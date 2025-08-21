@@ -1,0 +1,28 @@
+@import "tailwindcss";
+@plugin "@midudev/tailwind-animations";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+  scroll-behavior: smooth;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-bebas-neue: var(--bebas-neue);
+  --font-ibm-plex-sans: var(--ibm-plex-sans);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-ibm-plex-sans, sans-serif);
+}
