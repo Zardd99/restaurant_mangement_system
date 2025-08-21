@@ -35,5 +35,17 @@ The easiest way to deploy your Next.js app is to use the [Vercel Platform](https
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
 
+## restaurant_mangement_system
 
-## # restaurant_mangement_system
+## 🛠 Development
+
+### Submitting Changes
+
+Please follow our standard process for submitting changes:
+
+1.  Create a feature branch from `dev`.
+2.  Make your changes and write tests.
+3.  **Open a Pull Request (PR)** against the `dev` branch.
+4.  **Use our [Pull Request Template](.github/pull_request_templates/default.md)** when describing your changes.
+
+This helps reviewers understand the context and scope of your work quickly.
