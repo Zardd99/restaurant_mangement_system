@@ -5,7 +5,7 @@ interface UserListsProps {
 }
 
 const UserLists = ({ params }: UserListsProps) => {
-  return <div>Hello {params.id}</div>;
+  return <div>Users: {params.id}</div>;
 };
 
 export default UserLists;
