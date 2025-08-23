@@ -3,12 +3,11 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+type SidebarProps = {
+  isOpens: boolean;
+};
 
-interface SidebarProps {
-  isOpen: boolean;
-}
-
-const Sidebar = ({ isOpen }: SidebarProps) => {
+const Sidebar = ({ isOpens }: SidebarProps) => {
   const [isUsersOpen, setIsUsersOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
 
@@ -22,10 +21,10 @@ const Sidebar = ({ isOpen }: SidebarProps) => {
 
   return (
     <>
-      {isOpen && (
+      {isOpens && (
         <div
           className={`min-h-screen w-64 fixed top-10 left-0 ${
-            isOpen ? "translate-x-1" : "-translate-x-full"
+            isOpens ? "translate-x-1" : "-translate-x-full"
           } bg-white shadow-lg z-50 transition-transform duration-300 ease-in-out`}
         >
           <div className="p-4 flex justify-center items-center">
