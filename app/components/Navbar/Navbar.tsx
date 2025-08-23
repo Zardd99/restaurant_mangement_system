@@ -23,6 +23,9 @@ const Navbar = () => {
         </svg>
       </button>
       {isOpen && <Sidebar isOpens={isOpen} />}
+      <div>
+        <p>Heloo</p>
+      </div>
     </>
   );
 };
