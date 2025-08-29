@@ -3,7 +3,7 @@
 import { forwardRef, useEffect, useState } from "react";
 import Link from "next/link";
 import SidebarMobile from "./SidebarMobile";
-import sidebarContents from "@/constants/sidebar";
+import sidebarContents from "../../constants/sidebar";
 
 interface SidebarProps {
   isOpens: boolean;
@@ -40,7 +40,8 @@ const Sidebar = forwardRef<HTMLDivElement, SidebarProps>((props, ref) => {
     <>
       {isOpens ? (
         <div
-          className="min-h-screen w-64 fixed top-10 left-20 z-50 transition-transform duration-300 ease-in-out"
+          className="min-h-screen w-64 fixed top-10 left-0 z-50 transition-transform duration-300 ease-in-out bg-black text-white
+          "
           ref={ref}
         >
           {sidebarContents.map((section) => (
@@ -57,7 +58,7 @@ const Sidebar = forwardRef<HTMLDivElement, SidebarProps>((props, ref) => {
                   return (
                     <div
                       key={item.text}
-                      className="inline-block p-2 rounded-2xl cursor-pointer hover:bg-gray-200 font-bebas-neue uppercase"
+                      className="inline-block p-2 rounded-2xl cursor-pointer font-bebas-neue uppercase"
                       onClick={() => handleToggle("auth")}
                       id="auth-menu"
                     >
@@ -77,7 +78,7 @@ const Sidebar = forwardRef<HTMLDivElement, SidebarProps>((props, ref) => {
                             xmlns="http://www.w3.org/2000/svg"
                             width="20"
                             height="20"
-                            fill="#000000"
+                            fill="#ffffff"
                             viewBox="0 0 256 256"
                             className="inline-block float-right"
                           >
@@ -89,7 +90,7 @@ const Sidebar = forwardRef<HTMLDivElement, SidebarProps>((props, ref) => {
                         <div className="pl-15 flex flex-col rounded-2xl">
                           <Link
                             href="/login"
-                            className="cursor-pointer hover:bg-gray-300 px-3 py-1 rounded-xl"
+                            className="cursor-pointer  px-3 py-1 rounded-xl"
                           >
                             <span className="font-bebas-neue text-left">
                               Login
@@ -97,7 +98,7 @@ const Sidebar = forwardRef<HTMLDivElement, SidebarProps>((props, ref) => {
                           </Link>
                           <Link
                             href="/register"
-                            className="cursor-pointer hover:bg-gray-300 px-3 py-1 rounded-xl"
+                            className="cursor-pointer  px-3 py-1 rounded-xl"
                           >
                             <span className="font-bebas-neue text-left">
                               Register
@@ -112,7 +113,7 @@ const Sidebar = forwardRef<HTMLDivElement, SidebarProps>((props, ref) => {
                   return (
                     <div
                       key={item.text}
-                      className="flex flex-col p-2 rounded-2xl cursor-pointer hover:bg-gray-200 font-bebas-neue uppercase"
+                      className="flex flex-col p-2 rounded-2xl cursor-pointer  font-bebas-neue uppercase"
                       onClick={() => handleToggle("users")}
                     >
                       <div className="flex justify-between items-center">
@@ -131,7 +132,7 @@ const Sidebar = forwardRef<HTMLDivElement, SidebarProps>((props, ref) => {
                             xmlns="http://www.w3.org/2000/svg"
                             width="20"
                             height="20"
-                            fill="#000000"
+                            fill="#ffffff"
                             viewBox="0 0 256 256"
                             className="inline-block float-right"
                           >
@@ -141,17 +142,17 @@ const Sidebar = forwardRef<HTMLDivElement, SidebarProps>((props, ref) => {
                       </div>
                       {isUsersOpen && (
                         <div className="pl-15 ">
-                          <div className="cursor-pointer hover:bg-gray-300 p-1 rounded-xl px-3 py-1">
+                          <div className="cursor-pointer  p-1 rounded-xl px-3 py-1">
                             <span className="font-bebas-neue text-left">
                               Profile
                             </span>
                           </div>
-                          <div className="cursor-pointer hover:bg-gray-300 p-1 rounded-xl px-3 py-1">
+                          <div className="cursor-pointer  p-1 rounded-xl px-3 py-1">
                             <span className="font-bebas-neue text-left">
                               Settings
                             </span>
                           </div>
-                          <div className="cursor-pointer hover:bg-gray-300 p-1 rounded-xl px-3 py-1">
+                          <div className="cursor-pointer  p-1 rounded-xl px-3 py-1">
                             <span className="font-bebas-neue text-left">
                               Logout
                             </span>
@@ -165,7 +166,7 @@ const Sidebar = forwardRef<HTMLDivElement, SidebarProps>((props, ref) => {
                 return (
                   <div
                     key={item.text}
-                    className="flex items-center p-2 cursor-pointer hover:bg-gray-200 font-bebas-neue uppercase rounded-2xl"
+                    className="flex items-center p-2 cursor-pointer  font-bebas-neue uppercase rounded-2xl"
                   >
                     {item.icon}
                     <span className="font-bebas-neue text-left pl-4">

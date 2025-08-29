@@ -1,6 +1,6 @@
 import React from "react";
 import { forwardRef } from "react";
-import sidebarContents, { SidebarContent } from "@/constants/sidebar";
+import sidebarContents, { SidebarContent } from "../../constants/sidebar";
 
 interface SidebarMobileProps {
   handleTog: () => void;
@@ -14,7 +14,7 @@ const SidebarMobile = forwardRef<HTMLDivElement, SidebarMobileProps>(
 
     return (
       <div
-        className={`min-h-screen w-fit fixed top-10 left-20 z-50 transition-transform duration-300 ease-in-out`}
+        className={`min-h-screen w-fit fixed top-10 left-0 z-50 transition-transform duration-300 ease-in-out bg-black text-white`}
         ref={ref}
       >
         {/* Home */}
@@ -25,7 +25,7 @@ const SidebarMobile = forwardRef<HTMLDivElement, SidebarMobileProps>(
             </div>
             {con.content.map((cons) => (
               <div
-                className="flex flex-col items-center p-2 cursor-pointer hover:bg-gray-200 font-bebas-neue uppercase rounded-2xl"
+                className="flex flex-col items-center p-2 cursor-pointer  font-bebas-neue uppercase rounded-2xl"
                 key={cons.text}
                 onClick={
                   cons.text === "Authentication" || "Users"

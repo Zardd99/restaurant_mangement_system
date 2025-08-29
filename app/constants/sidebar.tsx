@@ -17,7 +17,7 @@ const sidebarContents = [
             xmlns="http://www.w3.org/2000/svg"
             width="32"
             height="32"
-            fill="#000000"
+            fill="#ffffff"
             viewBox="0 0 256 256"
             className="inline-block"
           >
@@ -39,7 +39,7 @@ const sidebarContents = [
             xmlns="http://www.w3.org/2000/svg"
             width="32"
             height="32"
-            fill="#000000"
+            fill="#ffffff"
             viewBox="0 0 256 256"
             className="inline-block"
           >
@@ -55,7 +55,7 @@ const sidebarContents = [
             xmlns="http://www.w3.org/2000/svg"
             width="32"
             height="32"
-            fill="#000000"
+            fill="#ffffff"
             viewBox="0 0 256 256"
             className="inline-block"
           >
@@ -71,7 +71,7 @@ const sidebarContents = [
             xmlns="http://www.w3.org/2000/svg"
             width="32"
             height="32"
-            fill="#000000"
+            fill="#ffffff"
             viewBox="0 0 256 256"
             className="inline-block"
           >
