@@ -34,7 +34,7 @@ const RootLayout = async ({ children }: { children: ReactNode }) => {
       <body
         className={`${ibmPlexSans.variable} ${bebasNeue.variable} font-ibm-plex-sans antialiased`}
       >
-        <div className="flex flex-col min-h-screen mx-auto container">
+        <div className="flex flex-col min-h-screen mx-auto">
           <Navbar />
           <main className="flex-1">{children}</main>
         </div>

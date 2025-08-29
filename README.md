@@ -35,7 +35,9 @@ The easiest way to deploy your Next.js app is to use the [Vercel Platform](https
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
 
-## restaurant_mangement_system
+## restaurant_mangement_system\_\_planning
+
+[Restaurant_management_system planning documentation](https://sakdachin.atlassian.net/wiki/external/ZDBmZmNjYzM1NGFhNDIwMWE0OWZlMWU5YjQ3ZDg1Y2Q)
 
 ## 🛠 Development
 
