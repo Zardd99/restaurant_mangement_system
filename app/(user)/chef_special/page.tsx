@@ -23,7 +23,7 @@ interface MenuItem {
   chefSpecial?: boolean;
 }
 
-const Menu = () => {
+const SpecialMenu = () => {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -31,15 +31,17 @@ const Menu = () => {
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
+  // Fetch chef special menu items from API
   useEffect(() => {
-    const fetchMenuItem = async () => {
+    const fetchChefSpecials = async () => {
       try {
         setLoading(true);
         setError(null);
 
-        let url = `${API_URL}/api/menu`;
+        // Fetch Special dishes with chefSpecial filter
+        let url = `${API_URL}/api/menu?chefSpecial=true`;
         if (searchQuery) {
-          url += `?search=${encodeURIComponent(searchQuery)}`;
+          url += `&search=${encodeURIComponent(searchQuery)}`;
         }
 
         const response = await fetch(url);
@@ -58,14 +60,16 @@ const Menu = () => {
           throw new Error("Invalid response format from API");
         }
       } catch (err) {
-        console.error("Error fetching:", err);
-        setError(err instanceof Error ? err.message : "Failed to load menu");
+        console.error("Error fetching chef specials:", err);
+        setError(
+          err instanceof Error ? err.message : "Failed to load special menu"
+        );
       } finally {
         setLoading(false);
       }
     };
 
-    fetchMenuItem();
+    fetchChefSpecials();
   }, [API_URL, searchQuery]);
 
   // Handler for adding items to cart
@@ -134,9 +138,11 @@ const Menu = () => {
     return (
       <div className="container mx-auto px-4 py-8 max-w-7xl">
         <div className="mb-10">
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">Menu</h2>
+          <h2 className="text-3xl font-bold text-gray-900 mb-2">
+            Chefs Specials
+          </h2>
           <p className="text-gray-600">
-            Discover our carefully curated selections
+            Discover our chefs carefully curated selections
           </p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -165,9 +171,11 @@ const Menu = () => {
     return (
       <div className="container mx-auto px-4 py-8 max-w-7xl">
         <div className="mb-10">
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">Menu</h2>
+          <h2 className="text-3xl font-bold text-gray-900 mb-2">
+            Chefs Specials
+          </h2>
           <p className="text-gray-600">
-            Discover our carefully curated selections
+            Discover our chefs carefully curated selections
           </p>
         </div>
         <div className="flex flex-col items-center justify-center py-16 px-4 bg-white rounded-2xl shadow-sm border border-gray-100">
@@ -202,20 +210,22 @@ const Menu = () => {
     );
   }
 
-  // Main UI with menu items
+  // Main UI with special menu items
   return (
     <ProtectedRoute>
       <div className="container mx-auto mt-18 px-4 py-8 max-w-7xl">
         <div className="mb-10 flex justify-between items-center">
-          <div className="">
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">Menus</h2>
+          <div>
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">
+              Chefs Specials
+            </h2>
             <p className="text-gray-600">
-              Discover our carefully curated selections
+              Discover our chefs carefully curated selections
             </p>
           </div>
-          <Link href="/chef_special">
+          <Link href="/user_interface" className="">
             <div className="mt-4 bg-gradient-to-r from-amber-500 to-orange-500 text-white px-5 py-3 rounded-full text-xs font-semibold shadow-md z-[999999]">
-              Go See Our Chef Special Menus
+              Go See Our Menus
             </div>
           </Link>
         </div>
@@ -239,10 +249,10 @@ const Menu = () => {
               </svg>
             </div>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">
-              No Menu Available
+              No Specials Available
             </h3>
             <p className="text-gray-600 text-center">
-              Check back later for our menu creations
+              Check back later for our chefs special creations
             </p>
           </div>
         ) : (
@@ -255,7 +265,7 @@ const Menu = () => {
                 {/* special badge */}
                 {item.chefSpecial && (
                   <div className="fixed top-4 right-4 bg-gradient-to-r from-amber-500 to-orange-500 text-white px-3 py-1.5 rounded-full text-xs font-semibold shadow-md z-[999999]">
-                    Menu
+                    Chefs Special
                   </div>
                 )}
 
@@ -359,4 +369,4 @@ const Menu = () => {
   );
 };
 
-export default Menu;
+export default SpecialMenu;
