@@ -34,7 +34,7 @@ const RegisterPage = () => {
       setError("");
       const { ...userData } = data;
       await registerUser(userData);
-      router.push("/dashboard");
+      router.push("/user_interface");
     } catch (err: unknown) {
       setError(
         err instanceof Error ? err.message : "An unknown error occurred"

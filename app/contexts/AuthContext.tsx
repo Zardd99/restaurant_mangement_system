@@ -6,6 +6,7 @@ import React, {
   useEffect,
   useState,
   ReactNode,
+  useCallback,
 } from "react";
 import axios from "axios";
 import Cookies from "js-cookie";
@@ -28,6 +29,7 @@ interface AuthContextType {
   register: (userData: RegisterData) => Promise<void>;
   logout: () => void;
   isLoading: boolean;
+  updateUser: (userData: Partial<User>) => void;
 }
 
 interface RegisterData {
@@ -81,7 +83,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             "Authorization"
           ] = `Bearer ${savedToken}`;
 
-          // Add type annotation for the response
           const response = await axios.get<{ user: User }>("/auth/me");
 
           setUser(response.data.user);
@@ -151,6 +152,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setUser(null);
   };
 
+  const updateUser = useCallback((userData: Partial<User>) => {
+    setUser((prevUser) => {
+      if (!prevUser) return prevUser;
+      return { ...prevUser, ...userData };
+    });
+  }, []);
+
   const value = {
     user,
     token,
@@ -158,6 +166,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     register,
     logout,
     isLoading,
+    updateUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

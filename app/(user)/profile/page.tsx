@@ -5,7 +5,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import axios from "axios";
 
 const UserProfile: React.FC = () => {
-  const { user, token } = useAuth();
+  const { user, token, updateUser } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({
     name: user?.name || "",
@@ -27,6 +27,27 @@ const UserProfile: React.FC = () => {
     }
   }, [user]);
 
+  // Simple polling to check for user updates
+  useEffect(() => {
+    if (!user) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const response = await axios.get(`/api/users/${user._id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (response.data.success) {
+          updateUser(response.data.user);
+        }
+      } catch (error) {
+        console.log("Polling for updates failed:", error);
+      }
+    }, 30000); // Check every 30 seconds
+
+    return () => clearInterval(interval);
+  }, [user, token, updateUser]);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setEditData((prev) => ({ ...prev, [name]: value }));
@@ -35,17 +56,15 @@ const UserProfile: React.FC = () => {
   const handleSave = async () => {
     try {
       const response = await axios.put(`/api/users/${user?._id}`, editData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       if (response.data.success) {
+        updateUser(response.data.user);
         setUpdateStatus({
           type: "success",
           message: "Profile updated successfully!",
         });
-        setTimeout(() => setUpdateStatus({ type: "", message: "" }), 3000);
       }
     } catch (error: unknown) {
       const axiosError = error as {
@@ -56,8 +75,8 @@ const UserProfile: React.FC = () => {
         message:
           axiosError.response?.data?.message || "Failed to update profile",
       });
-      setTimeout(() => setUpdateStatus({ type: "", message: "" }), 3000);
     }
+    setTimeout(() => setUpdateStatus({ type: "", message: "" }), 3000);
     setIsEditing(false);
   };
 
@@ -97,7 +116,11 @@ const UserProfile: React.FC = () => {
                 <div className="h-24 w-24 rounded-full bg-white/20 flex items-center justify-center text-4xl font-bold">
                   {user.name.charAt(0).toUpperCase()}
                 </div>
-                <div className="absolute bottom-0 right-0 h-6 w-6 rounded-full bg-green-500 border-2 border-white"></div>
+                {user.isActive ? (
+                  <div className="absolute bottom-0 right-0 h-6 w-6 rounded-full bg-green-500 border-2 border-white"></div>
+                ) : (
+                  <div className="absolute bottom-0 right-0 h-6 w-6 rounded-full bg-gray-500 border-2 border-white"></div>
+                )}
               </div>
               <div className="mt-6 md:mt-0 md:ml-6 text-center md:text-left">
                 <div className="flex items-center justify-center md:justify-start">
