@@ -40,7 +40,7 @@ const KitchenDisplaySystem = () => {
   const ws = useRef<WebSocket | null>(null);
   const reconnectAttempts = useRef(0);
   const maxReconnectAttempts = 5;
-  const { user, token } = useAuth();
+  const { token } = useAuth();
   const isConnecting = useRef(false);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -144,7 +144,7 @@ const KitchenDisplaySystem = () => {
             fetchOrders();
           }
         } catch (err) {
-          console.log("Received non-JSON message:", event.data);
+          console.log("Received non-JSON message:", event.data, err);
         }
       };
 
@@ -288,13 +288,13 @@ const KitchenDisplaySystem = () => {
               fetchOrders(); // This will always be the latest version
             }
           } catch (err) {
-            console.log("Received non-JSON message:", event.data);
+            console.log("Received non-JSON message:", event.data, err);
           }
         };
 
         ws.current.onerror = (error) => {
           // I hate this error 💀
-          // console.error("WebSocket error:", error);
+          console.error("WebSocket error:", error);
           isConnecting.current = false;
         };
 
@@ -327,7 +327,7 @@ const KitchenDisplaySystem = () => {
       }
       isConnecting.current = false;
     };
-  }, [fetchOrders, token]);
+  }, [fetchOrders, token, API_URL]);
 
   // const updateOrderStatus = async (orderId: string, newStatus: string) => {
   //   try {
@@ -395,6 +395,7 @@ const KitchenDisplaySystem = () => {
     return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   };
 
+  // Loading state
   if (loading) {
     return (
       <div className="space-y-6">
@@ -427,6 +428,7 @@ const KitchenDisplaySystem = () => {
     );
   }
 
+  // Error state
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center py-16 px-4 bg-white rounded-2xl shadow-sm border border-gray-100">
@@ -460,6 +462,7 @@ const KitchenDisplaySystem = () => {
     );
   }
 
+  // Main UI
   return (
     <div>
       <div className="flex flex-wrap gap-3 mb-6">

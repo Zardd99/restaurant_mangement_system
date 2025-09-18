@@ -91,7 +91,7 @@ const WaiterOrderInterface = () => {
     };
 
     fetchMenuItems();
-  }, [API_URL, searchQuery]);
+  }, [API_URL, searchQuery, token]);
 
   useEffect(() => {
     return () => {
@@ -256,7 +256,7 @@ const WaiterOrderInterface = () => {
   };
 
   const notifyOrderCreation = useCallback(
-    (orderData: any) => {
+    (orderData: OrderItem) => {
       const authToken = token || Cookies.get("token");
       if (!authToken) return;
 
@@ -414,6 +414,7 @@ const WaiterOrderInterface = () => {
     );
   }
 
+  // Main UI
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
       {/* Menu Items */}
@@ -590,7 +591,7 @@ const WaiterOrderInterface = () => {
             />
           </div>
 
-          {/* <div>
+          <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Order Notes
             </label>
@@ -601,7 +602,7 @@ const WaiterOrderInterface = () => {
               rows={2}
               className="w-full p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
             />
-          </div> */}
+          </div>
         </div>
 
         {/* Order Items */}

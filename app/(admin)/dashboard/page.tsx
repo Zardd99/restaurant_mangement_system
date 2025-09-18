@@ -128,50 +128,6 @@ const AdminUserDashboard = () => {
    * Handles authentication, error states, and data validation
    * Updates both users and filteredUsers state
    */
-  const fetchUsers = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      // Validate authentication token
-      if (!token || authLoading) return;
-
-      // Make authenticated API request
-      const response = await fetch(`${API_URL}/api/users`, {
-        headers: {
-          Authorization: `Bearer ${token}`, // JWT authentication
-          "Content-Type": "application/json",
-        },
-      });
-
-      // Handle HTTP error responses
-      if (!response.ok) {
-        if (response.status === 401) {
-          logout(); // Clear invalid/expired token
-          throw new Error("Session expired. Please log in again.");
-        } else if (response.status === 403) {
-          throw new Error("You don't have permission to access this resource.");
-        } else {
-          throw new Error(`Failed to fetch users: ${response.status}`);
-        }
-      }
-
-      // Parse and validate response data
-      const data = await response.json();
-
-      if (data.success && Array.isArray(data.users)) {
-        setUsers(data.users);
-        setFilteredUsers(data.users);
-      } else {
-        throw new Error("Invalid response format from API");
-      }
-    } catch (err) {
-      console.error("Error fetching users:", err);
-      setError(err instanceof Error ? err.message : "Failed to load users");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   // ============================================================================
   // LIFECYCLE EFFECTS
@@ -182,8 +138,55 @@ const AdminUserDashboard = () => {
    * Triggers when component mounts or token changes
    */
   useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        // Validate authentication token
+        if (!token || authLoading) return;
+
+        // Make authenticated API request
+        const response = await fetch(`${API_URL}/api/users`, {
+          headers: {
+            Authorization: `Bearer ${token}`, // JWT authentication
+            "Content-Type": "application/json",
+          },
+        });
+
+        // Handle HTTP error responses
+        if (!response.ok) {
+          if (response.status === 401) {
+            logout(); // Clear invalid/expired token
+            throw new Error("Session expired. Please log in again.");
+          } else if (response.status === 403) {
+            throw new Error(
+              "You don't have permission to access this resource."
+            );
+          } else {
+            throw new Error(`Failed to fetch users: ${response.status}`);
+          }
+        }
+
+        // Parse and validate response data
+        const data = await response.json();
+
+        if (data.success && Array.isArray(data.users)) {
+          setUsers(data.users);
+          setFilteredUsers(data.users);
+        } else {
+          throw new Error("Invalid response format from API");
+        }
+      } catch (err) {
+        console.error("Error fetching users:", err);
+        setError(err instanceof Error ? err.message : "Failed to load users");
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchUsers();
-  }, [token]);
+  }, [token, authLoading, logout, API_URL]);
 
   /**
    * Effect: Real-time filtering
