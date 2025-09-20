@@ -6,6 +6,8 @@ import { useSearch } from "../contexts/SearchContext";
 import Cookies from "js-cookie";
 import { useAuth } from "../contexts/AuthContext";
 import { useRef, useCallback } from "react";
+import { useSocket } from "../contexts/SocketContext";
+import { useLocalStorage } from "../hooks/useLocalStorage";
 
 interface MenuItem {
   _id: string;
@@ -35,14 +37,29 @@ const WaiterOrderInterface = () => {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [currentOrder, setCurrentOrder] = useState<OrderItem[]>([]);
-  const [tableNumber, setTableNumber] = useState<number>(1);
-  const [customerName, setCustomerName] = useState<string>("");
-  const [orderNotes, setOrderNotes] = useState<string>("");
+  const [currentOrder, setCurrentOrder] = useLocalStorage<OrderItem[]>(
+    "waiter_current_order",
+    []
+  );
+
+  const [tableNumber, setTableNumber] = useLocalStorage<number>(
+    "waiter_table_number",
+    1
+  );
+
+  const [customerName, setCustomerName] = useLocalStorage<string>(
+    "waiter_customer_name",
+    ""
+  );
+  const [orderNotes, setOrderNotes] = useLocalStorage<string>(
+    "waiter_order_notes",
+    ""
+  );
 
   // Contexts
   const { searchQuery } = useSearch();
   const { token } = useAuth();
+  const { socket } = useSocket();
 
   // Refs
   const ws = useRef<WebSocket | null>(null);
@@ -100,6 +117,24 @@ const WaiterOrderInterface = () => {
 
     fetchMenuItems();
   }, [API_URL, searchQuery, token]);
+
+  useEffect(() => {
+    if (socket) {
+      // Set role for this connection using the set_role event
+      socket.emit("set_role", "waiter");
+
+      // Handle connection errors
+      socket.on("error", (error) => {
+        console.error("Socket error:", error);
+      });
+    }
+
+    return () => {
+      if (socket) {
+        socket.off("error");
+      }
+    };
+  }, [socket]);
 
   useEffect(() => {
     return () => {
@@ -242,10 +277,20 @@ const WaiterOrderInterface = () => {
       const responseData = await response.json();
       console.log("Order submitted successfully:", responseData); // Debug log
 
+      if (socket) {
+        socket.emit("order_created", responseData);
+      }
+
       notifyOrderCreation(responseData);
+
+      localStorage.removeItem("waiter_current_order");
+      localStorage.removeItem("waiter_table_number");
+      localStorage.removeItem("waiter_customer_name");
+      localStorage.removeItem("waiter_order_notes");
 
       // Reset order after successful submission
       setCurrentOrder([]);
+      setTableNumber(1);
       setCustomerName("");
       setOrderNotes("");
       console.log("Order submitted successfully to the kitchen!");
@@ -756,18 +801,37 @@ const WaiterOrderInterface = () => {
           </div>
         )}
 
-        {/* Submit Button */}
-        <button
-          onClick={submitOrder}
-          disabled={currentOrder.length === 0}
-          className={`w-full py-3 px-4 rounded-xl font-medium transition-all ${
-            currentOrder.length === 0
-              ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-              : "bg-green-600 hover:bg-green-700 text-white shadow-md hover:shadow-lg"
-          }`}
-        >
-          Send Order to Kitchen
-        </button>
+        <div className="flex gap-4">
+          {/* Submit Button */}
+          <button
+            onClick={submitOrder}
+            disabled={currentOrder.length === 0}
+            className={`w-full py-3 px-4 rounded-xl font-medium transition-all ${
+              currentOrder.length === 0
+                ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                : "bg-green-600 hover:bg-green-700 text-white shadow-md hover:shadow-lg"
+            }`}
+          >
+            Send Order to Kitchen
+          </button>
+
+          {/* clear orders */}
+          <button
+            onClick={() => {
+              setCurrentOrder([]);
+              setCustomerName("");
+              setOrderNotes("");
+            }}
+            disabled={currentOrder.length === 0}
+            className={`px-4 py-3 rounded-xl font-medium transition-all ${
+              currentOrder.length === 0
+                ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                : "bg-red-600 hover:bg-red-700 text-white shadow-md hover:shadow-lg"
+            }`}
+          >
+            Clear Order
+          </button>
+        </div>
       </div>
     </div>
   );

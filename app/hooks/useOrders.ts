@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import Cookies from "js-cookie";
 import { Order } from "../(waiter_order)/KitchenDisplaySystem";
+import { useSocket } from "../contexts/SocketContext";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 const WS_URL = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:5000";
@@ -10,6 +11,7 @@ export const useOrders = (token: string | null, filter: string) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [ws, setWs] = useState<WebSocket | null>(null);
+  const { socket } = useSocket();
 
   const fetchOrders = useCallback(async () => {
     try {
@@ -94,14 +96,52 @@ export const useOrders = (token: string | null, filter: string) => {
       setWs(null);
     };
 
-    websocket.onerror = (error) => {
-      console.error("WebSocket error:", error);
-    };
+    // I'm sorry this error is a pain 😭 not that the web is crushing, this error just exist
+
+    // websocket.onerror = (error) => {
+    //   console.error("WebSocket error:", error);
+    // };
 
     return () => {
       websocket.close();
     };
   }, [token]);
+
+  useEffect(() => {
+    if (socket) {
+      // Set role for this connection using the set_role event
+      socket.emit("set_role", "chef");
+
+      socket.on("order_created", (newOrder: Order) => {
+        console.log("New order received:", newOrder._id);
+        setOrders((prev) => [newOrder, ...prev]);
+      });
+
+      socket.on(
+        "order_updated",
+        (updatedData: { orderId: string; status: string }) => {
+          console.log("Order updated:", updatedData.orderId);
+          setOrders((prev) =>
+            prev.map((order) =>
+              order._id === updatedData.orderId
+                ? { ...order, status: updatedData.status }
+                : order
+            )
+          );
+        }
+      );
+
+      socket.on("error", (error) => {
+        console.error("Socket error:", error);
+      });
+
+      return () => {
+        socket.off("order_created");
+        socket.off("order_updated");
+        socket.off("error");
+      };
+    }
+  }, [socket, setOrders]);
 
   return { orders, loading, error, fetchOrders };
 };

@@ -80,9 +80,11 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
       setWs(null);
     };
 
-    websocket.onerror = (error) => {
-      console.error("WebSocket error:", error);
-    };
+    // I'm sorry this error is a pain 😭 not that the web is crushing, this error just exist
+
+    // websocket.onerror = (error) => {
+    //   console.error("WebSocket error:", error);
+    // };
 
     return () => {
       websocket.close();

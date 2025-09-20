@@ -191,16 +191,7 @@ const Sidebar = forwardRef<HTMLDivElement, SidebarProps>((props, ref) => {
                                 >
                                   Profile
                                 </Link>
-                                <Link
-                                  href="/settings"
-                                  className={`block px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                                    pathname === "/settings"
-                                      ? "bg-blue-500/20 text-blue-300 border-l-2 border-blue-500"
-                                      : "text-slate-400 hover:text-slate-200 hover:bg-slate-700/30"
-                                  }`}
-                                >
-                                  Settings
-                                </Link>
+
                                 {/* Replace the logout Link with a button that calls handleLogout */}
                                 <button
                                   onClick={handleLogout}

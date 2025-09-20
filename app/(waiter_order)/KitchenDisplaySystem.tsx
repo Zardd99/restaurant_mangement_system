@@ -48,6 +48,8 @@ const KitchenDisplaySystem = () => {
     fetchOrders();
   }, [fetchOrders]);
 
+  
+
   // Loading state
   if (loading) {
     return <LoadingState type="orders" count={6} />;
