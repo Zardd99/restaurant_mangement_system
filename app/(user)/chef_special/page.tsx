@@ -40,7 +40,7 @@ const Menu = () => {
         setLoading(true);
         setError(null);
 
-        let url = `${API_URL}/api/menu`;
+        let url = `${API_URL}/api/menu?chefSpecial=true`;
         if (searchQuery) {
           url += `?search=${encodeURIComponent(searchQuery)}`;
         }
@@ -312,14 +312,16 @@ const Menu = () => {
       <div className="container mx-auto mt-18 px-4 py-8 max-w-7xl">
         <div className="mb-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h2 className="text-4xl font-bold text-gray-900 mb-2">Our Menu</h2>
+            <h2 className="text-4xl font-bold text-gray-900 mb-2">
+              Chef Special Menu
+            </h2>
             <p className="text-gray-600 text-lg">
-              Discover our carefully curated selections
+              Discover our chef carefully curated selections
             </p>
           </div>
-          <Link href="/chef_special">
+          <Link href="/user_interface">
             <div className="bg-gradient-to-r from-amber-500 to-orange-500 text-white px-6 py-3 rounded-full text-sm font-semibold shadow-md hover:shadow-lg transition-shadow">
-              Chefs Specials
+              Menus
             </div>
           </Link>
         </div>

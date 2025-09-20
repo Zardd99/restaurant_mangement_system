@@ -4,6 +4,9 @@ import "./globals.css";
 import localFont from "next/font/local";
 import { ReactNode } from "react";
 import Navbar from "./components/Navbar/Navbar";
+import { AuthProvider } from "./contexts/AuthContext";
+import { SearchProvider } from "./contexts/SearchContext";
+import { SocketProvider } from "./contexts/SocketContext";
 
 const ibmPlexSans = localFont({
   src: [
@@ -34,10 +37,16 @@ const RootLayout = async ({ children }: { children: ReactNode }) => {
       <body
         className={`${ibmPlexSans.variable} ${bebasNeue.variable} font-ibm-plex-sans antialiased`}
       >
-        <div className="flex flex-col min-h-screen mx-auto">
-          <Navbar />
-          <main className="flex-1">{children}</main>
-        </div>
+        <AuthProvider>
+          <SocketProvider>
+            <SearchProvider>
+              <div className="flex flex-col min-h-screen mx-auto">
+                <Navbar />
+                <main className="flex-1 ml-[83.40px]">{children}</main>
+              </div>
+            </SearchProvider>
+          </SocketProvider>
+        </AuthProvider>
       </body>
     </html>
   );

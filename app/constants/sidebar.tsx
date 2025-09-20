@@ -25,7 +25,7 @@ const sidebarContents = [
           </svg>
         ),
         text: "Dashboard",
-        link: "/#dashboard",
+        link: "/dashboard",
       },
     ],
   },
@@ -43,11 +43,11 @@ const sidebarContents = [
             viewBox="0 0 256 256"
             className="inline-block"
           >
-            <path d="M208,32H48A16,16,0,0,0,32,48V208a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V48A16,16,0,0,0,208,32Zm-12.69,88L136,60.69V48h12.69L208,107.32V120ZM136,83.31,172.69,120H136Zm72,1.38L171.31,48H208ZM120,48v72H48V48ZM107.31,208,48,148.69V136H60.69L120,195.31V208ZM120,172.69,83.31,136H120Zm-72-1.38L84.69,208H48ZM208,208H136V136h72v72Z"></path>
+            <path d="M208,32H48A16,16,0,0,0,32,48V208a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V48A16,16,0,0,0,208,32Zm-12.69,88L136,60.69V48h12.69L208,107.32V120ZM120,48v72H48V48ZM107.31,208,48,148.69V136H60.69L120,195.31V208ZM208,208H136V136h72v72Z"></path>
           </svg>
         ),
         text: "Special",
-        link: "/#special",
+        link: "/user_interface",
       },
       {
         icon: (
@@ -63,7 +63,7 @@ const sidebarContents = [
           </svg>
         ),
         text: "Authentication",
-        link: "/#authentication",
+        link: "#", // Keep as placeholder for dropdown
       },
       {
         icon: (
@@ -79,7 +79,22 @@ const sidebarContents = [
           </svg>
         ),
         text: "Users",
-        link: "/#users",
+        link: "#", // Keep as placeholder for dropdown
+      },
+      {
+        icon: (
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="32"
+            height="32"
+            fill="#ffffff"
+            viewBox="0 0 256 256"
+          >
+            <path d="M240,112a56.06,56.06,0,0,0-56-56c-1.77,0-3.54.1-5.29.26a56,56,0,0,0-101.42,0C75.54,56.1,73.77,56,72,56A56,56,0,0,0,48,162.59V208a16,16,0,0,0,16,16H192a16,16,0,0,0,16-16V162.59A56.09,56.09,0,0,0,240,112Zm-48,96H64V167.42a55.49,55.49,0,0,0,8,.58H184a55.49,55.49,0,0,0,8-.58Zm-8-56H170.25l5.51-22.06a8,8,0,0,0-15.52-3.88L153.75,152H136V128a8,8,0,0,0-16,0v24H102.25l-6.49-25.94a8,8,0,1,0-15.52,3.88L85.75,152H72a40,40,0,0,1,0-80l.58,0A55.21,55.21,0,0,0,72,80a8,8,0,0,0,16,0,40,40,0,0,1,80,0,8,8,0,0,0,16,0,55.21,55.21,0,0,0-.58-8l.58,0a40,40,0,0,1,0,80Z"></path>
+          </svg>
+        ),
+        text: "Chef",
+        link: "/waiter_order",
       },
     ],
   },
