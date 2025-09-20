@@ -118,14 +118,12 @@ const LoginPage = () => {
                 className="w-10 h-10 rounded-full bg-white border border-gray-300 flex items-center justify-center hover:bg-gray-50"
               >
                 <span className="sr-only">Google</span>
-                {/* Add Google icon here */}G
               </button>
               <button
                 type="button"
                 className="w-10 h-10 rounded-full bg-white border border-gray-300 flex items-center justify-center hover:bg-gray-50"
               >
                 <span className="sr-only">Facebook</span>
-                {/* Add Facebook icon here */}F
               </button>
             </div>
           </div>

@@ -1,17 +1,23 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { ProtectedRoute } from "../../components/ProtectedRoute/ProtectedRoute";
 import WaiterOrderInterface from "../WaiterOrderInterface";
 import KitchenDisplaySystem from "../KitchenDisplaySystem";
+import { WebSocketProvider } from "@/app/contexts/WebSocketContext";
 
 const WaiterOrderPage = () => {
+  // context
   const { user } = useAuth();
+
+  // state
   const [activeTab, setActiveTab] = useState<"order" | "kitchen">("order");
 
+  // constants
   const allowedRoles = ["waiter", "admin", "manager", "chef"];
 
+  // Roles check
   if (!user || !allowedRoles.includes(user.role)) {
     return (
       <ProtectedRoute>
@@ -27,6 +33,7 @@ const WaiterOrderPage = () => {
     );
   }
 
+  // Main UI
   return (
     <ProtectedRoute>
       <div className="container mx-auto mt-18 px-4 py-8 max-w-7xl">
@@ -64,11 +71,13 @@ const WaiterOrderPage = () => {
         </div>
 
         {/* Tab Content */}
-        {activeTab === "order" ? (
-          <WaiterOrderInterface />
-        ) : (
-          <KitchenDisplaySystem />
-        )}
+        <WebSocketProvider>
+          {activeTab === "order" ? (
+            <WaiterOrderInterface />
+          ) : (
+            <KitchenDisplaySystem />
+          )}
+        </WebSocketProvider>
       </div>
     </ProtectedRoute>
   );

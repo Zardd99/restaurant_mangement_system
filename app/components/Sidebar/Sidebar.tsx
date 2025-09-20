@@ -13,12 +13,17 @@ interface SidebarProps {
 }
 
 const Sidebar = forwardRef<HTMLDivElement, SidebarProps>((props, ref) => {
+  // contexts and props
   const { isOpens, handleToggles } = props;
-  const [isUsersOpen, setIsUsersOpen] = useState<boolean>(false);
-  const [isAuthOpen, setIsAuthOpen] = useState<boolean>(false);
   const pathname = usePathname();
   const router = useRouter();
   const { logout, user } = useAuth(); // Get logout function and user from auth context
+
+  // state
+  const [isUsersOpen, setIsUsersOpen] = useState<boolean>(false);
+  const [isAuthOpen, setIsAuthOpen] = useState<boolean>(false);
+
+  // -- functions / useEffects -- //
 
   const handleToggle = (type: "auth" | "users") => {
     if (type === "auth") {
@@ -42,6 +47,9 @@ const Sidebar = forwardRef<HTMLDivElement, SidebarProps>((props, ref) => {
     }
   }, [isOpens]);
 
+  // -- End -- //
+
+  // Main UI
   return (
     <AuthProvider>
       <>

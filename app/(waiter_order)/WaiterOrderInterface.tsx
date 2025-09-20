@@ -31,6 +31,7 @@ interface OrderItem {
 }
 
 const WaiterOrderInterface = () => {
+  // State
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -38,11 +39,18 @@ const WaiterOrderInterface = () => {
   const [tableNumber, setTableNumber] = useState<number>(1);
   const [customerName, setCustomerName] = useState<string>("");
   const [orderNotes, setOrderNotes] = useState<string>("");
+
+  // Contexts
   const { searchQuery } = useSearch();
   const { token } = useAuth();
+
+  // Refs
   const ws = useRef<WebSocket | null>(null);
 
+  // API URL
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+
+  // -- Effect / Function -- //
 
   // Fetch menu items from API
   useEffect(() => {

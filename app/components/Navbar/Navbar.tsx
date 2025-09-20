@@ -4,12 +4,18 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { useSearch } from "../../contexts/SearchContext";
 
 const Navbar = () => {
-  const [isOpen, setIsOpen] = useState<boolean>(false);
+  // context
   const { searchQuery, setSearchQuery } = useSearch(); // Use the context
+
+  // state
+  const [isOpen, setIsOpen] = useState<boolean>(false);
+
+  // refs
   const sidebarRef = useRef<HTMLDivElement>(null);
   const hamburgerRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
 
+  // -- functions / useEffects -- //
   const toggleMenu = () => {
     setIsOpen(!isOpen);
   };
@@ -44,6 +50,7 @@ const Navbar = () => {
     };
   }, [isOpen]);
 
+  // Main UI
   return (
     <>
       <nav className="fixed w-full z-[9999] bg-black">
