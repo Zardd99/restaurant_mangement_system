@@ -3,8 +3,8 @@ import Cookies from "js-cookie";
 import { Order } from "../(waiter_order)/KitchenDisplaySystem";
 import { useSocket } from "../contexts/SocketContext";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-const WS_URL = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:5000";
+const API_URL = process.env.API_URL || "http://localhost:5000";
+const WS_URL = process.env.WS_URL || "ws://localhost:5000";
 
 export const useOrders = (token: string | null, filter: string) => {
   const [orders, setOrders] = useState<Order[]>([]);

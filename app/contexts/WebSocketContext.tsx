@@ -16,8 +16,8 @@ const WebSocketContext = createContext<{
 
 export const useWebSocket = () => useContext(WebSocketContext);
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-const WS_URL = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:5000";
+const API_URL = process.env.API_URL || "http://localhost:5000";
+const WS_URL = process.env.WS_URL || "ws://localhost:5000";
 
 // WebSocket Provider Component
 export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
