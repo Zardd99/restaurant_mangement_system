@@ -68,7 +68,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Initialize axios defaults
   useEffect(() => {
     axios.defaults.baseURL =
-      process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+      (process.env.API_URL as string) || "http://localhost:5000";
   }, []);
 
   // Check for existing token on app load
@@ -83,7 +83,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             "Authorization"
           ] = `Bearer ${savedToken}`;
 
-          const response = await axios.get<{ user: User }>("/auth/me");
+          const response = await axios.get<{ user: User }>("api/auth/me");
 
           setUser(response.data.user);
           setToken(savedToken);
@@ -103,7 +103,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const login = async (email: string, password: string) => {
     try {
-      const response = await axios.post<AuthResponse>("/auth/login", {
+      const response = await axios.post<AuthResponse>("api/auth/login", {
         email,
         password,
       });
