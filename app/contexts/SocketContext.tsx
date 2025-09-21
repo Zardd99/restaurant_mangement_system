@@ -27,8 +27,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     if (!token) return;
 
-    const API_URL =
-      (process.env.NEXT_PUBLIC_API_URL as string) || "http://localhost:5000";
+    const API_URL = (process.env.API_URL as string) || "http://localhost:5000";
     const authToken = token || Cookies.get("token");
 
     if (!authToken) return;
