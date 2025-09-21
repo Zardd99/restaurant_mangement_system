@@ -32,7 +32,7 @@ const Menu = () => {
   const [activeFilter, setActiveFilter] = useState("all");
   const { searchQuery } = useSearch();
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+  const API_URL = (process.env.API_URL as string) || "http://localhost:5000";
 
   useEffect(() => {
     const fetchMenuItems = async () => {

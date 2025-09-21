@@ -65,7 +65,8 @@ const WaiterOrderInterface = () => {
   const ws = useRef<WebSocket | null>(null);
 
   // API URL
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+  const API_URL =
+    (process.env.NEXT_PUBLIC_API_URL as string) || "http://localhost:5000";
 
   // -- Effect / Function -- //
 
