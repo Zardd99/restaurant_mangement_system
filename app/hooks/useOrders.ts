@@ -1,9 +1,21 @@
 import { useState, useEffect, useCallback } from "react";
 import Cookies from "js-cookie";
-import { Order } from "../(waiter_order)/KitchenDisplaySystem";
+import { Order } from "../types/order";
 import { useSocket } from "../contexts/SocketContext";
 
 const API_URL = process.env.API_URL || "http://localhost:5000";
+
+// Type guard to check if a string is a valid order status
+const isValidOrderStatus = (status: string): status is Order["status"] => {
+  return [
+    "pending",
+    "confirmed",
+    "preparing",
+    "ready",
+    "served",
+    "cancelled",
+  ].includes(status);
+};
 
 export const useOrders = (token: string | null, filter: string) => {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -69,11 +81,20 @@ export const useOrders = (token: string | null, filter: string) => {
         (updatedData: { orderId: string; status: string }) => {
           console.log("Order updated:", updatedData.orderId);
           setOrders((prev) =>
-            prev.map((order) =>
-              order._id === updatedData.orderId
-                ? { ...order, status: updatedData.status }
-                : order
-            )
+            prev.map((order) => {
+              if (order._id === updatedData.orderId) {
+                // Validate the status before updating
+                if (isValidOrderStatus(updatedData.status)) {
+                  return { ...order, status: updatedData.status };
+                } else {
+                  console.warn(
+                    `Invalid status received: ${updatedData.status}`
+                  );
+                  return order; // Return unchanged order if status is invalid
+                }
+              }
+              return order;
+            })
           );
         }
       );
@@ -88,7 +109,7 @@ export const useOrders = (token: string | null, filter: string) => {
         socket.off("error");
       };
     }
-  }, [socket, setOrders]);
+  }, [socket]);
 
   return { orders, loading, error, fetchOrders };
 };
