@@ -5,6 +5,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { ProtectedRoute } from "../../components/ProtectedRoute/ProtectedRoute";
 import WaiterOrderInterface from "../WaiterOrderInterface";
 import KitchenDisplaySystem from "../KitchenDisplaySystem";
+import { SocketProvider } from "@/app/contexts/SocketContext";
 import { WebSocketProvider } from "@/app/contexts/WebSocketContext";
 
 const WaiterOrderPage = () => {
@@ -71,13 +72,15 @@ const WaiterOrderPage = () => {
         </div>
 
         {/* Tab Content */}
-        <WebSocketProvider>
-          {activeTab === "order" ? (
-            <WaiterOrderInterface />
-          ) : (
-            <KitchenDisplaySystem />
-          )}
-        </WebSocketProvider>
+        <SocketProvider>
+          <WebSocketProvider>
+            {activeTab === "order" ? (
+              <WaiterOrderInterface />
+            ) : (
+              <KitchenDisplaySystem />
+            )}
+          </WebSocketProvider>
+        </SocketProvider>
       </div>
     </ProtectedRoute>
   );
