@@ -7,6 +7,7 @@ import Navbar from "./components/Navbar/Navbar";
 import { AuthProvider } from "./contexts/AuthContext";
 import { SearchProvider } from "./contexts/SearchContext";
 import { SocketProvider } from "./contexts/SocketContext";
+import { WebSocketProvider } from "./contexts/WebSocketContext";
 
 const ibmPlexSans = localFont({
   src: [
@@ -39,12 +40,14 @@ const RootLayout = async ({ children }: { children: ReactNode }) => {
       >
         <AuthProvider>
           <SocketProvider>
-            <SearchProvider>
-              <div className="flex flex-col min-h-screen mx-auto">
-                <Navbar />
-                <main className="flex-1 ml-[83.40px]">{children}</main>
-              </div>
-            </SearchProvider>
+            <WebSocketProvider>
+              <SearchProvider>
+                <div className="flex flex-col min-h-screen mx-auto">
+                  <Navbar />
+                  <main className="flex-1 ml-[83.40px]">{children}</main>
+                </div>
+              </SearchProvider>
+            </WebSocketProvider>
           </SocketProvider>
         </AuthProvider>
       </body>

@@ -3,7 +3,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { io, Socket } from "socket.io-client";
 import { useAuth } from "./AuthContext";
-import Cookies from "js-cookie";
 
 interface SocketContextType {
   socket: Socket | null;
@@ -22,34 +21,58 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
-  const { token, user } = useAuth(); // Assuming user object contains role
+  const { token, user } = useAuth();
 
   useEffect(() => {
-    if (!token) return;
+    if (!token || !user?.role) {
+      console.log("Socket: Missing token or role, skipping connection");
+      return;
+    }
 
-    const API_URL = (process.env.API_URL as string) || "http://localhost:5000";
-    const authToken = token || Cookies.get("token");
-
-    if (!authToken) return;
+    const API_URL = process.env.API_URL || "http://localhost:5000";
 
     const newSocket = io(API_URL, {
       auth: {
-        token: authToken,
+        token: token,
       },
       query: {
-        token: authToken,
-        role: user?.role || "", // Include role in initial connection
+        token: token,
+        role: user.role,
+        userId: user._id, // Add user ID to query
       },
+      transports: ["websocket", "polling"],
+      timeout: 10000,
     });
 
     newSocket.on("connect", () => {
-      console.log("Connected to server");
+      console.log("Socket: Connected to server with ID:", newSocket.id);
       setIsConnected(true);
+
+      // Set role and user info after connection
+      newSocket.emit("set_role", user.role);
+      newSocket.emit("user_connected", {
+        userId: user._id,
+        role: user.role,
+        name: user.name,
+      });
     });
 
-    newSocket.on("disconnect", () => {
-      console.log("Disconnected from server");
+    newSocket.on("disconnect", (reason) => {
+      console.log("Socket: Disconnected from server. Reason:", reason);
       setIsConnected(false);
+    });
+
+    newSocket.on("connect_error", (error) => {
+      console.error("Socket: Connection error:", error.message);
+      setIsConnected(false);
+    });
+
+    newSocket.on("reconnect", (attemptNumber) => {
+      console.log("Socket: Reconnected after", attemptNumber, "attempts");
+      setIsConnected(true);
+      if (user) {
+        newSocket.emit("user_reconnected", user._id);
+      }
     });
 
     newSocket.on("error", (error) => {
@@ -59,10 +82,15 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
     setSocket(newSocket);
 
     return () => {
+      console.log("Socket: Cleaning up connection");
+      if (user) {
+        newSocket.emit("user_disconnected", user._id);
+      }
       newSocket.disconnect();
       setSocket(null);
+      setIsConnected(false);
     };
-  }, [token, user?.role]);
+  }, [token, user]);
 
   return (
     <SocketContext.Provider value={{ socket, isConnected }}>

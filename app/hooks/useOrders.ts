@@ -4,13 +4,11 @@ import { Order } from "../(waiter_order)/KitchenDisplaySystem";
 import { useSocket } from "../contexts/SocketContext";
 
 const API_URL = process.env.API_URL || "http://localhost:5000";
-const WS_URL = process.env.WS_URL || "ws://localhost:5000";
 
 export const useOrders = (token: string | null, filter: string) => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [ws, setWs] = useState<WebSocket | null>(null);
   const { socket } = useSocket();
 
   const fetchOrders = useCallback(async () => {
@@ -53,59 +51,8 @@ export const useOrders = (token: string | null, filter: string) => {
   }, [filter, token]);
 
   useEffect(() => {
-    if (!token) return;
-
-    const authToken = token || Cookies.get("token");
-    const wsUrl = `${WS_URL}/ws?token=${authToken}&role=chef`;
-    const websocket = new WebSocket(wsUrl);
-
-    websocket.onopen = () => {
-      console.log("WebSocket connected for orders");
-      setWs(websocket);
-    };
-
-    websocket.onmessage = (event) => {
-      try {
-        const message = JSON.parse(event.data);
-
-        switch (message.type) {
-          case "order_created":
-            // Add new order to the list
-            setOrders((prev) => [message.order, ...prev]);
-            break;
-          case "orders_updated":
-            // Update existing order status
-            setOrders((prev) =>
-              prev.map((order) =>
-                order._id === message.orderId
-                  ? { ...order, status: message.status }
-                  : order
-              )
-            );
-            break;
-          default:
-            break;
-        }
-      } catch (err) {
-        console.error("Error processing WebSocket message:", err);
-      }
-    };
-
-    websocket.onclose = () => {
-      console.log("WebSocket disconnected");
-      setWs(null);
-    };
-
-    // I'm sorry this error is a pain 😭 not that the web is crushing, this error just exist
-
-    // websocket.onerror = (error) => {
-    //   console.error("WebSocket error:", error);
-    // };
-
-    return () => {
-      websocket.close();
-    };
-  }, [token]);
+    fetchOrders();
+  }, [fetchOrders]);
 
   useEffect(() => {
     if (socket) {

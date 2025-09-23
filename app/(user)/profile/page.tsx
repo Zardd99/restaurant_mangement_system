@@ -2,10 +2,13 @@
 
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../../contexts/AuthContext";
+import { useSocket } from "../../contexts/SocketContext"; // Import socket context
 import axios from "axios";
+import { User } from "../../contexts/AuthContext";
 
 const UserProfile: React.FC = () => {
   const { user, token, updateUser } = useAuth();
+  const { socket, isConnected } = useSocket(); // Get socket instance
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({
     name: user?.name || "",
@@ -16,6 +19,7 @@ const UserProfile: React.FC = () => {
     type: "success" | "error" | "";
     message: string;
   }>({ type: "", message: "" });
+  const [isOnline, setIsOnline] = useState(true); // Track online status
 
   useEffect(() => {
     if (user) {
@@ -24,12 +28,69 @@ const UserProfile: React.FC = () => {
         email: user.email,
         phone: user.phone || "",
       });
+      // Set initial online status based on user data
+      setIsOnline(user.isActive);
     }
   }, [user]);
 
-  // Simple polling to check for user updates
+  // Socket.io real-time updates
   useEffect(() => {
-    if (!user) return;
+    if (!socket || !user) return;
+
+    // Listen for user status updates
+    const handleUserStatusUpdate = (updatedUser: User) => {
+      if (updatedUser._id === user._id) {
+        updateUser(updatedUser);
+        setIsOnline(updatedUser.isActive);
+        console.log("User status updated via socket:", updatedUser.isActive);
+      }
+    };
+
+    // Listen for user profile updates
+    const handleUserProfileUpdate = (updatedUser: User) => {
+      if (updatedUser._id === user._id) {
+        updateUser(updatedUser);
+        console.log("User profile updated via socket");
+      }
+    };
+
+    // Join user-specific room for real-time updates
+    socket.emit("join_user_room", user._id);
+
+    // Set up event listeners
+    socket.on("user_status_updated", handleUserStatusUpdate);
+    socket.on("user_profile_updated", handleUserProfileUpdate);
+    socket.on("user_online", (userId: string) => {
+      if (userId === user._id) {
+        setIsOnline(true);
+        updateUser({ ...user, isActive: true });
+      }
+    });
+    socket.on("user_offline", (userId: string) => {
+      if (userId === user._id) {
+        setIsOnline(false);
+        updateUser({ ...user, isActive: false });
+      }
+    });
+
+    // Emit user online status when component mounts
+    socket.emit("user_online", user._id);
+
+    return () => {
+      // Clean up event listeners
+      socket.off("user_status_updated", handleUserStatusUpdate);
+      socket.off("user_profile_updated", handleUserProfileUpdate);
+      socket.off("user_online");
+      socket.off("user_offline");
+
+      // Emit user offline status when component unmounts
+      socket.emit("user_offline", user._id);
+    };
+  }, [socket, user, updateUser]);
+
+  // Fallback polling (only if socket is not connected)
+  useEffect(() => {
+    if (!user || isConnected) return;
 
     const interval = setInterval(async () => {
       try {
@@ -39,14 +100,15 @@ const UserProfile: React.FC = () => {
 
         if (response.data.success) {
           updateUser(response.data.user);
+          setIsOnline(response.data.user.isActive);
         }
       } catch (error) {
         console.log("Polling for updates failed:", error);
       }
-    }, 30000); // Check every 30 seconds
+    }, 30000);
 
     return () => clearInterval(interval);
-  }, [user, token, updateUser]);
+  }, [user, token, updateUser, isConnected]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -65,6 +127,11 @@ const UserProfile: React.FC = () => {
           type: "success",
           message: "Profile updated successfully!",
         });
+
+        // Emit profile update via socket
+        if (socket) {
+          socket.emit("user_profile_update", response.data.user);
+        }
       }
     } catch (error: unknown) {
       const axiosError = error as {
@@ -105,9 +172,28 @@ const UserProfile: React.FC = () => {
     }
   };
 
+  // Use real-time online status or fallback to user.isActive
+  const displayStatus = isOnline;
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
+        {/* Connection Status Indicator */}
+        <div className="mb-4 flex items-center justify-end">
+          <div
+            className={`flex items-center text-sm ${
+              isConnected ? "text-green-600" : "text-yellow-600"
+            }`}
+          >
+            <div
+              className={`w-2 h-2 rounded-full mr-2 ${
+                isConnected ? "bg-green-500" : "bg-yellow-500"
+              }`}
+            ></div>
+            {isConnected ? "Real-time connected" : "Using fallback updates"}
+          </div>
+        </div>
+
         <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
           {/* Profile Header */}
           <div className="bg-gradient-to-r from-indigo-500 to-purple-600 p-8 text-white">
@@ -116,11 +202,18 @@ const UserProfile: React.FC = () => {
                 <div className="h-24 w-24 rounded-full bg-white/20 flex items-center justify-center text-4xl font-bold">
                   {user.name.charAt(0).toUpperCase()}
                 </div>
-                {user.isActive ? (
-                  <div className="absolute bottom-0 right-0 h-6 w-6 rounded-full bg-green-500 border-2 border-white"></div>
-                ) : (
-                  <div className="absolute bottom-0 right-0 h-6 w-6 rounded-full bg-gray-500 border-2 border-white"></div>
-                )}
+                <div className="absolute bottom-0 right-0 flex items-center">
+                  <div
+                    className={`h-6 w-6 rounded-full border-2 border-white ${
+                      displayStatus ? "bg-green-500" : "bg-gray-500"
+                    }`}
+                  ></div>
+                  {!isConnected && (
+                    <div className="ml-1 text-xs bg-yellow-500 text-white px-1 rounded">
+                      Offline
+                    </div>
+                  )}
+                </div>
               </div>
               <div className="mt-6 md:mt-0 md:ml-6 text-center md:text-left">
                 <div className="flex items-center justify-center md:justify-start">
@@ -224,12 +317,13 @@ const UserProfile: React.FC = () => {
                 <div className="flex items-center">
                   <span
                     className={`px-4 py-2 rounded-lg ${
-                      user.isActive
+                      displayStatus
                         ? "bg-green-100 text-green-800"
                         : "bg-red-100 text-red-800"
                     }`}
                   >
-                    {user.isActive ? "Active" : "Inactive"}
+                    {displayStatus ? "Active" : "Inactive"}
+                    {!isConnected && " (Offline)"}
                   </span>
                 </div>
               </div>
@@ -285,10 +379,10 @@ const UserProfile: React.FC = () => {
             </div>
             <div className="p-4 bg-green-50 rounded-lg">
               <h3 className="text-sm font-medium text-green-800">
-                Account Status
+                Connection Status
               </h3>
               <p className="mt-1 text-lg font-semibold">
-                {user.isActive ? "Verified" : "Pending"}
+                {isConnected ? "Real-time" : "Polling"}
               </p>
             </div>
           </div>

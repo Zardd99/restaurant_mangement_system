@@ -11,7 +11,7 @@ import React, {
 import axios from "axios";
 import Cookies from "js-cookie";
 
-interface User {
+export interface User {
   _id: string;
   name: string;
   email: string;
