@@ -13,6 +13,7 @@
     "isolatedModules": true,
     "jsx": "preserve",
     "incremental": true,
+    "types": ["jest"],
     "plugins": [
       {
         "name": "next"
@@ -28,7 +29,8 @@
     "**/*.tsx",
     ".next/types/**/*.ts",
     "backend/src/server.ts",
-    "backend/src/routes/orders.ts"
+    "backend/src/routes/orders.ts",
+    "jest.config.js"
   ],
   "exclude": ["node_modules"]
 }

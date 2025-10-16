@@ -7,40 +7,15 @@ import LoadingState from "./common/LoadingState";
 import ErrorState from "./common/ErrorState";
 import EmptyState from "./common/EmptyState";
 import OrderCard from "../components/OrderCard/OrderCard";
-import { useOrderWebSocket } from "../hooks/useOrderWebSocket";
+import KitchenStatsPanel from "../components/KitchenStatsPanel/KitchenStatsPanel";
 import { useOrders } from "../hooks/useOrders";
-
-export interface OrderItem {
-  menuItem: {
-    _id: string;
-    name: string;
-    price: number;
-  };
-  quantity: number;
-  specialInstructions?: string;
-  price: number;
-}
-
-export interface Order {
-  _id: string;
-  items: OrderItem[];
-  totalAmount: number;
-  status: string;
-  customer: {
-    _id: string;
-    name: string;
-    email: string;
-  };
-  tableNumber?: number;
-  orderType: string;
-  orderDate: string;
-  createdAt: string;
-  updatedAt: string;
-}
+import { useOrderWebSocket } from "../hooks/useOrderWebSocket";
 
 const KitchenDisplaySystem = () => {
   const { token } = useAuth();
   const [filter, setFilter] = useState<string>("all");
+  const [isStatsPanelOpen, setIsStatsPanelOpen] = useState(false);
+
   const { orders, loading, error, fetchOrders } = useOrders(token, filter);
   const { updateOrderStatus } = useOrderWebSocket(token, fetchOrders);
 
@@ -48,18 +23,27 @@ const KitchenDisplaySystem = () => {
     fetchOrders();
   }, [fetchOrders]);
 
-  // Loading state
   if (loading) {
     return <LoadingState type="orders" count={6} />;
   }
 
-  // Error state
   if (error) {
     return <ErrorState error={error} onRetry={fetchOrders} />;
   }
 
   return (
-    <div>
+    <div className="relative">
+      {/* Header with Stats Toggle */}
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">Kitchen Orders</h1>
+        <button
+          onClick={() => setIsStatsPanelOpen(true)}
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+        >
+          📊 View Analytics
+        </button>
+      </div>
+
       <FilterButtons filter={filter} setFilter={setFilter} />
 
       {orders.length === 0 ? (
@@ -82,6 +66,12 @@ const KitchenDisplaySystem = () => {
           ))}
         </div>
       )}
+
+      {/* Stats Panel */}
+      <KitchenStatsPanel
+        isOpen={isStatsPanelOpen}
+        onClose={() => setIsStatsPanelOpen(false)}
+      />
     </div>
   );
 };

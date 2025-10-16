@@ -126,7 +126,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const register = async (userData: RegisterData) => {
     try {
       const response = await axios.post<AuthResponse>(
-        "/auth/register",
+        "api/auth/register",
         userData
       );
       const { token: newToken, user: newUser } = response.data;
