@@ -8,7 +8,6 @@ interface RegisterFormData {
   email: string;
   password: string;
   confirmPassword: string;
-  phone?: string;
 }
 
 const useRegisterForm = () => {
