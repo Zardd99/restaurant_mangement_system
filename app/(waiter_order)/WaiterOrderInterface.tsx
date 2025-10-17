@@ -47,7 +47,7 @@ const WaiterOrderInterface = () => {
   const { socket } = useSocket();
 
   // API URL
-  const API_URL = (process.env.API_URL as string) || "http://localhost:5000";
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
   // Fetch menu items
   useEffect(() => {
@@ -72,6 +72,8 @@ const WaiterOrderInterface = () => {
         const response = await fetch(url, {
           headers: {
             Authorization: `Bearer ${authToken}`,
+            "Content-Type": "application/json",
+            "ngrok-skip-browser-warning": "true",
           },
         });
 
@@ -152,6 +154,7 @@ const WaiterOrderInterface = () => {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${authToken}`,
+          "ngrok-skip-browser-warning": "true",
         },
         body: JSON.stringify(orderData),
       });
