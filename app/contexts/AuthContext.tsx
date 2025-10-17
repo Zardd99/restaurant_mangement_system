@@ -8,7 +8,7 @@ import React, {
   ReactNode,
   useCallback,
 } from "react";
-import axios from "axios";
+import axios, { AxiosInstance } from "axios";
 import Cookies from "js-cookie";
 
 export interface User {
@@ -60,15 +60,29 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
+// Create axios instance with ngrok headers
+const createAxiosInstance = (): AxiosInstance => {
+  const instance = axios.create({
+    baseURL: process.env.NEXT_PUBLIC_API_URL,
+    headers: {
+      "Content-Type": "application/json",
+      "ngrok-skip-browser-warning": "true",
+    },
+  });
+
+  return instance;
+};
+
+let axiosInstance = createAxiosInstance();
+
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Initialize axios defaults
+  // Initialize axios on mount
   useEffect(() => {
-    axios.defaults.baseURL =
-      (process.env.API_URL as string) || "http://localhost:5000";
+    axiosInstance = createAxiosInstance();
   }, []);
 
   // Check for existing token on app load
@@ -78,12 +92,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       if (savedToken) {
         try {
-          // Verify token and get user data
-          axios.defaults.headers.common[
+          // Set authorization header
+          axiosInstance.defaults.headers.common[
             "Authorization"
           ] = `Bearer ${savedToken}`;
 
-          const response = await axios.get<{ user: User }>("api/auth/me");
+          const response = await axiosInstance.get<{ user: User }>(
+            "/api/auth/me"
+          );
 
           setUser(response.data.user);
           setToken(savedToken);
@@ -91,7 +107,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           // Token is invalid, clear it
           console.error("Token verification failed:", error);
           Cookies.remove("token");
-          delete axios.defaults.headers.common["Authorization"];
+          delete axiosInstance.defaults.headers.common["Authorization"];
         }
       }
 
@@ -103,15 +119,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const login = async (email: string, password: string) => {
     try {
-      const response = await axios.post<AuthResponse>("api/auth/login", {
-        email,
-        password,
-      });
+      const response = await axiosInstance.post<AuthResponse>(
+        "/api/auth/login",
+        {
+          email,
+          password,
+        }
+      );
       const { token: newToken, user: userData } = response.data;
 
       // Set token in cookie and axios headers
       Cookies.set("token", newToken, { expires: 30 });
-      axios.defaults.headers.common["Authorization"] = `Bearer ${newToken}`;
+      axiosInstance.defaults.headers.common[
+        "Authorization"
+      ] = `Bearer ${newToken}`;
 
       setToken(newToken);
       setUser(userData);
@@ -125,15 +146,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const register = async (userData: RegisterData) => {
     try {
-      const response = await axios.post<AuthResponse>(
-        "api/auth/register",
+      const response = await axiosInstance.post<AuthResponse>(
+        "/api/auth/register",
         userData
       );
       const { token: newToken, user: newUser } = response.data;
 
       // Set token in cookie and axios headers
       Cookies.set("token", newToken, { expires: 30 });
-      axios.defaults.headers.common["Authorization"] = `Bearer ${newToken}`;
+      axiosInstance.defaults.headers.common[
+        "Authorization"
+      ] = `Bearer ${newToken}`;
 
       setToken(newToken);
       setUser(newUser);
@@ -147,7 +170,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const logout = () => {
     Cookies.remove("token");
-    delete axios.defaults.headers.common["Authorization"];
+    delete axiosInstance.defaults.headers.common["Authorization"];
     setToken(null);
     setUser(null);
   };
