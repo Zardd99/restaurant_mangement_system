@@ -114,7 +114,7 @@ const AdminUserDashboard = () => {
   // ============================================================================
 
   // API base URL - uses environment variable with fallback for development
-  const API_URL = process.env.API_URL || "http://localhost:5000";
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
   // Pagination configuration
   const usersPerPage = 10;
@@ -151,6 +151,7 @@ const AdminUserDashboard = () => {
           headers: {
             Authorization: `Bearer ${token}`, // JWT authentication
             "Content-Type": "application/json",
+            "ngrok-skip-browser-warning": "true",
           },
         });
 
@@ -329,6 +330,7 @@ const AdminUserDashboard = () => {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
+          "ngrok-skip-browser-warning": "true",
         },
         body: JSON.stringify(updates),
       });
@@ -372,6 +374,7 @@ const AdminUserDashboard = () => {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
+          "ngrok-skip-browser-warning": "true",
         },
       });
 
@@ -411,6 +414,7 @@ const AdminUserDashboard = () => {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
+          "ngrok-skip-browser-warning": "true",
         },
         body: JSON.stringify({
           ...user,

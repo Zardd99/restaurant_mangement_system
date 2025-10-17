@@ -5,6 +5,7 @@ import Image from "next/image";
 import { ProtectedRoute } from "../../components/ProtectedRoute/ProtectedRoute";
 import Link from "next/link";
 import { useSearch } from "../../contexts/SearchContext";
+import { useAuth } from "../../contexts/AuthContext";
 
 interface MenuItem {
   _id: string;
@@ -31,8 +32,9 @@ const Menu = () => {
   const [error, setError] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState("all");
   const { searchQuery } = useSearch();
+  const { token } = useAuth();
 
-  const API_URL = process.env.API_URL || "http://localhost:5000";
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
   useEffect(() => {
     const fetchMenuItems = async () => {
@@ -45,7 +47,14 @@ const Menu = () => {
           url += `?search=${encodeURIComponent(searchQuery)}`;
         }
 
-        const response = await fetch(url);
+        const response = await fetch(url, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+            "ngrok-skip-browser-warning": "true",
+          },
+        });
 
         if (!response.ok) {
           throw new Error(`Failed to fetch menu items: ${response.status}`);

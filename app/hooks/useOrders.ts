@@ -3,7 +3,11 @@ import Cookies from "js-cookie";
 import { Order } from "../types/order";
 import { useSocket } from "../contexts/SocketContext";
 
-const API_URL = process.env.API_URL || "http://localhost:5000";
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
+if (!API_URL) {
+  console.error("NEXT_PUBLIC_API_URL environment variable is not set");
+}
 
 // Type guard to check if a string is a valid order status
 const isValidOrderStatus = (status: string): status is Order["status"] => {
@@ -24,6 +28,12 @@ export const useOrders = (token: string | null, filter: string) => {
   const { socket } = useSocket();
 
   const fetchOrders = useCallback(async () => {
+    if (!API_URL) {
+      setError("API URL is not configured");
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
@@ -42,6 +52,8 @@ export const useOrders = (token: string | null, filter: string) => {
       const response = await fetch(url, {
         headers: {
           Authorization: `Bearer ${authToken}`,
+          "Content-Type": "application/json",
+          "ngrok-skip-browser-warning": "true",
         },
       });
 
