@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { ProtectedRoute } from "../../components/ProtectedRoute/ProtectedRoute";
 import { useMenuData } from "@/app/hooks/useMenuData";
 import { MenuItem } from "@/app/hooks/useMenuData";
@@ -13,40 +13,14 @@ import LoadingState from "../../(waiter_order)/common/LoadingState";
 import ErrorState from "../../(waiter_order)/common/ErrorState";
 
 const Menu = () => {
-  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [availabilityFilter, setAvailabilityFilter] = useState("all");
   const [chefSpecialFilter, setChefSpecialFilter] = useState("all");
 
-  const API_URL = (process.env.API_URL as string) || "http://localhost:5000";
-  const { categories } = useMenuData();
-
-  useEffect(() => {
-    const fetchMenuItems = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        const response = await fetch(`${API_URL}/api/menu`);
-        if (!response.ok)
-          throw new Error(`Failed to fetch: ${response.status}`);
-
-        const data = await response.json();
-        const items = data.data || data;
-        setMenuItems(Array.isArray(items) ? items : []);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to load menu");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchMenuItems();
-  }, [API_URL]);
+  // Use the hook instead of fetching separately
+  const { menuItems, categories, loading, error } = useMenuData();
 
   const filteredItems = useMemo(() => {
     let filtered = [...menuItems];

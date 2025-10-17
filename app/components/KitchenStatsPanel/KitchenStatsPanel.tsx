@@ -10,9 +10,18 @@ const KitchenStatsPanel = ({ isOpen, onClose }: KitchenStatsPanelProps) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const API_URL = (process.env.API_URL as string) || "http://localhost:5000";
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
+  if (!API_URL) {
+    console.error("NEXT_PUBLIC_API_URL environment variable is not set");
+  }
 
   const fetchStats = async () => {
+    if (!API_URL) {
+      setError("API URL is not configured");
+      setLoading(false);
+      return;
+    }
     try {
       setLoading(true);
       setError(null);
@@ -20,6 +29,8 @@ const KitchenStatsPanel = ({ isOpen, onClose }: KitchenStatsPanelProps) => {
       const response = await fetch(`${API_URL}/api/orders/stats`, {
         headers: {
           Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+          "ngrok-skip-browser-warning": "true",
         },
       });
 

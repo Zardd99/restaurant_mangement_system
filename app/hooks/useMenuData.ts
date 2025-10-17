@@ -27,7 +27,11 @@ export interface MenuStats {
 
 export const useMenuData = () => {
   const { token, logout } = useAuth();
-  const API_URL = process.env.API_URL || "http://localhost:5000";
+  const API_URL = process.env.NEXT_PUBLIC_API_URL;
+  if (!API_URL) {
+    console.error("NEXT_PUBLIC_API_URL environment variable is not set");
+    // You can also throw an error or show a user-friendly message
+  }
 
   // state
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
@@ -53,6 +57,11 @@ export const useMenuData = () => {
   );
 
   const fetchMenuData = useCallback(async () => {
+    if (!API_URL) {
+      setError("API URL is not configured");
+      setLoading(false);
+      return;
+    }
     try {
       setLoading(false);
       setError(null);
@@ -63,6 +72,7 @@ export const useMenuData = () => {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
+          "ngrok-skip-browser-warning": "true",
         },
       });
 
@@ -103,6 +113,7 @@ export const useMenuData = () => {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
+          "ngrok-skip-browser-warning": "true",
         },
         body: JSON.stringify(updates),
       });
@@ -140,6 +151,7 @@ export const useMenuData = () => {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
+          "ngrok-skip-browser-warning": "true",
         },
       });
 
@@ -172,6 +184,7 @@ export const useMenuData = () => {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
+          "ngrok-skip-browser-warning": "true",
         },
         body: JSON.stringify(newItem),
       });
