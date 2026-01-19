@@ -15,12 +15,13 @@ import ErrorState from "../../(waiter_order)/common/ErrorState";
 const Menu = () => {
   const [activeFilter, setActiveFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [categoryFilter, setCategoryFilter] = useState<string[]>(["all"]);
   const [availabilityFilter, setAvailabilityFilter] = useState("all");
   const [chefSpecialFilter, setChefSpecialFilter] = useState("all");
 
   // Use the hook instead of fetching separately
-  const { menuItems, categories, loading, error } = useMenuData();
+  const { menuItems, categories, loading, error, getCategoryForFilter } =
+    useMenuData();
 
   const filteredItems = useMemo(() => {
     let filtered = [...menuItems];
@@ -32,7 +33,7 @@ const Menu = () => {
       filtered = filtered.filter(
         (item) =>
           item.dietaryTags?.includes("vegetarian") ||
-          item.dietaryTags?.includes("vegan")
+          item.dietaryTags?.includes("vegan"),
       );
     } else if (activeFilter === "trending") {
       filtered = filtered
@@ -54,7 +55,9 @@ const Menu = () => {
         item.description.toLowerCase().includes(searchTerm.toLowerCase());
 
       const matchesCategory =
-        categoryFilter === "all" || item.category === categoryFilter;
+        categoryFilter.length === 0 ||
+        categoryFilter.includes("all") ||
+        categoryFilter.includes(getCategoryForFilter(item.category));
 
       const matchesAvailability =
         availabilityFilter === "all" ||
@@ -80,6 +83,7 @@ const Menu = () => {
     categoryFilter,
     availabilityFilter,
     chefSpecialFilter,
+    getCategoryForFilter,
   ]);
 
   const addToCart = (item: MenuItem) => {
@@ -127,7 +131,7 @@ const Menu = () => {
           activeFilter={activeFilter}
           onClearFilters={() => {
             setSearchTerm("");
-            setCategoryFilter("all");
+            setCategoryFilter(["all"]);
             setAvailabilityFilter("all");
             setChefSpecialFilter("all");
           }}
