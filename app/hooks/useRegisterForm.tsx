@@ -27,12 +27,12 @@ const useRegisterForm = () => {
   const onSubmit = async (data: RegisterFormData) => {
     try {
       setError("");
-      const { confirmPassword, ...userData } = data;
+      const { ...userData } = data;
       await registerUser(userData);
       router.push("/user_interface");
     } catch (err: unknown) {
       setError(
-        err instanceof Error ? err.message : "An unknown error occurred"
+        err instanceof Error ? err.message : "An unknown error occurred",
       );
     }
   };

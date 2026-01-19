@@ -20,7 +20,8 @@ const Menu = () => {
   const [chefSpecialFilter, setChefSpecialFilter] = useState("all");
 
   // Use the hook instead of fetching separately
-  const { menuItems, categories, loading, error } = useMenuData();
+  const { menuItems, categories, loading, error, getCategoryForFilter } =
+    useMenuData();
 
   const filteredItems = useMemo(() => {
     let filtered = [...menuItems];
@@ -56,7 +57,7 @@ const Menu = () => {
       const matchesCategory =
         categoryFilter.length === 0 ||
         categoryFilter.includes("all") ||
-        categoryFilter.includes(item.category);
+        categoryFilter.includes(getCategoryForFilter(item.category));
 
       const matchesAvailability =
         availabilityFilter === "all" ||
@@ -82,6 +83,7 @@ const Menu = () => {
     categoryFilter,
     availabilityFilter,
     chefSpecialFilter,
+    getCategoryForFilter,
   ]);
 
   const addToCart = (item: MenuItem) => {
@@ -129,7 +131,7 @@ const Menu = () => {
           activeFilter={activeFilter}
           onClearFilters={() => {
             setSearchTerm("");
-            setCategoryFilter("all");
+            setCategoryFilter(["all"]);
             setAvailabilityFilter("all");
             setChefSpecialFilter("all");
           }}

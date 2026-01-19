@@ -1,5 +1,4 @@
-import { Search, Filter, ChevronDown, ChevronUp } from "lucide-react";
-import { useState } from "react";
+import { Search, Filter } from "lucide-react";
 
 interface SearchAndFilterBarProps {
   searchTerm: string;
