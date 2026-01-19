@@ -3,7 +3,6 @@ import MenuItemCard from "../MenuItemCard/MenuItemCard";
 
 interface MenuGridProps {
   items: MenuItem[];
-  addToCart: (item: MenuItem) => void;
   searchTerm: string;
   categoryFilter: string[];
   availabilityFilter: string;
@@ -14,7 +13,6 @@ interface MenuGridProps {
 
 const MenuGrid = ({
   items,
-  addToCart,
   searchTerm,
   categoryFilter,
   availabilityFilter,
@@ -24,12 +22,12 @@ const MenuGrid = ({
 }: MenuGridProps) => {
   if (items.length === 0) {
     return (
-      <div className="text-center py-16 animate-fade-in-up">
-        <div className="text-6xl mb-4">🍽️</div>
-        <h3 className="text-2xl font-semibold text-gray-700 mb-2">
+      <div className="text-center py-12 animate-fade-in-up">
+        <div className="text-4xl mb-3">🍽️</div>
+        <h3 className="text-xl font-semibold text-gray-700 mb-1">
           No items found
         </h3>
-        <p className="text-gray-500 mb-6 max-w-md mx-auto">
+        <p className="text-gray-500 mb-4 max-w-md mx-auto">
           {searchTerm ||
           !categoryFilter.includes("all") ||
           availabilityFilter !== "all" ||
@@ -55,8 +53,8 @@ const MenuGrid = ({
 
   return (
     <div className="animate-fade-in-up">
-      <div className="flex justify-between items-center mb-6">
-        <h3 className="text-2xl font-bold text-gray-900">
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-xl font-bold text-gray-900 mb-1">
           {activeFilter === "all"
             ? "All Menu Items"
             : activeFilter === "trending"
@@ -68,7 +66,7 @@ const MenuGrid = ({
                   : activeFilter === "vegan"
                     ? "Vegan Options"
                     : "Menu Items"}
-          <span className="text-gray-500 text-lg font-normal ml-2">
+          <span className="text-gray-500 text-sm font-normal ml-2">
             ({items.length} {items.length === 1 ? "item" : "items"})
           </span>
         </h3>
@@ -87,14 +85,11 @@ const MenuGrid = ({
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
         {items.map((item, index) => (
-          <MenuItemCard
-            key={item._id || index}
-            item={item}
-            addToOrder={addToCart}
-            animationDelay={index * 0.1}
-          />
+          <div key={item._id || index} className="">
+            <MenuItemCard item={item} animationDelay={index * 0.03} />
+          </div>
         ))}
       </div>
     </div>

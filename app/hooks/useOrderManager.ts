@@ -1,6 +1,15 @@
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 import { MenuItem } from "./useMenuData";
 import { useLocalStorage } from "./useLocalStorage";
+import { LocalStorageOrderRepository } from "@/app/repositories/LocalStorageOrderRepository";
+import {
+  loadOrder,
+  addToOrder as ucAddToOrder,
+  updateQuantity as ucUpdateQuantity,
+  updateInstructions as ucUpdateInstructions,
+  removeItem as ucRemoveItem,
+  clearOrder as ucClearOrder,
+} from "@/app/usecases/OrderUseCases";
 
 export interface OrderItem {
   menuItem: MenuItem;
@@ -11,81 +20,69 @@ export interface OrderItem {
 export const useOrderManager = () => {
   const [currentOrder, setCurrentOrder] = useLocalStorage<OrderItem[]>(
     "waiter_current_order",
-    []
+    [],
   );
 
-  const addToOrder = useCallback(
-    (item: MenuItem) => {
-      setCurrentOrder((prev) => {
-        const existingItem = prev.find(
-          (orderItem) => orderItem.menuItem._id === item._id
-        );
+  // Create repository instance (constructor injection)
+  const repo = new LocalStorageOrderRepository();
 
-        if (existingItem) {
-          return prev.map((orderItem) =>
-            orderItem.menuItem._id === item._id
-              ? { ...orderItem, quantity: orderItem.quantity + 1 }
-              : orderItem
-          );
-        } else {
-          return [
-            ...prev,
-            { menuItem: item, quantity: 1, specialInstructions: "" },
-          ];
-        }
-      });
+  // Ensure local state is in sync with repository at mount
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      const res = await loadOrder(repo as any);
+      if (mounted && res.ok) setCurrentOrder(res.value as OrderItem[]);
+    })();
+    return () => {
+      mounted = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const addToOrder = useCallback(
+    async (item: MenuItem) => {
+      const dto = { menuItem: item, quantity: 1, specialInstructions: "" };
+      const res = await ucAddToOrder(repo as any, dto as any);
+      if (res.ok) setCurrentOrder(res.value as OrderItem[]);
     },
-    [setCurrentOrder]
+    [setCurrentOrder],
   );
 
   const updateQuantity = useCallback(
-    (itemId: string, newQuantity: number) => {
-      setCurrentOrder((prev) => {
-        if (newQuantity < 1) {
-          return prev.filter((item) => item.menuItem._id !== itemId);
-        } else {
-          return prev.map((item) =>
-            item.menuItem._id === itemId
-              ? { ...item, quantity: newQuantity }
-              : item
-          );
-        }
-      });
+    async (itemId: string, newQuantity: number) => {
+      const res = await ucUpdateQuantity(repo as any, itemId, newQuantity);
+      if (res.ok) setCurrentOrder(res.value as OrderItem[]);
     },
-    [setCurrentOrder]
+    [setCurrentOrder],
   );
 
   const updateInstructions = useCallback(
-    (itemId: string, instructions: string) => {
-      setCurrentOrder((prev) =>
-        prev.map((item) =>
-          item.menuItem._id === itemId
-            ? { ...item, specialInstructions: instructions }
-            : item
-        )
-      );
+    async (itemId: string, instructions: string) => {
+      const res = await ucUpdateInstructions(repo as any, itemId, instructions);
+      if (res.ok) setCurrentOrder(res.value as OrderItem[]);
     },
-    [setCurrentOrder]
+    [setCurrentOrder],
   );
 
   const removeFromOrder = useCallback(
-    (itemId: string) => {
-      setCurrentOrder((prev) =>
-        prev.filter((item) => item.menuItem._id !== itemId)
-      );
+    async (itemId: string) => {
+      const res = await ucRemoveItem(repo as any, itemId);
+      if (res.ok) setCurrentOrder(res.value as OrderItem[]);
     },
-    [setCurrentOrder]
+    [setCurrentOrder],
   );
 
   const calculateTotal = useCallback(() => {
+    // UI-friendly synchronous total based on current state
     return currentOrder.reduce(
       (total, item) => total + item.menuItem.price * item.quantity,
-      0
+      0,
     );
   }, [currentOrder]);
 
-  const clearOrder = useCallback(() => {
-    setCurrentOrder([]);
+  const clearOrder = useCallback(async () => {
+    const res = await ucClearOrder(repo as any);
+    if (res.ok) setCurrentOrder([]);
   }, [setCurrentOrder]);
 
   return {

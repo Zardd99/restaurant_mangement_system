@@ -4,6 +4,7 @@ import { Order } from "../../types/order";
 interface OrderCardProps {
   order: Order;
   onStatusUpdate: (orderId: string, newStatus: string) => void;
+  additionalActions?: React.ReactNode;
 }
 
 const OrderCard = ({ order, onStatusUpdate }: OrderCardProps) => {
@@ -65,7 +66,7 @@ const OrderCard = ({ order, onStatusUpdate }: OrderCardProps) => {
         </div>
         <span
           className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(
-            order.status
+            order.status,
           )}`}
         >
           {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
@@ -164,6 +165,7 @@ const OrderCard = ({ order, onStatusUpdate }: OrderCardProps) => {
             Mark as Served
           </button>
         )}
+
         {(order.status === "confirmed" || order.status === "preparing") && (
           <button
             onClick={() => onStatusUpdate(order._id, "cancelled")}

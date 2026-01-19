@@ -1,13 +1,13 @@
 import { useState, useCallback } from "react";
-import { StatsManager, StatsData } from "../managers/StatsManager";
+import {
+  fetchKitchenStatsUseCase,
+  StatsData,
+} from "@/app/usecases/StatsUseCase";
 
 export const useKitchenStatsViewModel = (token: string | null) => {
   const [stats, setStats] = useState<StatsData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const statsManager = new StatsManager();
-
   const fetchStats = useCallback(async () => {
     if (!token) {
       setError("Authentication required");
@@ -17,11 +17,12 @@ export const useKitchenStatsViewModel = (token: string | null) => {
     try {
       setLoading(true);
       setError(null);
-      const data = await statsManager.fetchKitchenStats(token);
-      setStats(data);
+      const res = await fetchKitchenStatsUseCase(token);
+      if (res.ok) setStats(res.value);
+      else setError(res.error ?? "Failed to load statistics");
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Failed to load statistics"
+        err instanceof Error ? err.message : "Failed to load statistics",
       );
     } finally {
       setLoading(false);

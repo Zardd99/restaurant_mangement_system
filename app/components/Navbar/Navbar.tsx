@@ -1,33 +1,14 @@
 "use client";
 import Sidebar from "../Sidebar/Sidebar";
-import { useState, useRef, useEffect, useCallback } from "react";
-import { useSearch } from "../../contexts/SearchContext";
+import { useState, useRef, useEffect } from "react";
 
 const Navbar = () => {
-  // context
-  const { searchQuery, setSearchQuery } = useSearch(); // Use the context
-
-  // state
   const [isOpen, setIsOpen] = useState<boolean>(false);
-
-  // refs
   const sidebarRef = useRef<HTMLDivElement>(null);
   const hamburgerRef = useRef<HTMLDivElement>(null);
-  const searchRef = useRef<HTMLInputElement>(null);
 
-  // -- functions / useEffects -- //
   const toggleMenu = () => {
     setIsOpen(!isOpen);
-  };
-
-  const handleToggle = useCallback(() => {
-    setIsOpen(true);
-  }, []);
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log("Searching for:", searchQuery);
-    // The search query is now available globally through context
   };
 
   useEffect(() => {
@@ -44,25 +25,21 @@ const Navbar = () => {
     };
 
     document.addEventListener("mousedown", handleClickOutside);
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isOpen]);
 
-  // Main UI
   return (
     <>
-      <nav className="fixed w-full z-[9999] bg-black">
+      <nav className="fixed w-full z-50 bg-black">
         <div className="p-4 border-b border-slate-700/30 flex justify-between items-center">
           <div className="flex items-center space-x-4">
             <div
-              className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center z-[999] cursor-pointer"
+              className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center cursor-pointer"
               onClick={toggleMenu}
               ref={hamburgerRef}
             >
               <svg
-                className="w-6 h-6 text-white z-[999]"
+                className="w-6 h-6 text-white"
                 fill="currentColor"
                 viewBox="0 0 20 20"
               >
@@ -73,39 +50,12 @@ const Navbar = () => {
                 />
               </svg>
             </div>
-
-            <form onSubmit={handleSearch} className="relative">
-              <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                <svg
-                  className="w-4 h-4 text-gray-400"
-                  aria-hidden="true"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    stroke="currentColor"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="m19 19-4-4m0-7A7 7 0 1 1 1 8a7 7 0 0 1 14 0Z"
-                  />
-                </svg>
-              </div>
-              <input
-                type="text"
-                ref={searchRef}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="block w-full p-2 pl-10 text-sm rounded-lg bg-gray-700 border border-gray-600 placeholder-gray-400 text-white focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Search menu items..."
-              />
-            </form>
+            <div className="text-white font-semibold">Waiter Order System</div>
           </div>
         </div>
         <Sidebar
           isOpens={isOpen}
-          handleToggles={handleToggle}
+          handleToggles={() => setIsOpen(true)}
           ref={sidebarRef}
         />
       </nav>

@@ -86,13 +86,13 @@ const Menu = () => {
 
     if (activeFilter === "vegan") {
       filtered = menuItems.filter((item) =>
-        item.dietaryTags?.includes("vegan")
+        item.dietaryTags?.includes("vegan"),
       );
     } else if (activeFilter === "vegetarian") {
       filtered = menuItems.filter(
         (item) =>
           item.dietaryTags?.includes("vegetarian") ||
-          item.dietaryTags?.includes("vegan")
+          item.dietaryTags?.includes("vegan"),
       );
     } else if (activeFilter === "trending") {
       filtered = menuItems
@@ -350,7 +350,7 @@ const Menu = () => {
                   View all
                 </button>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
                 {trendingItems.map((item) => (
                   <div
                     key={item._id}
@@ -421,7 +421,7 @@ const Menu = () => {
                   View all
                 </button>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
                 {bestRatedItems.map((item) => (
                   <div
                     key={item._id}
