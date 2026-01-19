@@ -15,7 +15,7 @@ import ErrorState from "../../(waiter_order)/common/ErrorState";
 const Menu = () => {
   const [activeFilter, setActiveFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [categoryFilter, setCategoryFilter] = useState<string[]>(["all"]);
   const [availabilityFilter, setAvailabilityFilter] = useState("all");
   const [chefSpecialFilter, setChefSpecialFilter] = useState("all");
 
@@ -32,7 +32,7 @@ const Menu = () => {
       filtered = filtered.filter(
         (item) =>
           item.dietaryTags?.includes("vegetarian") ||
-          item.dietaryTags?.includes("vegan")
+          item.dietaryTags?.includes("vegan"),
       );
     } else if (activeFilter === "trending") {
       filtered = filtered
@@ -54,7 +54,9 @@ const Menu = () => {
         item.description.toLowerCase().includes(searchTerm.toLowerCase());
 
       const matchesCategory =
-        categoryFilter === "all" || item.category === categoryFilter;
+        categoryFilter.length === 0 ||
+        categoryFilter.includes("all") ||
+        categoryFilter.includes(item.category);
 
       const matchesAvailability =
         availabilityFilter === "all" ||

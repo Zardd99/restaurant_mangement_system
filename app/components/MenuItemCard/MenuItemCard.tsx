@@ -19,7 +19,7 @@ const MenuItemCard = ({
       style={{ animationDelay: `${animationDelay}s` }}
     >
       {item.chefSpecial && (
-        <div className="absolute top-4 right-4 bg-gradient-to-r from-amber-500 to-orange-500 text-white px-3 py-1.5 rounded-full text-xs font-semibold shadow-lg z-10 transform group-hover:scale-110 transition-transform duration-300">
+        <div className="absolute top-4 right-4 bg-black text-white px-3 py-1.5 rounded-full text-xs font-semibold shadow-lg z-10 transform group-hover:scale-110 transition-transform duration-300">
           ✨ Chefs Special
         </div>
       )}
@@ -62,7 +62,7 @@ const MenuItemCard = ({
               {item.dietaryTags.map((tag) => (
                 <span
                   key={tag}
-                  className="text-xs bg-gradient-to-r from-green-100 to-blue-100 text-gray-600 px-2 py-1 rounded-full transform group-hover:scale-105 transition-transform duration-300"
+                  className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full transform group-hover:scale-105 transition-transform duration-300"
                 >
                   {tag}
                 </span>
@@ -75,7 +75,7 @@ const MenuItemCard = ({
           onClick={() => addToOrder(item)}
           className={`w-full py-3 px-4 rounded-xl font-medium transition-all duration-300 transform hover:scale-105 active:scale-95 ${
             item.availability
-              ? "bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl"
+              ? "bg-black text-white shadow-lg hover:shadow-xl"
               : "bg-gray-200 text-gray-500 cursor-not-allowed"
           }`}
           disabled={!item.availability}

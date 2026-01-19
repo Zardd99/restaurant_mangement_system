@@ -1,10 +1,11 @@
-import { Search, Filter } from "lucide-react";
+import { Search, Filter, ChevronDown, ChevronUp } from "lucide-react";
+import { useState } from "react";
 
 interface SearchAndFilterBarProps {
   searchTerm: string;
   setSearchTerm: (term: string) => void;
-  categoryFilter: string;
-  setCategoryFilter: (filter: string) => void;
+  categoryFilter: string[];
+  setCategoryFilter: (filter: string[]) => void;
   availabilityFilter: string;
   setAvailabilityFilter: (filter: string) => void;
   chefSpecialFilter: string;
@@ -43,13 +44,58 @@ const SearchAndFilterBar = ({
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3">
+        {/* Category Filter with Checkboxes */}
+        <div className="relative">
+          <Filter className="absolute left-3 top-3 text-gray-400" size={18} />
+          <div className="pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent transition-all duration-200 hover:border-gray-300 bg-white">
+            <div className="text-sm font-medium text-gray-700 mb-2">
+              Categories
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <label className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={categoryFilter.includes("all")}
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      setCategoryFilter(["all"]);
+                    } else {
+                      setCategoryFilter([]);
+                    }
+                  }}
+                  className="mr-2"
+                />
+                All
+              </label>
+              {categories.map((category) => (
+                <label key={category} className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={categoryFilter.includes(category)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        if (categoryFilter.includes("all")) {
+                          setCategoryFilter([category]);
+                        } else {
+                          setCategoryFilter([...categoryFilter, category]);
+                        }
+                      } else {
+                        setCategoryFilter(
+                          categoryFilter.filter((c) => c !== category),
+                        );
+                      }
+                    }}
+                    className="mr-2"
+                  />
+                  {category.charAt(0).toUpperCase() + category.slice(1)}
+                </label>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Other Filters */}
         {[
-          {
-            value: categoryFilter,
-            onChange: setCategoryFilter,
-            options: ["all", ...categories],
-            label: "Categories",
-          },
           {
             value: availabilityFilter,
             onChange: setAvailabilityFilter,

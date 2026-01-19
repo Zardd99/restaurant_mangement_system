@@ -5,7 +5,7 @@ interface MenuGridProps {
   items: MenuItem[];
   addToCart: (item: MenuItem) => void;
   searchTerm: string;
-  categoryFilter: string;
+  categoryFilter: string[];
   availabilityFilter: string;
   chefSpecialFilter: string;
   activeFilter: string;
@@ -31,7 +31,7 @@ const MenuGrid = ({
         </h3>
         <p className="text-gray-500 mb-6 max-w-md mx-auto">
           {searchTerm ||
-          categoryFilter !== "all" ||
+          !categoryFilter.includes("all") ||
           availabilityFilter !== "all" ||
           chefSpecialFilter !== "all"
             ? "Try adjusting your search or filters to find what you're looking for."
@@ -39,7 +39,7 @@ const MenuGrid = ({
         </p>
 
         {(searchTerm ||
-          categoryFilter !== "all" ||
+          !categoryFilter.includes("all") ||
           availabilityFilter !== "all" ||
           chefSpecialFilter !== "all") && (
           <button
@@ -60,21 +60,21 @@ const MenuGrid = ({
           {activeFilter === "all"
             ? "All Menu Items"
             : activeFilter === "trending"
-            ? "Trending Now"
-            : activeFilter === "best"
-            ? "Best Rated"
-            : activeFilter === "vegetarian"
-            ? "Vegetarian Options"
-            : activeFilter === "vegan"
-            ? "Vegan Options"
-            : "Menu Items"}
+              ? "Trending Now"
+              : activeFilter === "best"
+                ? "Best Rated"
+                : activeFilter === "vegetarian"
+                  ? "Vegetarian Options"
+                  : activeFilter === "vegan"
+                    ? "Vegan Options"
+                    : "Menu Items"}
           <span className="text-gray-500 text-lg font-normal ml-2">
             ({items.length} {items.length === 1 ? "item" : "items"})
           </span>
         </h3>
 
         {(searchTerm ||
-          categoryFilter !== "all" ||
+          !categoryFilter.includes("all") ||
           availabilityFilter !== "all" ||
           chefSpecialFilter !== "all") && (
           <button

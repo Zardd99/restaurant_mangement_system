@@ -14,7 +14,7 @@ import ModalManager from "../../components/ModalManager/ModalManager";
 const AdminMenuDashboard = () => {
   const { isLoading: authLoading, user: currentUser } = useAuth();
   const router = useRouter();
-
+  
   const {
     menuItems,
     categories,
@@ -30,7 +30,7 @@ const AdminMenuDashboard = () => {
   } = useMenuData();
 
   const [searchTerm, setSearchTerm] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [categoryFilter, setCategoryFilter] = useState<string[]>(["all"]);
   const [availabilityFilter, setAvailabilityFilter] = useState("all");
   const [chefSpecialFilter, setChefSpecialFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
@@ -52,7 +52,7 @@ const AdminMenuDashboard = () => {
 
   const filteredMenuItems = useMemo(() => {
     const getCategoryForFilter = (
-      category: string | { _id: string; name: string }
+      category: string | { _id: string; name: string },
     ): string => {
       if (typeof category === "string") return category;
       return category?.name || "";
@@ -66,7 +66,9 @@ const AdminMenuDashboard = () => {
 
       const itemCategoryName = getCategoryForFilter(item.category);
       const matchesCategory =
-        categoryFilter === "all" || itemCategoryName === categoryFilter;
+        categoryFilter.length === 0 ||
+        categoryFilter.includes("all") ||
+        categoryFilter.includes(itemCategoryName);
 
       const matchesAvailability =
         availabilityFilter === "all" ||
@@ -129,7 +131,7 @@ const AdminMenuDashboard = () => {
 
   const openModal = (
     item: MenuItem | null,
-    type: "view" | "edit" | "delete" | "create"
+    type: "view" | "edit" | "delete" | "create",
   ) => {
     setSelectedItem(item);
     setModalType(type);
