@@ -1,16 +1,16 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { ProtectedRoute } from "../../components/ProtectedRoute/ProtectedRoute";
+import { ProtectedRoute } from "@/app/components/ProtectedRoute/ProtectedRoute";
 import { useMenuData } from "@/app/hooks/useMenuData";
-import { MenuItem } from "@/app/hooks/useMenuData";
-import MenuHeader from "../../components/MenuHeader/MenuHeader";
-import FilterSection from "../../components/FilterSection/FilterSection";
-import SearchAndFilterBar from "../../components/SearchAndFilterBar/SearchAndFilterBar";
-import MenuGrid from "../../components/MenuGrid/MenuGrid";
-import FeaturedSections from "../../components/FeaturedSections/FeaturedSections";
-import LoadingState from "../../(waiter_order)/common/LoadingState";
-import ErrorState from "../../(waiter_order)/common/ErrorState";
+import { useOrders } from "@/app/hooks/useOrders";
+import { useAuth } from "@/app/contexts/AuthContext";
+import MenuHeader from "@/app/components/MenuHeader/MenuHeader";
+import FeaturedSections from "@/app/components/FeaturedSections/FeaturedSections";
+import FilterSection from "@/app/components/FilterSection/FilterSection";
+import MenuGrid from "@/app/components/MenuGrid/MenuGrid";
+import MenuStickyHeader from "@/app/components/Menu/MenuStickyHeader";
+import MenuTopItemsChartBW from "@/app/components/MenuStats/MenuTopItemsChartBW";
 
 const Menu = () => {
   const [activeFilter, setActiveFilter] = useState("all");
@@ -19,9 +19,10 @@ const Menu = () => {
   const [availabilityFilter, setAvailabilityFilter] = useState("all");
   const [chefSpecialFilter, setChefSpecialFilter] = useState("all");
 
-  // Use the hook instead of fetching separately
   const { menuItems, categories, loading, error, getCategoryForFilter } =
     useMenuData();
+  const { token } = useAuth();
+  const { orders } = useOrders(token, "all");
 
   const filteredItems = useMemo(() => {
     let filtered = [...menuItems];
@@ -86,30 +87,17 @@ const Menu = () => {
     getCategoryForFilter,
   ]);
 
-  const addToCart = (item: MenuItem) => {
-    console.log("Added to cart:", item);
-  };
-
-  if (loading) return <LoadingState type="menu" count={6} />;
-  if (error) return <ErrorState error={error} />;
-
   return (
     <ProtectedRoute>
       <div className="container mx-auto mt-18 px-4 py-8 max-w-7xl">
         <MenuHeader />
+        {/* 
+        <div>
+          <MenuTopItemsChartBW orders={orders} />
+        </div> */}
 
-        <FeaturedSections
-          menuItems={menuItems}
-          activeFilter={activeFilter}
-          setActiveFilter={setActiveFilter}
-        />
-
-        <FilterSection
-          activeFilter={activeFilter}
-          setActiveFilter={setActiveFilter}
-        />
-
-        <SearchAndFilterBar
+        {/* Sticky Filter Header */}
+        <MenuStickyHeader
           searchTerm={searchTerm}
           setSearchTerm={setSearchTerm}
           categoryFilter={categoryFilter}
@@ -119,23 +107,41 @@ const Menu = () => {
           chefSpecialFilter={chefSpecialFilter}
           setChefSpecialFilter={setChefSpecialFilter}
           categories={categories}
+          orders={orders}
         />
 
-        <MenuGrid
-          items={filteredItems}
-          addToCart={addToCart}
-          searchTerm={searchTerm}
-          categoryFilter={categoryFilter}
-          availabilityFilter={availabilityFilter}
-          chefSpecialFilter={chefSpecialFilter}
+        {/* Featured Sections */}
+        <FeaturedSections
+          menuItems={menuItems}
           activeFilter={activeFilter}
-          onClearFilters={() => {
-            setSearchTerm("");
-            setCategoryFilter(["all"]);
-            setAvailabilityFilter("all");
-            setChefSpecialFilter("all");
-          }}
+          setActiveFilter={setActiveFilter}
         />
+
+        {/* Quick Filters */}
+        <div className="my-6">
+          <FilterSection
+            activeFilter={activeFilter}
+            setActiveFilter={setActiveFilter}
+          />
+        </div>
+
+        {/* Menu Grid */}
+        <div className="mt-6">
+          <MenuGrid
+            items={filteredItems}
+            searchTerm={searchTerm}
+            categoryFilter={categoryFilter}
+            availabilityFilter={availabilityFilter}
+            chefSpecialFilter={chefSpecialFilter}
+            activeFilter={activeFilter}
+            onClearFilters={() => {
+              setSearchTerm("");
+              setCategoryFilter(["all"]);
+              setAvailabilityFilter("all");
+              setChefSpecialFilter("all");
+            }}
+          />
+        </div>
       </div>
     </ProtectedRoute>
   );

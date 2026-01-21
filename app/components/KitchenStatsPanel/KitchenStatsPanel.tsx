@@ -2,7 +2,26 @@
 
 import { useEffect, useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
-import { StatsData, KitchenStatsPanelProps } from "@/app/types/state";
+
+interface StatsData {
+  dailyEarnings: number;
+  weeklyEarnings: number;
+  yearlyEarnings: number;
+  todayOrderCount: number;
+  avgOrderValue: number;
+  ordersByStatus: Record<string, number>;
+  bestSellingDishes: Array<{
+    name: string;
+    quantity: number;
+    revenue: number;
+  }>;
+  message?: string;
+}
+
+interface KitchenStatsPanelProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
 
 const KitchenStatsPanel = ({ isOpen, onClose }: KitchenStatsPanelProps) => {
   const { token } = useAuth();
@@ -13,52 +32,58 @@ const KitchenStatsPanel = ({ isOpen, onClose }: KitchenStatsPanelProps) => {
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
   const fetchStats = async () => {
-    if (!API_URL) {
-      setError("API URL is not configured");
-      setLoading(false);
-      return;
-    }
-
-    if (!token) {
-      setError("Authentication required");
-      setLoading(false);
-      return;
-    }
-
     try {
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`${API_URL}/api/orders/stats`, {
+      if (!token) {
+        throw new Error("No authentication token found");
+      }
+
+      // Use provided API URL or fallback to same-origin API route
+      const base = API_URL ? String(API_URL).replace(/\/$/, "") : "";
+      const url = base ? `${base}/api/orders/stats` : `/api/orders/stats`;
+
+      const response = await fetch(url, {
         headers: {
           Authorization: `Bearer ${token}`,
+          // When using ngrok tunnels, this header prevents ngrok's HTML warning page
+          // from being returned for API requests in the browser
           "Content-Type": "application/json",
-          "Cache-Control": "no-cache",
           "ngrok-skip-browser-warning": "true",
         },
-        credentials: "include",
       });
 
-      const data = await response.json();
+      const contentType = response.headers.get("content-type") || "";
 
-      if (!response.ok) {
+      // If the server didn't return JSON (e.g. an HTML error page), capture it
+      let data: any = null;
+      if (contentType.includes("application/json")) {
+        data = await response.json();
+      } else {
+        const text = await response.text();
+        console.error("Expected JSON response but received:", text);
         throw new Error(
-          data.message || `HTTP error! status: ${response.status}`
+          `Expected JSON response but received ${response.status} ${response.statusText}`,
         );
       }
 
-      if (!data.success) {
-        throw new Error(data.message || "Failed to fetch statistics");
+      if (!response.ok) {
+        const errorMessage =
+          (data && data.message) ||
+          `Error ${response.status}: ${response.statusText}`;
+        throw new Error(errorMessage);
       }
 
-      setStats(data.data);
+      console.log("Received stats data:", data);
+      setStats(data);
     } catch (err) {
-      console.error("Fetch stats error:", err);
+      console.error("Error fetching stats:", err);
       setError(
-        err instanceof Error ? err.message : "Failed to load statistics"
+        err instanceof Error ? err.message : "Failed to load statistics",
       );
 
-      // Set empty stats on error for better UX
+      // Set default stats on error
       setStats({
         dailyEarnings: 0,
         weeklyEarnings: 0,
@@ -67,6 +92,7 @@ const KitchenStatsPanel = ({ isOpen, onClose }: KitchenStatsPanelProps) => {
         avgOrderValue: 0,
         ordersByStatus: {},
         bestSellingDishes: [],
+        message: "Using default statistics",
       });
     } finally {
       setLoading(false);
@@ -76,19 +102,32 @@ const KitchenStatsPanel = ({ isOpen, onClose }: KitchenStatsPanelProps) => {
   useEffect(() => {
     if (isOpen) {
       fetchStats();
+
+      // Refresh every 30 seconds while panel is open
+      const interval = setInterval(fetchStats, 30000);
+      return () => clearInterval(interval);
     }
   }, [isOpen, token]);
 
   if (!isOpen) return null;
 
-  // Default order status colors
+  // Status colors
   const statusColors: Record<string, string> = {
-    pending: "bg-yellow-50 text-yellow-700",
-    confirmed: "bg-blue-50 text-blue-700",
-    preparing: "bg-purple-50 text-purple-700",
-    ready: "bg-green-50 text-green-700",
-    delivered: "bg-teal-50 text-teal-700",
-    cancelled: "bg-red-50 text-red-700",
+    pending: "bg-yellow-100 text-yellow-800",
+    confirmed: "bg-blue-100 text-blue-800",
+    preparing: "bg-purple-100 text-purple-800",
+    ready: "bg-green-100 text-green-800",
+    served: "bg-teal-100 text-teal-800",
+    cancelled: "bg-red-100 text-red-800",
+  };
+
+  // Format currency
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      minimumFractionDigits: 2,
+    }).format(amount);
   };
 
   return (
@@ -117,8 +156,11 @@ const KitchenStatsPanel = ({ isOpen, onClose }: KitchenStatsPanelProps) => {
           </div>
         ) : error ? (
           <div className="text-center p-4">
-            <div className="text-red-500 mb-2">⚠️</div>
-            <p className="text-red-600 mb-4">{error}</p>
+            <div className="text-yellow-500 mb-2">⚠️</div>
+            <p className="text-red-600 mb-2">{error}</p>
+            <p className="text-gray-500 text-sm mb-4">
+              Showing default statistics
+            </p>
             <button
               onClick={fetchStats}
               className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors text-sm"
@@ -128,10 +170,17 @@ const KitchenStatsPanel = ({ isOpen, onClose }: KitchenStatsPanelProps) => {
           </div>
         ) : stats ? (
           <div className="space-y-6">
+            {/* Message if any */}
+            {stats.message && (
+              <div className="bg-yellow-50 border border-yellow-200 rounded p-3">
+                <p className="text-yellow-800 text-sm">{stats.message}</p>
+              </div>
+            )}
+
             {/* Today's Summary */}
             <div>
               <h3 className="font-semibold text-gray-700 mb-3 text-sm uppercase tracking-wider">
-                Todays Summary
+                Today's Summary
               </h3>
               <div className="grid grid-cols-2 gap-3">
                 <div className="flex flex-col p-3 bg-blue-50 rounded border border-blue-100">
@@ -147,7 +196,7 @@ const KitchenStatsPanel = ({ isOpen, onClose }: KitchenStatsPanelProps) => {
                     Avg Order Value
                   </span>
                   <span className="font-bold text-green-800 text-xl">
-                    ${stats.avgOrderValue.toFixed(2)}
+                    {formatCurrency(stats.avgOrderValue)}
                   </span>
                 </div>
               </div>
@@ -156,7 +205,7 @@ const KitchenStatsPanel = ({ isOpen, onClose }: KitchenStatsPanelProps) => {
             {/* Order Status Breakdown */}
             <div>
               <h3 className="font-semibold text-gray-700 mb-3 text-sm uppercase tracking-wider">
-                Order Status
+                Order Status (Today)
               </h3>
               <div className="space-y-2">
                 {Object.entries(stats.ordersByStatus).length > 0 ? (
@@ -173,7 +222,7 @@ const KitchenStatsPanel = ({ isOpen, onClose }: KitchenStatsPanelProps) => {
                         </span>
                         <span className="font-bold">{count}</span>
                       </div>
-                    )
+                    ),
                   )
                 ) : (
                   <div className="text-center p-3 bg-gray-50 rounded border border-gray-200">
@@ -194,7 +243,7 @@ const KitchenStatsPanel = ({ isOpen, onClose }: KitchenStatsPanelProps) => {
                     Today
                   </span>
                   <span className="font-bold text-green-800 text-lg">
-                    ${stats.dailyEarnings.toFixed(2)}
+                    {formatCurrency(stats.dailyEarnings)}
                   </span>
                 </div>
                 <div className="flex justify-between items-center p-3 bg-blue-50 rounded border border-blue-100">
@@ -202,7 +251,7 @@ const KitchenStatsPanel = ({ isOpen, onClose }: KitchenStatsPanelProps) => {
                     This Week
                   </span>
                   <span className="font-bold text-blue-800 text-lg">
-                    ${stats.weeklyEarnings.toFixed(2)}
+                    {formatCurrency(stats.weeklyEarnings)}
                   </span>
                 </div>
                 <div className="flex justify-between items-center p-3 bg-purple-50 rounded border border-purple-100">
@@ -210,7 +259,7 @@ const KitchenStatsPanel = ({ isOpen, onClose }: KitchenStatsPanelProps) => {
                     This Year
                   </span>
                   <span className="font-bold text-purple-800 text-lg">
-                    ${stats.yearlyEarnings.toFixed(2)}
+                    {formatCurrency(stats.yearlyEarnings)}
                   </span>
                 </div>
               </div>
@@ -219,7 +268,7 @@ const KitchenStatsPanel = ({ isOpen, onClose }: KitchenStatsPanelProps) => {
             {/* Best Sellers Section */}
             <div>
               <h3 className="font-semibold text-gray-700 mb-3 text-sm uppercase tracking-wider">
-                Top Dishes
+                Top Dishes (All Time)
               </h3>
               <div className="space-y-2">
                 {stats.bestSellingDishes.length > 0 ? (
@@ -243,7 +292,7 @@ const KitchenStatsPanel = ({ isOpen, onClose }: KitchenStatsPanelProps) => {
                       </div>
                       <div className="text-right">
                         <div className="text-sm font-semibold text-green-600">
-                          ${dish.revenue.toFixed(2)}
+                          {formatCurrency(dish.revenue)}
                         </div>
                       </div>
                     </div>
@@ -254,6 +303,19 @@ const KitchenStatsPanel = ({ isOpen, onClose }: KitchenStatsPanelProps) => {
                   </div>
                 )}
               </div>
+            </div>
+
+            {/* Footer */}
+            <div className="pt-4 border-t border-gray-200">
+              <button
+                onClick={fetchStats}
+                className="w-full py-2 text-sm bg-gray-100 hover:bg-gray-200 text-gray-700 rounded transition-colors"
+              >
+                Refresh Statistics
+              </button>
+              <p className="text-xs text-gray-500 text-center mt-2">
+                Updated every 30 seconds
+              </p>
             </div>
           </div>
         ) : null}
