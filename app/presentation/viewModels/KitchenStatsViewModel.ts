@@ -2,7 +2,7 @@ import { useState, useCallback } from "react";
 import {
   fetchKitchenStatsUseCase,
   StatsData,
-} from "@/app/usecases/StatsUseCase";
+} from "../../usecases/StatsUseCase";
 
 export const useKitchenStatsViewModel = (token: string | null) => {
   const [stats, setStats] = useState<StatsData | null>(null);

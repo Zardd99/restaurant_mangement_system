@@ -24,7 +24,7 @@ This project uses [`next/font`](https://nextjs.org/docs/app/building-your-applic
 
 To learn more about Next.js, take a look at the following resources:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API. 
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
 - [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
 
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
@@ -211,7 +211,6 @@ NEXT_PUBLIC_AUTH0_AUDIENCE=your_auth0_audience
 ### Phase 1: Customer Experience (3 minutes)
 
 1. **Menu Browsing**
-
    - Navigate to customer interface
    - Demonstrate filtering by dietary preferences
    - Show search functionality
@@ -355,13 +354,11 @@ Types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
 ### Common Issues
 
 1. **WebSocket Connection Failed**
-
    - Check backend server is running
    - Verify CORS configuration
    - Check firewall settings
 
 2. **Authentication Errors**
-
    - Verify JWT secret consistency
    - Check Auth0 configuration
    - Validate token expiration
@@ -386,3 +383,11 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ---
 
 **Built with ❤️ for modern restaurant operations**
+
+## hidden route
+
+"http://localhost:3000 replace with the actual domain"
+
+- http://localhost:3000/inventory/IngredientDeductionPreview
+- http://localhost:3000/inventory/IngredientStockDashboard
+- http://localhost:3000/users

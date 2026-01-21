@@ -1,4 +1,4 @@
-import { MenuItem } from "@/app/hooks/useMenuData";
+import { MenuItem } from "../../hooks/useMenuData";
 
 /**
  * ViewModel for MenuItemCard

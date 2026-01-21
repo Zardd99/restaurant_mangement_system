@@ -1,5 +1,5 @@
-import { Result } from "../core/Result";
-import { MenuItem } from "../hooks/useMenuData";
+import { Result } from "../../core/Result";
+import { MenuItem } from "../../hooks/useMenuData";
 
 export interface OrderItemDTO {
   menuItem: MenuItem;

@@ -7,7 +7,7 @@
  */
 
 import { Result, Ok, Err } from "../core/Result";
-import { IngredientRepository } from "../repositories/IngredientRepository";
+import { IngredientRepository } from "../domain/repositories/IngredientRepository";
 
 export interface OrderItemDTO {
   menuItemId: string;
