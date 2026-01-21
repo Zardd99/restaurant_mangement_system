@@ -1,5 +1,4 @@
 import SearchAndFilterBar from "../SearchAndFilterBar/SearchAndFilterBar";
-import MenuTopItemsChartBW from "../MenuStats/MenuTopItemsChartBW";
 
 interface MenuStickyHeaderProps {
   searchTerm: string;
@@ -43,9 +42,6 @@ const MenuStickyHeader = ({
           />
         </div>
 
-        <div>
-          <MenuTopItemsChartBW orders={orders} />
-        </div>
       </div>
     </div>
   );

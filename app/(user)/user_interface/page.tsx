@@ -10,6 +10,7 @@ import FeaturedSections from "@/app/components/FeaturedSections/FeaturedSections
 import FilterSection from "@/app/components/FilterSection/FilterSection";
 import MenuGrid from "@/app/components/MenuGrid/MenuGrid";
 import MenuStickyHeader from "@/app/components/Menu/MenuStickyHeader";
+import MenuTopItemsChartBW from "@/app/components/MenuStats/MenuTopItemsChartBW";
 
 const Menu = () => {
   const [activeFilter, setActiveFilter] = useState("all");
@@ -24,7 +25,7 @@ const Menu = () => {
   const { orders } = useOrders(token, "all");
 
   const filteredItems = useMemo(() => {
-    let filtered = [...menuItems];  
+    let filtered = [...menuItems];
 
     // Apply dietary filters
     if (activeFilter === "vegan") {
@@ -90,6 +91,24 @@ const Menu = () => {
     <ProtectedRoute>
       <div className="container mx-auto mt-18 px-4 py-8 max-w-7xl">
         <MenuHeader />
+        {/* 
+        <div>
+          <MenuTopItemsChartBW orders={orders} />
+        </div> */}
+
+        {/* Sticky Filter Header */}
+        <MenuStickyHeader
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          categoryFilter={categoryFilter}
+          setCategoryFilter={setCategoryFilter}
+          availabilityFilter={availabilityFilter}
+          setAvailabilityFilter={setAvailabilityFilter}
+          chefSpecialFilter={chefSpecialFilter}
+          setChefSpecialFilter={setChefSpecialFilter}
+          categories={categories}
+          orders={orders}
+        />
 
         {/* Featured Sections */}
         <FeaturedSections
@@ -105,20 +124,6 @@ const Menu = () => {
             setActiveFilter={setActiveFilter}
           />
         </div>
-
-        {/* Sticky Filter Header */}
-        <MenuStickyHeader
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
-          categoryFilter={categoryFilter}
-          setCategoryFilter={setCategoryFilter}
-          availabilityFilter={availabilityFilter}
-          setAvailabilityFilter={setAvailabilityFilter}
-          chefSpecialFilter={chefSpecialFilter}
-          setChefSpecialFilter={setChefSpecialFilter}
-          categories={categories}
-          orders={orders}
-        />
 
         {/* Menu Grid */}
         <div className="mt-6">
