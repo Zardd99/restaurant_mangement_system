@@ -7,7 +7,7 @@
  */
 
 import { Result, Ok, Err } from "../core/Result";
-import { OrderRepository } from "../repositories/OrderRepository";
+import { OrderRepository } from "../domain/repositories/OrderRepository";
 import {
   IngredientDeductionService,
   IngredientImpact,

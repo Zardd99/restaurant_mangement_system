@@ -1,4 +1,4 @@
-import { Result, Ok, Err } from "@/app/core/Result";
+import { Result, Ok, Err } from "..//core/Result";
 
 export interface StatsData {
   dailyEarnings: number;

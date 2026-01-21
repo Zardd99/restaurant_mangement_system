@@ -7,8 +7,8 @@
  */
 
 import { useState, useCallback } from "react";
-import { OrderManager, OrderSubmissionDTO } from "../managers/OrderManager";
-import { IngredientImpact } from "../services/IngredientDeductionService";
+import { OrderManager, OrderSubmissionDTO } from "../../managers/OrderManager";
+import { IngredientImpact } from "../../services/IngredientDeductionService";
 
 interface OrderViewState {
   isSubmitting: boolean;

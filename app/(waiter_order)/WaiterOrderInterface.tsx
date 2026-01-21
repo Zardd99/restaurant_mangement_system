@@ -16,6 +16,7 @@ import {
   Leaf,
   Clock,
   Star,
+  AlertTriangle,
 } from "lucide-react";
 
 // Components
@@ -27,6 +28,7 @@ import ErrorState from "./common/ErrorState";
 
 // Hooks
 import { useOrderManager } from "../hooks/useOrderManager";
+import { useInventoryDeduction } from "../hooks/useInventoryDeduction";
 import { MenuItem } from "../hooks/useMenuData";
 
 const WaiterOrderInterface = () => {
@@ -41,9 +43,14 @@ const WaiterOrderInterface = () => {
   const [priceSort, setPriceSort] = useState("none");
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [activeQuickFilter, setActiveQuickFilter] = useState("all");
+  const [showStockWarning, setShowStockWarning] = useState(false);
+  const [stockWarningMessage, setStockWarningMessage] = useState("");
 
   // Order Management
   const orderManager = useOrderManager();
+
+  // Inventory Deduction Hook
+  const { deductIngredientsForOrder, isDeducting } = useInventoryDeduction();
 
   // Form State
   const [tableNumber, setTableNumber] = useLocalStorage<number>(
@@ -206,7 +213,7 @@ const WaiterOrderInterface = () => {
     activeQuickFilter,
   ]);
 
-  // Submit order to kitchen
+  // Submit order to kitchen with inventory deduction
   const submitOrder = async () => {
     if (orderManager.currentOrder.length === 0) {
       alert("Please add items to the order before submitting");
@@ -222,6 +229,40 @@ const WaiterOrderInterface = () => {
       const authToken = token || Cookies.get("token");
       if (!authToken) throw new Error("No authentication token found.");
 
+      // Prepare items for inventory deduction
+      const deductionItems = orderManager.currentOrder.map((item) => ({
+        menuItemId: item.menuItem._id,
+        quantity: item.quantity,
+      }));
+
+      // Deduct ingredients before creating the order
+      const deductionResult = await deductIngredientsForOrder(
+        deductionItems,
+        authToken,
+        API_URL || "",
+      );
+
+      if (!deductionResult.success) {
+        // Show stock warning but allow override
+        const proceed = window.confirm(
+          `${deductionResult.error}\n\nDo you want to proceed anyway?`,
+        );
+
+        if (!proceed) {
+          return;
+        }
+        // If they proceed, show warning but continue
+        setStockWarningMessage(
+          deductionResult.error || "Ingredients may be insufficient",
+        );
+        setShowStockWarning(true);
+      } else if (deductionResult.warning) {
+        // Show warning but continue
+        setStockWarningMessage(deductionResult.warning);
+        setShowStockWarning(true);
+      }
+
+      // Create the order
       const orderData = {
         items: orderManager.currentOrder.map((item) => ({
           menuItem: item.menuItem._id,
@@ -234,6 +275,18 @@ const WaiterOrderInterface = () => {
         customerName: customerName || `Table ${tableNumber}`,
         orderType: "dine-in",
         status: "confirmed",
+        // Include inventory deduction information
+        inventoryDeduction: deductionResult.success
+          ? {
+              success: true,
+              warning: deductionResult.warning,
+              timestamp: new Date().toISOString(),
+            }
+          : {
+              success: false,
+              error: deductionResult.error,
+              timestamp: new Date().toISOString(),
+            },
       };
 
       const response = await fetch(`${API_URL}/api/orders`, {
@@ -251,11 +304,20 @@ const WaiterOrderInterface = () => {
       const responseData = await response.json();
       if (socket) socket.emit("order_created", responseData);
 
+      // Show success message with any warnings
+      if (showStockWarning || deductionResult.warning) {
+        alert(`Order submitted successfully!\n\nNote: ${stockWarningMessage}`);
+      } else {
+        alert("Order submitted successfully!");
+      }
+
       // Clear order
       orderManager.clearOrder();
       setTableNumber(1);
       setCustomerName("");
       setOrderNotes("");
+      setShowStockWarning(false);
+      setStockWarningMessage("");
 
       setIsCartOpen(false);
     } catch (err: unknown) {
@@ -272,6 +334,23 @@ const WaiterOrderInterface = () => {
 
   return (
     <div className="relative">
+      {/* Stock Warning Banner */}
+      {showStockWarning && (
+        <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+          <div className="flex items-center">
+            <AlertTriangle className="w-5 h-5 text-yellow-600 mr-2" />
+            <p className="text-yellow-800 font-medium">Stock Level Warning</p>
+          </div>
+          <p className="text-yellow-700 text-sm mt-1">{stockWarningMessage}</p>
+          <button
+            onClick={() => setShowStockWarning(false)}
+            className="mt-2 text-yellow-600 hover:text-yellow-800 text-sm font-medium"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
       {/* Mobile Cart Button */}
       <button
         onClick={() => setIsCartOpen(true)}
@@ -501,14 +580,21 @@ const WaiterOrderInterface = () => {
             <div className="mt-6 space-y-3">
               <button
                 onClick={submitOrder}
-                disabled={orderManager.currentOrder.length === 0}
-                className={`w-full py-3 px-4 rounded-lg font-medium transition-all ${
-                  orderManager.currentOrder.length === 0
+                disabled={orderManager.currentOrder.length === 0 || isDeducting}
+                className={`w-full py-3 px-4 rounded-lg font-medium transition-all flex items-center justify-center ${
+                  orderManager.currentOrder.length === 0 || isDeducting
                     ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                     : "bg-gray-900 hover:bg-black text-white shadow-md hover:shadow-lg"
                 }`}
               >
-                Send to Kitchen
+                {isDeducting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Processing...
+                  </>
+                ) : (
+                  "Send to Kitchen"
+                )}
               </button>
 
               <button
@@ -516,6 +602,7 @@ const WaiterOrderInterface = () => {
                   orderManager.clearOrder();
                   setCustomerName("");
                   setOrderNotes("");
+                  setShowStockWarning(false);
                 }}
                 disabled={orderManager.currentOrder.length === 0}
                 className={`w-full py-3 px-4 rounded-lg font-medium transition-all ${
@@ -580,14 +667,23 @@ const WaiterOrderInterface = () => {
               <div className="p-4 border-t border-gray-200 space-y-3">
                 <button
                   onClick={submitOrder}
-                  disabled={orderManager.currentOrder.length === 0}
-                  className={`w-full py-3 px-4 rounded-lg font-medium transition-all ${
-                    orderManager.currentOrder.length === 0
+                  disabled={
+                    orderManager.currentOrder.length === 0 || isDeducting
+                  }
+                  className={`w-full py-3 px-4 rounded-lg font-medium transition-all flex items-center justify-center ${
+                    orderManager.currentOrder.length === 0 || isDeducting
                       ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                       : "bg-gray-900 hover:bg-black text-white shadow-md"
                   }`}
                 >
-                  Send to Kitchen
+                  {isDeducting ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Processing...
+                    </>
+                  ) : (
+                    "Send to Kitchen"
+                  )}
                 </button>
 
                 <button
@@ -595,6 +691,7 @@ const WaiterOrderInterface = () => {
                     orderManager.clearOrder();
                     setCustomerName("");
                     setOrderNotes("");
+                    setShowStockWarning(false);
                     setIsCartOpen(false);
                   }}
                   disabled={orderManager.currentOrder.length === 0}

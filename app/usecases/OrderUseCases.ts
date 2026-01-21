@@ -1,8 +1,8 @@
 import {
   OrderRepository,
   OrderItemDTO,
-} from "@/app/repositories/OrderRepository";
-import { Result, Ok, Err } from "@/app/core/Result";
+} from "../domain/repositories/OrderRepository";
+import { Result, Ok, Err } from "..//core/Result";
 
 export const loadOrder = async (
   repo: OrderRepository,

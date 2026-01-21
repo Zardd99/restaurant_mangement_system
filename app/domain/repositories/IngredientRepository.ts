@@ -6,7 +6,7 @@
  * Implementation: APIIngredientRepository
  */
 
-import { Result } from "../core/Result";
+import { Result } from "../../core/Result";
 
 export interface IngredientAvailability {
   menuItemId: string;
@@ -28,6 +28,7 @@ export interface DeductionResult {
   unit: string;
   isLowStock: boolean;
   needsReorder: boolean;
+  reorderPoint: number;
 }
 
 /**

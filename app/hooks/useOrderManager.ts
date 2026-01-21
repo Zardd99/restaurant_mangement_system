@@ -1,7 +1,7 @@
 import { useCallback, useEffect } from "react";
 import { MenuItem } from "./useMenuData";
 import { useLocalStorage } from "./useLocalStorage";
-import { LocalStorageOrderRepository } from "@/app/repositories/LocalStorageOrderRepository";
+import { LocalStorageOrderRepository } from "../domain/repositories/LocalStorageOrderRepository";
 import {
   loadOrder,
   addToOrder as ucAddToOrder,
@@ -9,7 +9,7 @@ import {
   updateInstructions as ucUpdateInstructions,
   removeItem as ucRemoveItem,
   clearOrder as ucClearOrder,
-} from "@/app/usecases/OrderUseCases";
+} from "../usecases/OrderUseCases";
 
 export interface OrderItem {
   menuItem: MenuItem;

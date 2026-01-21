@@ -1,5 +1,5 @@
 import { OrderRepository, OrderItemDTO } from "./OrderRepository";
-import { Result, Ok } from "../core/Result";
+import { Result, Ok } from "../../core/Result";
 
 const STORAGE_KEY = "waiter_current_order";
 

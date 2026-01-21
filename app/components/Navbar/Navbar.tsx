@@ -50,7 +50,9 @@ const Navbar = () => {
                 />
               </svg>
             </div>
-            <div className="text-white font-semibold">Waiter Order System</div>
+            <div className="text-white font-semibold">
+              Restaurant management System
+            </div>
           </div>
         </div>
         <Sidebar
