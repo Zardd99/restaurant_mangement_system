@@ -229,12 +229,6 @@ const WaiterOrderInterface = () => {
       const authToken = token || Cookies.get("token");
       if (!authToken) throw new Error("No authentication token found.");
 
-      // Prepare items for inventory deduction
-      const deductionItems = orderManager.currentOrder.map((item) => ({
-        menuItemId: item.menuItem._id,
-        quantity: item.quantity,
-      }));
-
       // Create the order
       const orderData = {
         items: orderManager.currentOrder.map((item) => ({
