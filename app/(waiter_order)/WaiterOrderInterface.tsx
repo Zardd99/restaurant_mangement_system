@@ -20,9 +20,9 @@ import {
 } from "lucide-react";
 
 // Components
-import MenuItemCardForWaiter from "@/app/components/MenuItemCard/MenuItemCardForWaiter";
-import OrderForm from "../components/OrderForm/OrderForm";
-import OrderSummary from "../components/OrderSummary/OrderSummary";
+import MenuItemCardForWaiter from "../presentation/components/MenuItemCard/MenuItemCardForWaiter";
+import OrderForm from "../presentation/components/OrderForm/OrderForm";
+import OrderSummary from "../presentation/components/OrderSummary/OrderSummary";
 import LoadingState from "./common/LoadingState";
 import ErrorState from "./common/ErrorState";
 

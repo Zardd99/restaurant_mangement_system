@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { ProtectedRoute } from "../../components/ProtectedRoute/ProtectedRoute";
+import { ProtectedRoute } from "../../presentation/components/ProtectedRoute/ProtectedRoute";
 import Link from "next/link";
 import { useSearch } from "../../contexts/SearchContext";
 import { useAuth } from "../../contexts/AuthContext";

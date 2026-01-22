@@ -3,7 +3,7 @@ import "./globals.css";
 
 import localFont from "next/font/local";
 import { ReactNode } from "react";
-import Navbar from "./components/Navbar/Navbar";
+import Navbar from "./presentation/components/Navbar/Navbar";
 import { AuthProvider } from "./contexts/AuthContext";
 import { SearchProvider } from "./contexts/SearchContext";
 import { SocketProvider } from "./contexts/SocketContext";

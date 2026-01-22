@@ -1,16 +1,16 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { ProtectedRoute } from "@/app/components/ProtectedRoute/ProtectedRoute";
+import { ProtectedRoute } from "../../presentation/components/ProtectedRoute/ProtectedRoute";
 import { useMenuData } from "@/app/hooks/useMenuData";
 import { useOrders } from "@/app/hooks/useOrders";
 import { useAuth } from "@/app/contexts/AuthContext";
-import MenuHeader from "@/app/components/MenuHeader/MenuHeader";
-import FeaturedSections from "@/app/components/FeaturedSections/FeaturedSections";
-import FilterSection from "@/app/components/FilterSection/FilterSection";
-import MenuGrid from "@/app/components/MenuGrid/MenuGrid";
-import MenuStickyHeader from "@/app/components/Menu/MenuStickyHeader";
-import MenuTopItemsChartBW from "@/app/components/MenuStats/MenuTopItemsChartBW";
+import MenuHeader from "../../presentation/components/MenuHeader/MenuHeader";
+import FeaturedSections from "../../presentation/components/FeaturedSections/FeaturedSections";
+import FilterSection from "../../presentation/components/FilterSection/FilterSection";
+import MenuGrid from "../../presentation/components/MenuGrid/MenuGrid";
+import MenuStickyHeader from "../../presentation/components/Menu/MenuStickyHeader";
+import MenuTopItemsChartBW from "../../presentation/components/MenuStats/MenuTopItemsChartBW";
 
 const Menu = () => {
   const [activeFilter, setActiveFilter] = useState("all");

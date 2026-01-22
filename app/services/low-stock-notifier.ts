@@ -1,4 +1,4 @@
-import { ConsumptionResult } from "../usecases/consume-ingredients-use-case";
+import { ConsumptionResult } from "../application/usecases/consume-ingredients-use-case";
 
 export interface LowStockAlert {
   ingredientId: string;
