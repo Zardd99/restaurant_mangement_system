@@ -5,16 +5,16 @@ import { Plus, AlertCircle, ChefHat } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import { useMenuData, MenuItem } from "../../hooks/useMenuData";
-import MenuStats from "../../components/MenuStats/MenuStat";
-import MenuFilters from "../../components/MenuFilters/MenuFilters";
-import MenuTable from "../../components/MenuTable/MenuTable";
-import Pagination from "../../components/Pagination/Pagination";
-import ModalManager from "../../components/ModalManager/ModalManager";
+import MenuStats from "../../presentation/components/MenuStats/MenuStat";
+import MenuFilters from "../../presentation/components/MenuFilters/MenuFilters";
+import MenuTable from "../../presentation/components/MenuTable/MenuTable";
+import Pagination from "../../presentation/components/Pagination/Pagination";
+import ModalManager from "../../presentation/components/ModalManager/ModalManager";
 
 const AdminMenuDashboard = () => {
   const { isLoading: authLoading, user: currentUser } = useAuth();
   const router = useRouter();
-  
+
   const {
     menuItems,
     categories,

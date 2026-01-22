@@ -1,5 +1,5 @@
-import { OrderItem } from "../..//managers/inventory-manager";
-import { OrderCoordinator } from "../coordinators/order-coordinator";
+import { OrderItem } from "../../application/managers/inventory-manager";
+import { OrderCoordinator } from "../../application/coordinators/order-coordinator";
 
 export class OrderViewModel {
   private orderItems: OrderItem[] = [];

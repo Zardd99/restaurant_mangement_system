@@ -9,7 +9,7 @@ import {
   updateInstructions as ucUpdateInstructions,
   removeItem as ucRemoveItem,
   clearOrder as ucClearOrder,
-} from "../usecases/OrderUseCases";
+} from "../application/usecases/OrderUseCases";
 
 export interface OrderItem {
   menuItem: MenuItem;

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
-import { ProtectedRoute } from "../../components/ProtectedRoute/ProtectedRoute";
+import { ProtectedRoute } from "../../presentation/components/ProtectedRoute/ProtectedRoute";
 import WaiterOrderInterface from "../WaiterOrderInterface";
 import KitchenDisplaySystem from "../KitchenDisplaySystem";
 import { SocketProvider } from "@/app/contexts/SocketContext";

@@ -7,7 +7,10 @@
  */
 
 import { useState, useCallback } from "react";
-import { OrderManager, OrderSubmissionDTO } from "../../managers/OrderManager";
+import {
+  OrderManager,
+  OrderSubmissionDTO,
+} from "../../application/managers/OrderManager";
 import { IngredientImpact } from "../../services/IngredientDeductionService";
 
 interface OrderViewState {
