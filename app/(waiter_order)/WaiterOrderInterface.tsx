@@ -235,33 +235,6 @@ const WaiterOrderInterface = () => {
         quantity: item.quantity,
       }));
 
-      // Deduct ingredients before creating the order
-      const deductionResult = await deductIngredientsForOrder(
-        deductionItems,
-        authToken,
-        API_URL || "",
-      );
-
-      if (!deductionResult.success) {
-        // Show stock warning but allow override
-        const proceed = window.confirm(
-          `${deductionResult.error}\n\nDo you want to proceed anyway?`,
-        );
-
-        if (!proceed) {
-          return;
-        }
-        // If they proceed, show warning but continue
-        setStockWarningMessage(
-          deductionResult.error || "Ingredients may be insufficient",
-        );
-        setShowStockWarning(true);
-      } else if (deductionResult.warning) {
-        // Show warning but continue
-        setStockWarningMessage(deductionResult.warning);
-        setShowStockWarning(true);
-      }
-
       // Create the order
       const orderData = {
         items: orderManager.currentOrder.map((item) => ({
@@ -275,18 +248,6 @@ const WaiterOrderInterface = () => {
         customerName: customerName || `Table ${tableNumber}`,
         orderType: "dine-in",
         status: "confirmed",
-        // Include inventory deduction information
-        inventoryDeduction: deductionResult.success
-          ? {
-              success: true,
-              warning: deductionResult.warning,
-              timestamp: new Date().toISOString(),
-            }
-          : {
-              success: false,
-              error: deductionResult.error,
-              timestamp: new Date().toISOString(),
-            },
       };
 
       const response = await fetch(`${API_URL}/api/orders`, {
@@ -303,13 +264,6 @@ const WaiterOrderInterface = () => {
 
       const responseData = await response.json();
       if (socket) socket.emit("order_created", responseData);
-
-      // Show success message with any warnings
-      if (showStockWarning || deductionResult.warning) {
-        alert(`Order submitted successfully!\n\nNote: ${stockWarningMessage}`);
-      } else {
-        alert("Order submitted successfully!");
-      }
 
       // Clear order
       orderManager.clearOrder();
