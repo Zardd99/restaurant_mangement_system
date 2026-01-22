@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, memo, useMemo, useRef } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import FilterButtons from "./FilterButtons";
 import LoadingState from "./common/LoadingState";
@@ -13,12 +13,47 @@ import { useOrderWebSocket } from "../hooks/useOrderWebSocket";
 import { useInventoryDeduction } from "../hooks/useInventoryDeduction";
 import { AlertTriangle } from "lucide-react";
 
+// Individual order wrapper that manages its own data
+const OrderCardWrapper = memo(
+  ({
+    orderId,
+    initialOrder,
+    onStatusUpdate,
+  }: {
+    orderId: string;
+    initialOrder: any;
+    onStatusUpdate: (orderId: string, newStatus: string) => void;
+  }) => {
+    const [order, setOrder] = useState(initialOrder);
+
+    // Update local order when initialOrder changes
+    useEffect(() => {
+      setOrder(initialOrder);
+    }, [initialOrder]);
+
+    return <OrderCard order={order} onStatusUpdate={onStatusUpdate} />;
+  },
+  (prevProps, nextProps) => {
+    // Only re-render if this specific order changed
+    return (
+      prevProps.orderId === nextProps.orderId &&
+      prevProps.initialOrder._id === nextProps.initialOrder._id &&
+      prevProps.initialOrder.status === nextProps.initialOrder.status &&
+      prevProps.initialOrder.items === nextProps.initialOrder.items &&
+      prevProps.onStatusUpdate === nextProps.onStatusUpdate
+    );
+  },
+);
+
+OrderCardWrapper.displayName = "OrderCardWrapper";
+
 const KitchenDisplaySystem = () => {
   const { token } = useAuth();
   const [filter, setFilter] = useState<string>("all");
   const [isStatsPanelOpen, setIsStatsPanelOpen] = useState(false);
   const [showDeductionWarning, setShowDeductionWarning] = useState(false);
-  const [deductionWarning, setDeductionWarning] = useState("");
+  const [deductionWarning, setDeductionWarning] = useState("");   
+  const [visibleOrders, setVisibleOrders] = useState<number>(12);
 
   const { orders, loading, error, fetchOrders } = useOrders(token, filter);
   const { updateOrderStatus } = useOrderWebSocket(token, fetchOrders);
@@ -26,58 +61,88 @@ const KitchenDisplaySystem = () => {
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
+  // Use refs to store values without causing re-renders
+  const ordersRef = useRef(orders);
+  const apiUrlRef = useRef(API_URL);
+  const tokenRef = useRef(token);
+  const deductIngredientsRef = useRef(deductIngredientsForOrder);
+  const updateOrderStatusRef = useRef(updateOrderStatus);
+
+  // Keep refs in sync
   useEffect(() => {
+    ordersRef.current = orders;
+  }, [orders]);
+
+  useEffect(() => {
+    apiUrlRef.current = API_URL;
+  }, [API_URL]);
+
+  useEffect(() => {
+    tokenRef.current = token;
+  }, [token]);
+
+  useEffect(() => {
+    deductIngredientsRef.current = deductIngredientsForOrder;
+  }, [deductIngredientsForOrder]);
+
+  useEffect(() => {
+    updateOrderStatusRef.current = updateOrderStatus;
+  }, [updateOrderStatus]);
+
+  // Memoize fetchOrders to prevent infinite loops
+  const memoizedFetchOrders = useCallback(() => {
     fetchOrders();
   }, [fetchOrders]);
 
-  // Enhanced status update that deducts ingredients when status changes to "preparing"
-  const handleStatusUpdate = async (orderId: string, newStatus: string) => {
-    try {
-      // Find the current order
-      const order = orders.find((o) => o._id === orderId);
+  useEffect(() => {
+    memoizedFetchOrders();
+  }, [memoizedFetchOrders]);
+
+  // Create a STABLE status update handler with NO dependencies on orders
+  const handleStatusUpdate = useCallback(
+    async (orderId: string, newStatus: string) => {
+      // Find the order from the ref (not from state)
+      const order = ordersRef.current.find((o) => o._id === orderId);
       if (!order) return;
 
-      // If status is changing to "preparing", deduct ingredients
-      if (newStatus === "preparing" && order.status !== "preparing") {
-        // Prepare items for deduction
-        const deductionItems = order.items.map((item: any) => ({
-          menuItemId: item.menuItem?._id || item.menuItem,
-          quantity: item.quantity,
-        }));
+      try {
+        // If status is changing to "preparing", deduct ingredients
+        if (newStatus === "preparing" && order.status !== "preparing") {
+          const deductionItems = order.items.map((item: any) => ({
+            menuItemId: item.menuItem?._id || item.menuItem,
+            quantity: item.quantity,
+          }));
 
-        const authToken = token;
-        if (authToken && API_URL) {
-          const deductionResult = await deductIngredientsForOrder(
-            deductionItems,
-            authToken,
-            API_URL,
-          );
+          const authToken = tokenRef.current;
+          const apiUrl = apiUrlRef.current;
 
-          if (!deductionResult.success) {
-            // Show warning but allow status update
-            setDeductionWarning(
-              `Inventory deduction warning: ${deductionResult.error}`,
-            );
-            setShowDeductionWarning(true);
-
-            // Ask for confirmation to proceed
-            const proceed = window.confirm(
-              `Failed to deduct ingredients: ${deductionResult.error}\n\nDo you want to mark as preparing anyway?`,
+          if (authToken && apiUrl) {
+            const deductionResult = await deductIngredientsRef.current(
+              deductionItems,
+              authToken,
+              apiUrl,
             );
 
-            if (!proceed) {
-              return;
+            if (!deductionResult.success) {
+              setDeductionWarning(
+                `Inventory deduction warning: ${deductionResult.error}`,
+              );
+              setShowDeductionWarning(true);
+
+              const proceed = window.confirm(
+                `Failed to deduct ingredients: ${deductionResult.error}\n\nDo you want to mark as preparing anyway?`,
+              );
+
+              if (!proceed) {
+                return;
+              }
+            } else if (deductionResult.warning) {
+              setDeductionWarning(deductionResult.warning);
+              setShowDeductionWarning(true);
             }
-          } else if (deductionResult.warning) {
-            // Show warning but continue
-            setDeductionWarning(deductionResult.warning);
-            setShowDeductionWarning(true);
-          }
 
-          // Update the order with deduction information
-          const updateResponse = await fetch(
-            `${API_URL}/api/orders/${orderId}/inventory`,
-            {
+            // Update the order with deduction information
+            await fetch(`${apiUrl}/api/orders/${orderId}/inventory`, {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
@@ -91,24 +156,62 @@ const KitchenDisplaySystem = () => {
                 warning: deductionResult.warning,
                 timestamp: new Date().toISOString(),
               }),
-            },
-          );
-
-          if (!updateResponse.ok) {
-            console.warn(
-              "Failed to update order with inventory deduction info",
-            );
+            });
           }
         }
-      }
 
-      // Update the order status via WebSocket
-      updateOrderStatus(orderId, newStatus);
-    } catch (error) {
-      console.error("Error handling status update:", error);
-      alert("Failed to update order status");
-    }
-  };
+        // Update the order status via WebSocket using ref
+        updateOrderStatusRef.current(orderId, newStatus);
+      } catch (error) {
+        console.error("Error handling status update:", error);
+        alert("Failed to update order status");
+      }
+    },
+    [], // NO DEPENDENCIES - completely stable!
+  );
+
+  // Create a Map of orders by ID for O(1) lookup and referential stability
+  const ordersMap = useMemo(() => {
+    const map = new Map();
+    orders.forEach((order) => {
+      map.set(order._id, order);
+    });
+    return map;
+  }, [orders]);
+
+  // Memoize visible order IDs instead of orders
+  const visibleOrderIds = useMemo(
+    () => orders.slice(0, visibleOrders).map((o) => o._id),
+    [orders, visibleOrders],
+  );
+
+  // Lazy load more orders when scrolling
+  const handleLoadMore = useCallback(() => {
+    setVisibleOrders((prev) => prev + 12);
+  }, []);
+
+  // Reset visible orders when filter changes
+  useEffect(() => {
+    setVisibleOrders(12);
+  }, [filter]);
+
+  // Memoize event handlers
+  const handleStatsPanelOpen = useCallback(() => {
+    setIsStatsPanelOpen(true);
+  }, []);
+
+  const handleStatsPanelClose = useCallback(() => {
+    setIsStatsPanelOpen(false);
+  }, []);
+
+  const handleDismissWarning = useCallback(() => {
+    setShowDeductionWarning(false);
+  }, []);
+
+  // Memoize filter setter to prevent re-renders
+  const handleFilterChange = useCallback((newFilter: string) => {
+    setFilter(newFilter);
+  }, []);
 
   if (loading) {
     return <LoadingState type="orders" count={6} />;
@@ -127,7 +230,7 @@ const KitchenDisplaySystem = () => {
             <AlertTriangle className="w-5 h-5 text-yellow-600 mr-2" />
             <p className="text-yellow-800 font-medium">Inventory Alert</p>
             <button
-              onClick={() => setShowDeductionWarning(false)}
+              onClick={handleDismissWarning}
               className="ml-auto text-yellow-600 hover:text-yellow-800"
             >
               ✕
@@ -141,14 +244,14 @@ const KitchenDisplaySystem = () => {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Kitchen Orders</h1>
         <button
-          onClick={() => setIsStatsPanelOpen(true)}
+          onClick={handleStatsPanelOpen}
           className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
         >
           📊 View Analytics
         </button>
       </div>
 
-      <FilterButtons filter={filter} setFilter={setFilter} />
+      <FilterButtons filter={filter} setFilter={handleFilterChange} />
 
       {orders.length === 0 ? (
         <EmptyState
@@ -160,24 +263,44 @@ const KitchenDisplaySystem = () => {
           }
         />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {orders.map((order) => (
-            <OrderCard
-              key={order._id}
-              order={order}
-              onStatusUpdate={handleStatusUpdate}
-            />
-          ))}
-        </div>
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {visibleOrderIds.map((orderId) => {
+              const order = ordersMap.get(orderId);
+              if (!order) return null;
+
+              return (
+                <OrderCardWrapper
+                  key={orderId}
+                  orderId={orderId}
+                  initialOrder={order}
+                  onStatusUpdate={handleStatusUpdate}
+                />
+              );
+            })}
+          </div>
+
+          {/* Load More Button (Lazy Loading) */}
+          {visibleOrders < orders.length && (
+            <div className="flex justify-center mt-8">
+              <button
+                onClick={handleLoadMore}
+                className="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-lg font-medium transition-colors"
+              >
+                Load More Orders ({orders.length - visibleOrders} remaining)
+              </button>
+            </div>
+          )}
+        </>
       )}
 
       {/* Stats Panel */}
       <KitchenStatsPanel
         isOpen={isStatsPanelOpen}
-        onClose={() => setIsStatsPanelOpen(false)}
+        onClose={handleStatsPanelClose}
       />
     </div>
   );
 };
 
-export default KitchenDisplaySystem;
+export default memo(KitchenDisplaySystem);

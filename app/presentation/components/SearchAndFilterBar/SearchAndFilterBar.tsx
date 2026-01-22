@@ -27,6 +27,7 @@ const SearchAndFilterBar: React.FC<SearchAndFilterBarProps> = ({
   categories,
 }) => {
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
 
   const handleCategoryChange = (category: string, checked: boolean) => {
     if (category === "all") {
@@ -43,13 +44,13 @@ const SearchAndFilterBar: React.FC<SearchAndFilterBarProps> = ({
 
   const getCategoryDisplayText = () => {
     if (categoryFilter.includes("all") || categoryFilter.length === 0) {
-      return "All Categories";
+      return "All";
     }
     if (categoryFilter.length === 1) {
       const cat = categoryFilter[0];
-      return cat.charAt(0).toUpperCase() + cat.slice(1);
+      return cat.charAt(0).toUpperCase() + cat.slice(1).substring(0, 8);
     }
-    return `${categoryFilter.length} categories`;
+    return `${categoryFilter.length}`;
   };
 
   const clearAllFilters = () => {
@@ -68,155 +69,173 @@ const SearchAndFilterBar: React.FC<SearchAndFilterBarProps> = ({
     );
   };
 
+  const activeFilterCount = [
+    !categoryFilter.includes("all") && categoryFilter.length > 0,
+    availabilityFilter !== "all",
+    chefSpecialFilter !== "all",
+    searchTerm !== "",
+  ].filter(Boolean).length;
+
   return (
-    <div className="bg-white rounded-xl p-4 border border-gray-200 mb-4">
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+    <div className="bg-white rounded-lg p-2 border border-gray-200 mb-2 shadow-sm">
+      {/* Compact single row layout */}
+      <div className="flex items-center gap-2">
         {/* Search Input */}
         <div className="flex-1 relative">
           <Search
-            className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-            size={20}
+            className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400"
+            size={14}
           />
           <input
             type="text"
-            placeholder="Search menu items by name or description..."
-            className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all duration-200 bg-gray-50"
+            placeholder="Search menu..."
+            className="w-full pl-8 pr-7 py-1.5 text-xs border border-gray-200 rounded-lg focus:ring-1 focus:ring-gray-600 focus:border-transparent transition-all duration-200 bg-gray-50"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
           {searchTerm && (
             <button
               onClick={() => setSearchTerm("")}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              className="absolute right-1.5 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 p-0.5"
             >
-              <X size={18} />
+              <X size={12} />
             </button>
           )}
         </div>
 
-        {/* Filters Section */}
-        <div className="flex flex-col sm:flex-row gap-3">
-          {/* Category Filter Dropdown */}
-          <div className="relative">
-            <button
-              type="button"
-              onClick={() => setIsCategoryOpen(!isCategoryOpen)}
-              className="flex items-center justify-between w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-all duration-200 hover:border-gray-300 bg-gray-50 min-w-[180px]"
-            >
-              <Filter
-                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-                size={18}
-              />
-              <span className="text-sm font-medium text-gray-700">
-                {getCategoryDisplayText()}
-              </span>
-              {isCategoryOpen ? (
-                <ChevronUp className="w-4 h-4 text-gray-400" />
-              ) : (
-                <ChevronDown className="w-4 h-4 text-gray-400" />
-              )}
-            </button>
+        {/* Toggle Filters Button */}
+        <button
+          onClick={() => setShowFilters(!showFilters)}
+          className="relative p-1.5 text-xs border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-150"
+          title="Toggle filters"
+        >
+          <Filter size={14} className="text-gray-400" />
+          {activeFilterCount > 0 && (
+            <span className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 text-white text-[10px] rounded-full flex items-center justify-center">
+              {activeFilterCount}
+            </span>
+          )}
+        </button>
 
-            {/* Dropdown Menu */}
-            {isCategoryOpen && (
-              <div className="absolute z-50 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden animate-fade-in">
-                <div className="p-3">
-                  <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                    Select Categories
-                  </div>
+        {/* Category Filter - Compact */}
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setIsCategoryOpen(!isCategoryOpen)}
+            className="flex items-center gap-1 px-2 py-1.5 text-xs border border-gray-200 rounded-lg hover:border-gray-300 bg-gray-50 transition-colors duration-150"
+            title="Category filter"
+          >
+            <span className="font-medium text-gray-700">
+              {getCategoryDisplayText()}
+            </span>
+            {isCategoryOpen ? (
+              <ChevronUp className="w-3 h-3 text-gray-400" />
+            ) : (
+              <ChevronDown className="w-3 h-3 text-gray-400" />
+            )}
+          </button>
 
-                  {/* All Categories Option */}
-                  <label className="flex items-center py-2 px-2 hover:bg-gray-50 rounded transition-colors duration-150 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={
-                        categoryFilter.includes("all") ||
-                        categoryFilter.length === 0
-                      }
-                      onChange={(e) =>
-                        handleCategoryChange("all", e.target.checked)
-                      }
-                      className="h-4 w-4 text-gray-900 rounded border-gray-300 focus:ring-gray-900"
-                    />
-                    <span className="ml-2 text-sm text-gray-700 font-medium">
-                      All Categories
-                    </span>
-                  </label>
-
-                  <div className="h-px bg-gray-100 my-2"></div>
-
-                  {/* Individual Categories */}
-                  <div className="max-h-60 overflow-y-auto">
-                    {categories.map((category) => (
-                      <label
-                        key={category}
-                        className="flex items-center py-2 px-2 hover:bg-gray-50 rounded transition-colors duration-150 cursor-pointer"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={categoryFilter.includes(category)}
-                          onChange={(e) =>
-                            handleCategoryChange(category, e.target.checked)
-                          }
-                          className="h-4 w-4 text-gray-900 rounded border-gray-300 focus:ring-gray-900"
-                        />
-                        <span className="ml-2 text-sm text-gray-700">
-                          {category.charAt(0).toUpperCase() + category.slice(1)}
-                        </span>
-                      </label>
-                    ))}
-                  </div>
+          {/* Compact Dropdown Menu */}
+          {isCategoryOpen && (
+            <div className="absolute right-0 z-50 mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden animate-fade-in">
+              <div className="p-2">
+                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 px-1">
+                  Categories
+                </div>
+                <label className="flex items-center py-1 px-2 hover:bg-gray-50 rounded transition-colors duration-150 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={
+                      categoryFilter.includes("all") ||
+                      categoryFilter.length === 0
+                    }
+                    onChange={(e) =>
+                      handleCategoryChange("all", e.target.checked)
+                    }
+                    className="h-3.5 w-3.5 text-gray-900 rounded border-gray-300 focus:ring-1 focus:ring-gray-600"
+                  />
+                  <span className="ml-2 text-sm text-gray-700 font-medium">
+                    All Categories
+                  </span>
+                </label>
+                <div className="h-px bg-gray-100 my-1"></div>
+                <div className="max-h-40 overflow-y-auto">
+                  {categories.map((category) => (
+                    <label
+                      key={category}
+                      className="flex items-center py-1 px-2 hover:bg-gray-50 rounded transition-colors duration-150 cursor-pointer"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={categoryFilter.includes(category)}
+                        onChange={(e) =>
+                          handleCategoryChange(category, e.target.checked)
+                        }
+                        className="h-3.5 w-3.5 text-gray-900 rounded border-gray-300 focus:ring-1 focus:ring-gray-600"
+                      />
+                      <span className="ml-2 text-sm text-gray-700 truncate">
+                        {category}
+                      </span>
+                    </label>
+                  ))}
                 </div>
               </div>
-            )}
-          </div>
-
-          {/* Availability Filter */}
-          <div className="relative">
-            <Filter
-              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-              size={18}
-            />
-            <select
-              className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent appearance-none transition-all duration-200 hover:border-gray-300 bg-gray-50"
-              value={availabilityFilter}
-              onChange={(e) => setAvailabilityFilter(e.target.value)}
-            >
-              <option value="all">All Status</option>
-              <option value="available">Available</option>
-              <option value="unavailable">Unavailable</option>
-            </select>
-          </div>
-
-          {/* Chef Special Filter */}
-          <div className="relative">
-            <Filter
-              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-              size={18}
-            />
-            <select
-              className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent appearance-none transition-all duration-200 hover:border-gray-300 bg-gray-50"
-              value={chefSpecialFilter}
-              onChange={(e) => setChefSpecialFilter(e.target.value)}
-            >
-              <option value="all">All Items</option>
-              <option value="special">Chef Specials</option>
-              <option value="regular">Regular Items</option>
-            </select>
-          </div>
-
-          {/* Clear Filters Button */}
-          {hasActiveFilters() && (
-            <button
-              onClick={clearAllFilters}
-              className="flex items-center gap-2 px-4 py-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200 text-sm font-medium text-gray-700"
-            >
-              <X size={16} />
-              Clear
-            </button>
+            </div>
           )}
         </div>
+
+        {/* Clear Button - Only show when filters are active */}
+        {hasActiveFilters() && (
+          <button
+            onClick={clearAllFilters}
+            className="p-1.5 text-xs border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200"
+            title="Clear all filters"
+          >
+            <X size={12} className="text-gray-500" />
+          </button>
+        )}
       </div>
+
+      {/* Expanded Filters Section - Only shows when toggled */}
+      {showFilters && (
+        <div className="mt-2 pt-2 border-t border-gray-100">
+          <div className="flex flex-wrap gap-2">
+            {/* Availability Filter */}
+            <div className="relative">
+              <select
+                className="pl-7 pr-5 py-1.5 text-xs border border-gray-200 rounded-lg focus:ring-1 focus:ring-gray-600 focus:border-transparent appearance-none transition-all duration-200 hover:border-gray-300 bg-gray-50"
+                value={availabilityFilter}
+                onChange={(e) => setAvailabilityFilter(e.target.value)}
+              >
+                <option value="all">Status: All</option>
+                <option value="available">Available</option>
+                <option value="unavailable">Unavailable</option>
+              </select>
+              <Filter
+                className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400"
+                size={12}
+              />
+            </div>
+
+            {/* Chef Special Filter */}
+            <div className="relative">
+              <select
+                className="pl-7 pr-5 py-1.5 text-xs border border-gray-200 rounded-lg focus:ring-1 focus:ring-gray-600 focus:border-transparent appearance-none transition-all duration-200 hover:border-gray-300 bg-gray-50"
+                value={chefSpecialFilter}
+                onChange={(e) => setChefSpecialFilter(e.target.value)}
+              >
+                <option value="all">Type: All</option>
+                <option value="special">Chef Specials</option>
+                <option value="regular">Regular Items</option>
+              </select>
+              <Filter
+                className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400"
+                size={12}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
