@@ -17,7 +17,7 @@ const MenuStickyHeader = ({
   searchTerm,
   setSearchTerm,
   categoryFilter,
-  setCategoryFilter,  
+  setCategoryFilter,
   availabilityFilter,
   setAvailabilityFilter,
   chefSpecialFilter,
@@ -26,24 +26,23 @@ const MenuStickyHeader = ({
   orders,
 }: MenuStickyHeaderProps) => {
   return (
-    <div className="sticky top-20 z-40 bg-white/95 backdrop-blur-sm py-4 -mx-4 px-4 border-b border-gray-200">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
-        <div className="lg:col-span-2">
-          <SearchAndFilterBar
-            searchTerm={searchTerm}
-            setSearchTerm={setSearchTerm}
-            categoryFilter={categoryFilter}
-            setCategoryFilter={setCategoryFilter}
-            availabilityFilter={availabilityFilter}
-            setAvailabilityFilter={setAvailabilityFilter}
-            chefSpecialFilter={chefSpecialFilter}
-            setChefSpecialFilter={setChefSpecialFilter}
-            categories={categories}
-          />
-        </div>
-
+    <div className="sticky top-17 z-30 flex gap-4 items-center mx-auto justify-center">
+      <div className="lg:col-span-2 w-full">
+        <SearchAndFilterBar
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          categoryFilter={categoryFilter}
+          setCategoryFilter={setCategoryFilter}
+          availabilityFilter={availabilityFilter}
+          setAvailabilityFilter={setAvailabilityFilter}
+          chefSpecialFilter={chefSpecialFilter}
+          setChefSpecialFilter={setChefSpecialFilter}
+          categories={categories}
+        />
       </div>
     </div>
+    //     <div className="z-20 bg-white/95 backdrop-blur-sm py-4 -mx-4 px-4 border-b border-gray-200">
+    // </div>
   );
 };
 
