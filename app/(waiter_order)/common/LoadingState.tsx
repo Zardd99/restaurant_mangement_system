@@ -51,7 +51,7 @@ const LoadingState: React.FC<LoadingStateProps> = ({ type, count = 6 }) => {
               key={i}
               className="bg-white rounded-2xl shadow-md overflow-hidden border border-gray-100"
             >
-              <div className="h-40 bg-gradient-to-r from-gray-200 to-gray-300 animate-pulse"></div>
+              <div className="h-40 bg-gray-300 animate-pulse"></div>
               <div className="p-4">
                 <div className="h-6 bg-gray-200 rounded-full w-3/4 mb-3 animate-pulse"></div>
                 <div className="h-4 bg-gray-200 rounded-full w-1/4 mb-3 animate-pulse"></div>

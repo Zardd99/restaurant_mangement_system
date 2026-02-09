@@ -26,7 +26,7 @@ const SidebarItem = ({
   const baseClasses =
     "flex items-center justify-between w-full p-3 rounded-lg transition-all duration-200 group relative";
   const activeClasses = isActive
-    ? "bg-gradient-to-r from-blue-500/20 via-blue-400/20 to-purple-500/20 text-white border-l-2 border-blue-500 shadow-lg"
+    ? "bg-gray-700 bg-opacity-30 text-white border-l-2 border-white shadow-lg"
     : "text-gray-300 hover:text-white hover:bg-gray-800/50 hover:shadow-md";
 
   const iconClasses = isActive

@@ -16,6 +16,7 @@ const SidebarMobile = forwardRef<HTMLDivElement, SidebarMobileProps>(
 
     return (
       <div
+        onMouseEnter={() => handleTog && handleTog()}
         className="min-h-screen mt-18 w-20 fixed top-0 left-0 z-50 transition-all duration-300 ease-in-out bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 backdrop-blur-xl border-r border-slate-700/50 shadow-2xl"
         ref={ref}
       >

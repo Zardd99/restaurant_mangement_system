@@ -17,10 +17,10 @@ const SidebarMobile = ({
   const mobileItems = SidebarConfig.getMobileSidebarItems(userRole);
 
   return (
-    <div className="fixed inset-y-0 left-0 z-40 w-16 bg-gradient-to-b from-gray-900 to-gray-950 border-r border-gray-800 ">
+    <div className="fixed inset-y-0 left-0 z-40 w-16 bg-black border-r border-gray-800 ">
       {/* Logo */}
       <div className="h-16 flex items-center justify-center border-b border-gray-800">
-        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg">
+        <div className="w-10 h-10 bg-black rounded-lg flex items-center justify-center shadow-lg">
           <span className="text-white font-bold text-sm">RP</span>
         </div>
       </div>
@@ -39,7 +39,7 @@ const SidebarMobile = ({
               }}
               className={`w-full p-2 rounded-lg transition-colors relative group ${
                 isActive
-                  ? "bg-gradient-to-br from-blue-500/20 to-purple-500/20 text-blue-400 shadow-lg"
+                  ? "bg-gray-700 bg-opacity-40 text-white shadow-lg"
                   : "text-gray-400 hover:text-gray-300 hover:bg-gray-800/50"
               }`}
               title={item.text}
@@ -73,7 +73,7 @@ const SidebarMobile = ({
 
               {/* Active indicator */}
               {isActive && (
-                <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-gradient-to-b from-blue-500 to-purple-500 rounded-l shadow-lg" />
+                <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-white rounded-l shadow-lg" />
               )}
             </button>
           );
@@ -82,7 +82,7 @@ const SidebarMobile = ({
 
       {/* Profile */}
       <div className="absolute bottom-0 left-0 right-0 p-3 border-t border-gray-800">
-        <button className="w-10 h-10 mx-auto bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center hover:scale-105 transition-transform shadow-lg relative">
+        <button className="w-10 h-10 mx-auto bg-gray-700 rounded-full flex items-center justify-center hover:scale-105 transition-transform shadow-lg relative">
           <span className="text-white font-bold text-sm">U</span>
           <div className="absolute bottom-0 right-0 w-2 h-2 bg-green-500 rounded-full border border-gray-900"></div>
         </button>

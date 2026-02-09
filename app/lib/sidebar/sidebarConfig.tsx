@@ -19,6 +19,7 @@ import {
   Shield,
   Calendar,
   TrendingUp,
+  Zap,
 } from "lucide-react";
 
 export interface SidebarItem {
@@ -151,7 +152,7 @@ export class SidebarConfig {
   private static getUserManagementSection(): SidebarSection {
     return {
       id: "user-management",
-      label: "User Management",
+      label: "Management",
       roles: ["admin", "manager"],
       items: [
         {
@@ -160,6 +161,13 @@ export class SidebarConfig {
           icon: <Users className={this.ICON_SIZE} />,
           link: "/users",
           badge: "Admin",
+          roles: ["admin"],
+        },
+        {
+          id: "promotions",
+          text: "Promotions",
+          icon: <Zap className={this.ICON_SIZE} />,
+          link: "/promotions",
           roles: ["admin"],
         },
         {
