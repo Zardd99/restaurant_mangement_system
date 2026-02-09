@@ -176,7 +176,7 @@ const UserProfile: React.FC = () => {
   const displayStatus = isOnline;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-white py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
         {/* Connection Status Indicator */}
         <div className="mb-4 flex items-center justify-end">
@@ -196,7 +196,7 @@ const UserProfile: React.FC = () => {
 
         <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
           {/* Profile Header */}
-          <div className="bg-gradient-to-r from-indigo-500 to-purple-600 p-8 text-white">
+          <div className="bg-black p-8 text-white">
             <div className="flex flex-col md:flex-row items-center">
               <div className="relative">
                 <div className="h-24 w-24 rounded-full bg-white/20 flex items-center justify-center text-4xl font-bold">
@@ -230,7 +230,7 @@ const UserProfile: React.FC = () => {
                   )}
                   <span
                     className={`ml-3 px-3 py-1 rounded-full text-xs font-medium ${getRoleColor(
-                      user.role
+                      user.role,
                     )}`}
                   >
                     {user.role.toUpperCase()}

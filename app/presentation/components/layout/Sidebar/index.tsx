@@ -50,20 +50,18 @@ const Sidebar = ({ isOpen, onClose, user, onLogout }: SidebarProps) => {
       <div
         ref={sidebarRef}
         data-sidebar
-        className={` fixed top-0 left-0 h-full w-64 bg-gradient-to-b from-gray-900 via-gray-900 to-gray-950 border-r border-gray-800 z-50 transform transition-transform duration-300 ${
+        className={` fixed top-0 left-0 h-full w-64 bg-black border-r border-gray-800 z-50 transform transition-transform duration-300 ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
         {/* Header */}
         <div className="h-16 flex items-center justify-between px-4 border-b border-gray-800">
           <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center shadow-lg">
+            <div className="w-8 h-8 bg-black rounded-lg flex items-center justify-center shadow-lg">
               <span className="text-white font-bold text-sm">RP</span>
             </div>
             <div>
-              <h2 className="text-white font-semibold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-                Restaurant Pro
-              </h2>
+              <h2 className="text-white font-semibold">Restaurant Pro</h2>
               <p className="text-gray-400 text-xs">Management System</p>
             </div>
           </div>
@@ -93,7 +91,7 @@ const Sidebar = ({ isOpen, onClose, user, onLogout }: SidebarProps) => {
           <div className="p-4 border-b border-gray-800">
             <div className="flex items-center space-x-3">
               <div className="relative">
-                <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center shadow-lg">
+                <div className="w-10 h-10 bg-gray-700 rounded-full flex items-center justify-center shadow-lg">
                   <span className="text-white font-bold">
                     {user.name.charAt(0).toUpperCase()}
                   </span>

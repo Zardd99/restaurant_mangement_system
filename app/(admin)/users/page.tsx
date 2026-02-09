@@ -94,7 +94,7 @@ const AdminUserDashboard = () => {
   const [selectedUser, setSelectedUser] = useState<User | null>(null); // User for modal operations
   const [showModal, setShowModal] = useState(false); // Modal visibility
   const [modalType, setModalType] = useState<"view" | "edit" | "delete">(
-    "view"
+    "view",
   ); // Modal operation type
 
   // Edit form state
@@ -162,7 +162,7 @@ const AdminUserDashboard = () => {
             throw new Error("Session expired. Please log in again.");
           } else if (response.status === 403) {
             throw new Error(
-              "You don't have permission to access this resource."
+              "You don't have permission to access this resource.",
             );
           } else {
             throw new Error(`Failed to fetch users: ${response.status}`);
@@ -347,8 +347,8 @@ const AdminUserDashboard = () => {
       // Optimistic UI update - update user in local state
       setUsers(
         users.map((user) =>
-          user._id === userId ? { ...user, ...updates } : user
-        )
+          user._id === userId ? { ...user, ...updates } : user,
+        ),
       );
       closeModal();
     } catch (err) {
@@ -434,8 +434,8 @@ const AdminUserDashboard = () => {
       // Optimistic UI update - toggle user status in local state
       setUsers(
         users.map((user) =>
-          user._id === userId ? { ...user, isActive: !user.isActive } : user
-        )
+          user._id === userId ? { ...user, isActive: !user.isActive } : user,
+        ),
       );
     } catch (err) {
       console.error("Error updating user:", err);
@@ -493,7 +493,7 @@ const AdminUserDashboard = () => {
   // ============================================================================
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4 md:p-6 mt-18">
+    <div className="min-h-screen bg-white p-4 md:p-6 mt-18">
       <div className="max-w-7xl mx-auto">
         {/* ========================================================================
             HEADER SECTION
@@ -705,7 +705,7 @@ const AdminUserDashboard = () => {
                       <td className="px-4 py-4">
                         <div className="flex items-center">
                           {/* User Avatar - Generated from first letter of name */}
-                          <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                          <div className="w-10 h-10 bg-black rounded-full flex items-center justify-center">
                             <span className="text-white font-semibold text-sm">
                               {user.name.charAt(0).toUpperCase()}
                             </span>
@@ -725,7 +725,7 @@ const AdminUserDashboard = () => {
                       <td className="px-4 py-4">
                         <span
                           className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getRoleColor(
-                            user.role
+                            user.role,
                           )}`}
                         >
                           {user.role}
@@ -858,7 +858,7 @@ const AdminUserDashboard = () => {
                       (page) =>
                         page === 1 ||
                         page === totalPages ||
-                        (page >= currentPage - 1 && page <= currentPage + 1)
+                        (page >= currentPage - 1 && page <= currentPage + 1),
                     )
                     .map((page, index, array) => {
                       // Add ellipsis for gaps in pagination

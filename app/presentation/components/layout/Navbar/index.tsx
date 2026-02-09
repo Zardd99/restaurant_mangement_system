@@ -1,27 +1,12 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { useNavbarViewModel } from "./NavbarViewModel";
+import { useRef } from "react";
 import { NavbarProps } from "./types";
 import { useAuth } from "../../../../contexts/AuthContext";
 
-const Navbar = ({ onMenuToggle, isMenuOpen }: NavbarProps) => {
-  const { handleMenuToggle, handleClickOutside } = useNavbarViewModel(
-    onMenuToggle,
-    isMenuOpen,
-  );
-  const { user, logout } = useAuth();
-
+const Navbar = ({ user }: NavbarProps) => {
+  const { logout } = useAuth();
   const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleDocumentClick = (event: MouseEvent) => {
-      handleClickOutside(event);
-    };
-
-    document.addEventListener("mousedown", handleDocumentClick);
-    return () => document.removeEventListener("mousedown", handleDocumentClick);
-  }, [handleClickOutside]);
 
   const getUserInitials = () => {
     if (!user?.name) return "U";
@@ -41,36 +26,17 @@ const Navbar = ({ onMenuToggle, isMenuOpen }: NavbarProps) => {
   return (
     <nav
       ref={containerRef}
-      className="fixed top-0 z-50 w-full bg-gradient-to-r from-gray-900 to-gray-950 shadow-xl border-b border-gray-800/50 backdrop-blur-sm"
+      className="fixed top-0 z-50 w-full bg-black shadow-xl border-b border-gray-800/50 backdrop-blur-sm"
     >
       <div className="px-4 h-16 flex items-center justify-between">
-        {/* Left section with hamburger and brand */}
+        {/* Left section with brand */}
         <div className="flex items-center space-x-4">
-          <button
-            data-hamburger
-            onClick={handleMenuToggle}
-            className="p-2 rounded-lg hover:bg-gray-800/50 transition-colors group"
-            aria-label="Toggle menu"
-          >
-            <div className="w-6 h-5 flex flex-col justify-between">
-              <span
-                className={`block h-0.5 w-full bg-gray-300 transition-transform ${isMenuOpen ? "rotate-45 translate-y-2" : ""}`}
-              />
-              <span
-                className={`block h-0.5 w-full bg-gray-300 transition-opacity ${isMenuOpen ? "opacity-0" : ""}`}
-              />
-              <span
-                className={`block h-0.5 w-full bg-gray-300 transition-transform ${isMenuOpen ? "-rotate-45 -translate-y-2" : ""}`}
-              />
-            </div>
-          </button>
-
           <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+            <div className="w-8 h-8 bg-black rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-sm">RP</span>
             </div>
             <div>
-              <h1 className="text-white font-semibold text-lg bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+              <h1 className="text-white font-semibold text-lg">
                 Restaurant Pro
               </h1>
               <p className="text-gray-400 text-xs">Management System</p>
@@ -85,6 +51,7 @@ const Navbar = ({ onMenuToggle, isMenuOpen }: NavbarProps) => {
             onClick={() => {
               /* Add notification handler */
             }}
+            title="Notifications"
           >
             <svg
               className="w-5 h-5 text-gray-400"
@@ -105,7 +72,7 @@ const Navbar = ({ onMenuToggle, isMenuOpen }: NavbarProps) => {
           <div className="h-8 w-px bg-gray-700" />
 
           <div className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-800/50 transition-colors">
-            <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center">
+            <div className="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center">
               <span className="text-white font-bold text-sm">
                 {getUserInitials()}
               </span>
@@ -121,6 +88,7 @@ const Navbar = ({ onMenuToggle, isMenuOpen }: NavbarProps) => {
           <button
             onClick={logout}
             className="hidden md:flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-red-500/10 transition-colors text-red-400 hover:text-red-300"
+            title="Logout"
           >
             <svg
               className="w-4 h-4"

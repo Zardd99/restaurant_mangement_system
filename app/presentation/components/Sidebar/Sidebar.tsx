@@ -55,7 +55,8 @@ const Sidebar = forwardRef<HTMLDivElement, SidebarProps>((props, ref) => {
       <>
         {isOpens ? (
           <div
-            className="min-h-screen mt-18 w-72 fixed top-0 left-0 z-50 transition-all duration-300 ease-in-out bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 backdrop-blur-xl border-r border-slate-700/50 shadow-2xl"
+            onMouseLeave={() => handleToggles()}
+            className="min-h-screen mt-18 w-72 fixed top-0 left-0 z-50 transition-all duration-300 ease-in-out bg-black border-r border-gray-700/50 shadow-2xl"
             ref={ref}
           >
             {/* Header */}
@@ -212,7 +213,7 @@ const Sidebar = forwardRef<HTMLDivElement, SidebarProps>((props, ref) => {
                           key={item.text}
                           className={`group flex items-center space-x-3 px-3 py-3 rounded-xl transition-all duration-200 hover:bg-slate-700/50 active:scale-95 ${
                             pathname === item.link
-                              ? "bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-white border-l-2 border-blue-500"
+                              ? "bg-gray-700 bg-opacity-30 text-white border-l-2 border-white"
                               : "text-slate-200 hover:text-white"
                           }`}
                         >
@@ -244,7 +245,7 @@ const Sidebar = forwardRef<HTMLDivElement, SidebarProps>((props, ref) => {
             {/* Footer */}
             <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-slate-700/30 bg-slate-900/50 backdrop-blur">
               <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-gradient-to-r from-green-400 to-blue-500 rounded-full flex items-center justify-center">
+                <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
                   <span className="text-white text-xs font-bold">
                     {user?.name?.charAt(0).toUpperCase() || "U"}
                   </span>

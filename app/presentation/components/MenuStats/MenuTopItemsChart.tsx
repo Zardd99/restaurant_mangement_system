@@ -49,7 +49,7 @@ const MenuTopItemsChart: React.FC<Props> = ({ orders, maxItems = 10 }) => {
             <div className="w-36 text-sm text-gray-700 truncate">{t.name}</div>
             <div className="flex-1 h-6 bg-gray-100 rounded-full overflow-hidden">
               <div
-                className="h-6 bg-gradient-to-r from-indigo-500 to-purple-500"
+                className="h-6 bg-gray-400"
                 style={{ width: `${(t.qty / maxQty) * 100}%` }}
               />
             </div>

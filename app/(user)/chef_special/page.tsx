@@ -244,7 +244,7 @@ const Menu = () => {
                 key={i}
                 className="bg-white rounded-2xl shadow-md overflow-hidden border border-gray-100"
               >
-                <div className="h-56 bg-gradient-to-r from-gray-200 to-gray-300 animate-pulse"></div>
+                <div className="h-56 bg-gray-300 animate-pulse"></div>
                 <div className="p-6">
                   <div className="h-6 bg-gray-200 rounded-full w-3/4 mb-4"></div>
                   <div className="h-4 bg-gray-200 rounded-full w-1/4 mb-4"></div>
@@ -329,7 +329,7 @@ const Menu = () => {
             </p>
           </div>
           <Link href="/user_interface">
-            <div className="bg-gradient-to-r from-amber-500 to-orange-500 text-white px-6 py-3 rounded-full text-sm font-semibold shadow-md hover:shadow-lg transition-shadow">
+            <div className="bg-red-600 text-white px-6 py-3 rounded-full text-sm font-semibold shadow-md hover:shadow-lg transition-shadow">
               Menus
             </div>
           </Link>
@@ -531,7 +531,7 @@ const Menu = () => {
               >
                 {/* special badge */}
                 {item.chefSpecial && (
-                  <div className="absolute top-4 right-4 bg-gradient-to-r from-amber-500 to-orange-500 text-white px-3 py-1.5 rounded-full text-xs font-semibold shadow-md z-10">
+                  <div className="absolute top-4 right-4 bg-red-600 text-white px-3 py-1.5 rounded-full text-xs font-semibold shadow-md z-10">
                     Chefs Special
                   </div>
                 )}
