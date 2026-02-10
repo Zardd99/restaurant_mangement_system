@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../../../contexts/AuthContext";
 import { APIIngredientRepository } from "../../../infrastructure/repositories/APIIngredientRepository";
-import { MenuItemViewModel } from "../../../presentation/viewModels/MenuItemViewModel";
+import { createEmailJSNotificationService } from "../../../services/emailjsNotificationService";
+import { checkEmailJSConfig } from "../../../utils/emailjsConfig";
 
 interface IngredientStock {
   id: string;
@@ -33,6 +34,15 @@ export const IngredientStockDashboard: React.FC = () => {
   );
   const [filter, setFilter] = useState<"all" | "low" | "critical">("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const [emailService] = useState(() => createEmailJSNotificationService());
+  const [emailStatus, setEmailStatus] = useState<{
+    lastSent: Date | null;
+    success: boolean;
+    message?: string;
+  }>({
+    lastSent: null,
+    success: false,
+  });
 
   useEffect(() => {
     if (token) {
@@ -54,7 +64,6 @@ export const IngredientStockDashboard: React.FC = () => {
         token,
       );
 
-      // Get dashboard data
       const dashboardResult = await repo.getDashboardData();
 
       if (!dashboardResult.ok) {
@@ -65,25 +74,54 @@ export const IngredientStockDashboard: React.FC = () => {
 
       const dashboardData = dashboardResult.value;
 
-      // Check if data is valid
-      if (
-        !dashboardData ||
-        !dashboardData.inventory ||
-        !Array.isArray(dashboardData.inventory.ingredients)
-      ) {
-        console.error("Invalid dashboard data structure:", dashboardData);
-        // Use empty array as fallback
+      if (!dashboardData?.inventory?.ingredients) {
         setIngredients([]);
         return;
       }
 
-      setIngredients(dashboardData.inventory.ingredients);
+      const newIngredients = dashboardData.inventory.ingredients;
+      setIngredients(newIngredients);
+
+      // Send email alerts if there are low stock items
+      const config = checkEmailJSConfig();
+      if (config.isConfigured && config.managerEmail) {
+        const lowStockItems = newIngredients.filter(
+          (ing) => ing.isLowStock || ing.needsReorder,
+        );
+
+        if (lowStockItems.length > 0) {
+          const alerts = lowStockItems.map((ing) => ({
+            ingredientId: ing.id,
+            ingredientName: ing.name,
+            currentStock: ing.currentStock,
+            minStock: ing.minStock,
+            unit: ing.unit,
+            reorderPoint: ing.reorderPoint,
+            costPerUnit: ing.costPerUnit,
+          }));
+
+          const result = await emailService.sendLowStockAlert(alerts);
+
+          setEmailStatus({
+            lastSent: new Date(),
+            success: result,
+            message: result
+              ? "Low stock alert sent successfully"
+              : "Failed to send email alert",
+          });
+
+          if (result) {
+            console.log("Low stock email notification sent");
+          } else {
+            console.warn("Failed to send email notification");
+          }
+        }
+      }
     } catch (err) {
       console.error("Failed to fetch ingredients:", err);
       setError(
         err instanceof Error ? err.message : "Failed to load ingredient data",
       );
-      // Set empty ingredients on error
       setIngredients([]);
     } finally {
       setLoading(false);
@@ -91,7 +129,6 @@ export const IngredientStockDashboard: React.FC = () => {
   };
 
   const filteredIngredients = ingredients.filter((ingredient) => {
-    // Apply search filter
     if (
       searchTerm &&
       !ingredient.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -99,7 +136,6 @@ export const IngredientStockDashboard: React.FC = () => {
       return false;
     }
 
-    // Apply stock status filter
     switch (filter) {
       case "low":
         return ingredient.isLowStock;
@@ -145,13 +181,6 @@ export const IngredientStockDashboard: React.FC = () => {
         throw new Error(reorderResult.error || "Failed to place reorder");
       }
 
-      // Show success message
-      console.log(
-        "Reorder placed successfully:",
-        reorderResult.value.reorderId,
-      );
-
-      // Refresh data
       await fetchIngredientStock();
     } catch (err) {
       console.error("Failed to reorder:", err);
@@ -163,8 +192,6 @@ export const IngredientStockDashboard: React.FC = () => {
     if (!token) return;
 
     try {
-      // In a real implementation, you would open a modal or form
-      // For now, let's simulate updating to a fixed value
       const newStock = prompt(
         `Enter new stock level for ingredient ${ingredientId}:`,
         "100",
@@ -192,10 +219,6 @@ export const IngredientStockDashboard: React.FC = () => {
       console.error("Failed to update stock:", err);
       setError(err instanceof Error ? err.message : "Update failed");
     }
-  };
-
-  const refreshData = async () => {
-    await fetchIngredientStock();
   };
 
   if (!token) {
