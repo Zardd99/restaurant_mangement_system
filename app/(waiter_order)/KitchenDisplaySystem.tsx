@@ -12,6 +12,7 @@ import { useOrders } from "../hooks/useOrders";
 import { useOrderWebSocket } from "../hooks/useOrderWebSocket";
 import { useInventoryDeduction } from "../hooks/useInventoryDeduction";
 import { AlertTriangle } from "lucide-react";
+import Link from "next/link";
 
 // Individual order wrapper that manages its own data
 const OrderCardWrapper = memo(
@@ -52,7 +53,7 @@ const KitchenDisplaySystem = () => {
   const [filter, setFilter] = useState<string>("all");
   const [isStatsPanelOpen, setIsStatsPanelOpen] = useState(false);
   const [showDeductionWarning, setShowDeductionWarning] = useState(false);
-  const [deductionWarning, setDeductionWarning] = useState("");   
+  const [deductionWarning, setDeductionWarning] = useState("");
   const [visibleOrders, setVisibleOrders] = useState<number>(12);
 
   const { orders, loading, error, fetchOrders } = useOrders(token, filter);
@@ -243,12 +244,20 @@ const KitchenDisplaySystem = () => {
       {/* Header with Stats Toggle */}
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Kitchen Orders</h1>
-        <button
-          onClick={handleStatsPanelOpen}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-        >
-          📊 View Analytics
-        </button>
+        <div className="flex gap-2">
+          <Link
+            href="/analytics"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center"
+          >
+            📊 Full Analytics
+          </Link>
+          <button
+            onClick={handleStatsPanelOpen}
+            className="bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+          >
+            📈 Quick Stats
+          </button>
+        </div>
       </div>
 
       <FilterButtons filter={filter} setFilter={handleFilterChange} />
@@ -294,7 +303,7 @@ const KitchenDisplaySystem = () => {
         </>
       )}
 
-      {/* Stats Panel */}
+      {/* Stats Panel Modal */}
       <KitchenStatsPanel
         isOpen={isStatsPanelOpen}
         onClose={handleStatsPanelClose}

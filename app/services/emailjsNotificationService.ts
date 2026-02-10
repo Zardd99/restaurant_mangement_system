@@ -58,7 +58,6 @@ export class EmailJSNotificationService {
         alert.currentStock <= alert.minStock,
     );
 
-    // ✅ FIXED: Format lists as plain text strings (NOT arrays)
     const formatCriticalList = criticalAlerts
       .map(
         (alert, idx) =>
@@ -73,7 +72,6 @@ export class EmailJSNotificationService {
       )
       .join("\n");
 
-    // ✅ ONLY use simple string variables
     const templateParams = {
       to_name: this.config.managerName || "Inventory Manager",
       to_email: this.config.managerEmail,
@@ -93,7 +91,6 @@ export class EmailJSNotificationService {
         this.config.dashboardUrl ||
         "https://restaurant-mangement-system-seven.vercel.app/inventory/IngredientStockDashboard",
 
-      // ✅ Plain text lists (NOT arrays)
       critical_items_list: formatCriticalList || "None",
       low_items_list: formatLowList || "None",
     };
@@ -134,7 +131,6 @@ export class EmailJSNotificationService {
       return false;
     }
 
-    // ✅ Test with same format as real data
     const testParams = {
       to_name: this.config.managerName || "Test User",
       to_email: this.config.managerEmail,
@@ -154,7 +150,6 @@ export class EmailJSNotificationService {
         this.config.dashboardUrl ||
         "https://restaurant-mangement-system-seven.vercel.app/inventory/IngredientStockDashboard",
 
-      // ✅ Plain text lists
       critical_items_list:
         "1. Tomatoes: 5kg (Min: 20kg, Reorder: 10kg) - $2.50/kg",
       low_items_list:
