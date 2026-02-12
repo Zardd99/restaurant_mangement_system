@@ -51,7 +51,7 @@ const AnalyticsPage = () => {
   // Handle closing the stats panel (not used in full page, but kept for consistency)
   const handleStatsPanelClose = useCallback(() => {
     // In full page view, redirect back to kitchen
-    window.location.href = "/kitchen";
+    window.location.href = "/waiter_order";
   }, []);
 
   // Handle time range change
