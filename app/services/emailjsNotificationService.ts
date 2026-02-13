@@ -1,5 +1,16 @@
+// ============================================================================
+// Third-Party Libraries
+// ============================================================================
 import emailjs from "@emailjs/browser";
 
+// ============================================================================
+// Types & Interfaces – Email Notifications
+// ============================================================================
+
+/**
+ * Represents a low‑stock alert for a single ingredient.
+ * Used to populate both email templates and internal alerting logic.
+ */
 export interface LowStockAlert {
   ingredientId: string;
   ingredientName: string;
@@ -10,24 +21,57 @@ export interface LowStockAlert {
   costPerUnit: number;
 }
 
+/**
+ * Configuration object required to initialise and use EmailJS.
+ * All values should be obtained from environment variables.
+ */
 export interface EmailJSConfig {
+  /** EmailJS service ID (from the EmailJS dashboard). */
   serviceId: string;
+  /** EmailJS template ID (e.g., "low_stock_alert"). */
   templateId: string;
+  /** EmailJS public key (used to initialise the client). */
   publicKey: string;
+  /** Email address of the inventory manager (recipient). */
   managerEmail: string;
+  /** Optional display name for the recipient. */
   managerName?: string;
+  /** Optional URL to the inventory dashboard (included in alerts). */
   dashboardUrl?: string;
 }
 
+// ============================================================================
+// EmailJS Notification Service
+// ============================================================================
+
+/**
+ * EmailJSNotificationService – Handles sending email notifications for
+ * inventory events (low stock alerts, reorder confirmations, test emails).
+ *
+ * - Encapsulates all EmailJS configuration and initialisation.
+ * - Provides methods to send low‑stock summaries, test messages, and reorder confirmations.
+ * - Gracefully degrades on server‑side (returns mock) or when configuration is incomplete.
+ *
+ * @class
+ */
 export class EmailJSNotificationService {
   private config: EmailJSConfig;
   private isInitialized: boolean = false;
 
+  /**
+   * Creates an instance of EmailJSNotificationService.
+   * Automatically calls `initialize()` to set up the EmailJS client.
+   * @param config - Validated EmailJS configuration object.
+   */
   constructor(config: EmailJSConfig) {
     this.config = config;
     this.initialize();
   }
 
+  /**
+   * Initialises the EmailJS client with the public key.
+   * Only runs on the client side (window defined).
+   */
   private initialize(): void {
     if (typeof window !== "undefined" && this.config.publicKey) {
       emailjs.init(this.config.publicKey);
@@ -35,8 +79,17 @@ export class EmailJSNotificationService {
     }
   }
 
+  // --------------------------------------------------------------------------
+  // Public API – Email Sending
+  // --------------------------------------------------------------------------
+
   /**
-   * Send low stock alert email to inventory manager
+   * Sends a low‑stock alert email to the inventory manager.
+   * Alerts are grouped into two categories: critical (at or below reorder point)
+   * and low (above reorder point but at or below minimum stock).
+   *
+   * @param alerts - Array of low‑stock alerts to include in the email.
+   * @returns Promise<boolean> – True if the email was sent successfully, false otherwise.
    */
   async sendLowStockAlert(alerts: LowStockAlert[]): Promise<boolean> {
     if (!this.isInitialized) {
@@ -58,17 +111,22 @@ export class EmailJSNotificationService {
         alert.currentStock <= alert.minStock,
     );
 
+    // Format bullet lists for the email body
     const formatCriticalList = criticalAlerts
       .map(
         (alert, idx) =>
-          `${idx + 1}. ${alert.ingredientName}: ${alert.currentStock}${alert.unit} (Min: ${alert.minStock}${alert.unit}, Reorder: ${alert.reorderPoint}${alert.unit}) - $${alert.costPerUnit.toFixed(2)}/${alert.unit}`,
+          `${idx + 1}. ${alert.ingredientName}: ${alert.currentStock}${alert.unit} ` +
+          `(Min: ${alert.minStock}${alert.unit}, Reorder: ${alert.reorderPoint}${alert.unit}) - ` +
+          `$${alert.costPerUnit.toFixed(2)}/${alert.unit}`,
       )
       .join("\n");
 
     const formatLowList = lowAlerts
       .map(
         (alert, idx) =>
-          `${idx + 1}. ${alert.ingredientName}: ${alert.currentStock}${alert.unit} (Min: ${alert.minStock}${alert.unit}) - $${alert.costPerUnit.toFixed(2)}/${alert.unit}`,
+          `${idx + 1}. ${alert.ingredientName}: ${alert.currentStock}${alert.unit} ` +
+          `(Min: ${alert.minStock}${alert.unit}) - ` +
+          `$${alert.costPerUnit.toFixed(2)}/${alert.unit}`,
       )
       .join("\n");
 
@@ -109,7 +167,7 @@ export class EmailJSNotificationService {
     } catch (error) {
       console.error("Failed to send email:", error);
 
-      // Log specific error details
+      // Log specific error details for debugging
       if (error instanceof Error) {
         console.error("Error details:", {
           message: error.message,
@@ -123,7 +181,10 @@ export class EmailJSNotificationService {
   }
 
   /**
-   * Send test email to verify configuration
+   * Sends a test email to verify the EmailJS configuration.
+   * Uses predefined dummy data to fill the template.
+   *
+   * @returns Promise<boolean> – True if the test email was sent successfully.
    */
   async sendTestEmail(): Promise<boolean> {
     if (!this.isInitialized) {
@@ -174,7 +235,14 @@ export class EmailJSNotificationService {
   }
 
   /**
-   * Send reorder confirmation email
+   * Sends a reorder confirmation email after a purchase order is created.
+   *
+   * @param ingredientName - Name of the ingredient being reordered.
+   * @param reorderId     - Unique identifier of the reorder transaction.
+   * @param quantity      - Amount ordered.
+   * @param estimatedCost - Estimated total cost of the order.
+   * @param supplier      - Optional supplier name (defaults to "Default Supplier").
+   * @returns Promise<boolean> – True if the email was sent successfully.
    */
   async sendReorderConfirmation(
     ingredientName: string,
@@ -210,7 +278,7 @@ export class EmailJSNotificationService {
     try {
       await emailjs.send(
         this.config.serviceId,
-        "reorder_confirmation", // You'll need to create this template
+        "reorder_confirmation", // You must create this template in EmailJS
         templateParams,
       );
       console.log("Reorder confirmation email sent");
@@ -222,11 +290,23 @@ export class EmailJSNotificationService {
   }
 }
 
-// Factory function to create the service
+// ============================================================================
+// Factory Function
+// ============================================================================
+
+/**
+ * Creates and configures an EmailJSNotificationService instance.
+ * - On the server side (window undefined), returns a mock service that
+ *   always reports success (prevents runtime errors during SSR).
+ * - On the client side, reads configuration from environment variables
+ *   and validates them. Logs warnings if any required variable is missing.
+ *
+ * @returns {EmailJSNotificationService} A fully configured service (or mock for SSR).
+ */
 export const createEmailJSNotificationService =
   (): EmailJSNotificationService => {
+    // Server‑side rendering – return a mock object that satisfies the interface
     if (typeof window === "undefined") {
-      // Return a mock service for server-side rendering
       return {
         sendLowStockAlert: async () => true,
         sendTestEmail: async () => true,
@@ -247,7 +327,7 @@ export const createEmailJSNotificationService =
         "https://restaurant-mangement-system-seven.vercel.app/inventory/IngredientStockDashboard",
     };
 
-    // Validate configuration
+    // Validate that all required configuration keys are present
     const isValidConfig =
       config.serviceId &&
       config.templateId &&

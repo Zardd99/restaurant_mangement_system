@@ -1,5 +1,19 @@
 "use client";
 
+/**
+ * =============================================================================
+ * MENU PAGE – CHEF'S SPECIALS
+ * =============================================================================
+ * Displays a curated list of menu items with real-time promotions,
+ * dietary filtering, and dynamic sorting. Integrated with search context
+ * and protected by authentication.
+ *
+ * @module Menu
+ */
+
+// -----------------------------------------------------------------------------
+// IMPORTS
+// -----------------------------------------------------------------------------
 import { useState, useEffect, useMemo } from "react";
 import { ProtectedRoute } from "../../presentation/components/ProtectedRoute/ProtectedRoute";
 import MenuItemCard from "../../presentation/components/MenuItemCard/MenuItemCard";
@@ -7,6 +21,14 @@ import Link from "next/link";
 import { useSearch } from "../../contexts/SearchContext";
 import { useAuth } from "../../contexts/AuthContext";
 
+// -----------------------------------------------------------------------------
+// TYPES & INTERFACES
+// -----------------------------------------------------------------------------
+
+/**
+ * Raw menu item entity as returned from the backend.
+ * After enrichment, `effectivePrice` and `appliedPromotion` are added.
+ */
 interface MenuItem {
   _id: string;
   name: string;
@@ -22,6 +44,7 @@ interface MenuItem {
   reviewCount: number;
   createdAt: string;
   updatedAt: string;
+  // Enriched fields (added client-side)
   effectivePrice?: number;
   originalPrice?: number;
   appliedPromotion?: {
@@ -33,6 +56,9 @@ interface MenuItem {
   } | null;
 }
 
+/**
+ * Active promotion applicable to one or more menu items.
+ */
 interface Promotion {
   _id: string;
   name: string;
@@ -45,29 +71,67 @@ interface Promotion {
   isActive: boolean;
 }
 
+// -----------------------------------------------------------------------------
+// COMPONENT: Menu
+// -----------------------------------------------------------------------------
 const Menu = () => {
+  // ===========================================================================
+  // STATE DECLARATIONS
+  // ===========================================================================
+
+  /** Raw menu items fetched from the API (before enrichment). */
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+
+  /** Filtered subset of menuItems according to activeFilter. */
   const [filteredItems, setFilteredItems] = useState<MenuItem[]>([]);
+
+  /** List of currently active promotions. */
   const [promotions, setPromotions] = useState<Promotion[]>([]);
+
+  /** Loading state during initial data fetch. */
   const [loading, setLoading] = useState(true);
+
+  /** Holds any error encountered during API calls. */
   const [error, setError] = useState<string | null>(null);
+
+  /** Currently selected filter: all, trending, best, vegetarian, vegan, discounted. */
   const [activeFilter, setActiveFilter] = useState("all");
+
+  // ===========================================================================
+  // CONTEXT HOOKS
+  // ===========================================================================
   const { searchQuery } = useSearch();
   const { token } = useAuth();
 
+  // ===========================================================================
+  // CONSTANTS
+  // ===========================================================================
   const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-  // Helper function to enrich menu items with promotion data
+  // ===========================================================================
+  // PURE HELPER FUNCTIONS
+  // ===========================================================================
+
+  /**
+   * Enriches menu items with calculated effective prices and promotion details.
+   * This is a pure function – does not mutate inputs.
+   *
+   * @param items - Raw menu items.
+   * @param promos - List of active promotions.
+   * @returns Enriched menu items with `effectivePrice` and `appliedPromotion`.
+   */
   const enrichMenuItemsWithPromotions = (
     items: MenuItem[],
     promos: Promotion[],
   ): MenuItem[] => {
     return items.map((item) => {
+      // Find the first active promotion that applies to this item
       const appliedPromo = promos.find(
         (promo) =>
           promo.isActive && promo.applicableMenuItems.includes(item._id),
       );
 
+      // No applicable promotion → return item with original price
       if (!appliedPromo) {
         return {
           ...item,
@@ -79,6 +143,7 @@ const Menu = () => {
       let effectivePrice = item.price;
       let discountAmount = 0;
 
+      // Calculate discount based on type
       if (appliedPromo.discountType === "percentage") {
         discountAmount = item.price * (appliedPromo.discountValue / 100);
         effectivePrice = item.price - discountAmount;
@@ -101,13 +166,21 @@ const Menu = () => {
     });
   };
 
+  // ===========================================================================
+  // DATA FETCHING (SIDE EFFECTS)
+  // ===========================================================================
+
+  /**
+   * Main data fetcher – retrieves menu items and active promotions,
+   * then enriches the items with promotion data.
+   */
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
         setError(null);
 
-        // Fetch menu items
+        // 1. Fetch Chef's Special menu items (optionally filtered by search)
         let url = `${API_URL}/api/menu?chefSpecial=true`;
         if (searchQuery) {
           url += `&search=${encodeURIComponent(searchQuery)}`;
@@ -118,7 +191,7 @@ const Menu = () => {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
-            "ngrok-skip-browser-warning": "true",
+            "ngrok-skip-browser-warning": "true", // Bypass ngrok interstitial
           },
         });
 
@@ -133,7 +206,7 @@ const Menu = () => {
           throw new Error("Invalid response format from API");
         }
 
-        // Fetch active promotions
+        // 2. Fetch active promotions (optional – may fail gracefully)
         const promotionResponse = await fetch(
           `${API_URL}/api/promotions/active`,
           {
@@ -154,7 +227,7 @@ const Menu = () => {
 
         setPromotions(promos);
 
-        // Enrich items with promotion data
+        // 3. Enrich items and update state
         const enrichedItems = enrichMenuItemsWithPromotions(items, promos);
         setMenuItems(enrichedItems);
         setFilteredItems(enrichedItems);
@@ -169,7 +242,14 @@ const Menu = () => {
     fetchData();
   }, [API_URL, searchQuery, token]);
 
-  // Filter items based on active filter
+  // ===========================================================================
+  // FILTERING LOGIC (SIDE EFFECT)
+  // ===========================================================================
+
+  /**
+   * Re‑computes the filtered item list whenever the active filter
+   * or the underlying menu items change.
+   */
   useEffect(() => {
     let filtered = [...menuItems];
 
@@ -200,9 +280,24 @@ const Menu = () => {
     setFilteredItems(filtered);
   }, [activeFilter, menuItems]);
 
-  // Filter buttons component
+  // ===========================================================================
+  // DERIVED DATA (COMPUTED ON EVERY RENDER)
+  // ===========================================================================
+
+  /** Number of items currently discounted. */
+  const discountedItems = menuItems.filter((item) => item.appliedPromotion);
+
+  // ===========================================================================
+  // RENDER HELPERS
+  // ===========================================================================
+
+  /**
+   * Filter button group – encapsulated here to keep the main render clean.
+   * Uses local state setter `setActiveFilter` and current `activeFilter`.
+   */
   const FilterButtons = () => (
     <div className="flex flex-wrap gap-3 mb-10">
+      {/* All Items */}
       <button
         onClick={() => setActiveFilter("all")}
         className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 ${
@@ -228,6 +323,8 @@ const Menu = () => {
           All Items
         </div>
       </button>
+
+      {/* Trending Now */}
       <button
         onClick={() => setActiveFilter("trending")}
         className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 ${
@@ -253,6 +350,8 @@ const Menu = () => {
           Trending Now
         </div>
       </button>
+
+      {/* Best Rated */}
       <button
         onClick={() => setActiveFilter("best")}
         className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 ${
@@ -278,6 +377,8 @@ const Menu = () => {
           Best Rated
         </div>
       </button>
+
+      {/* Vegetarian */}
       <button
         onClick={() => setActiveFilter("vegetarian")}
         className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 ${
@@ -303,6 +404,8 @@ const Menu = () => {
           Vegetarian
         </div>
       </button>
+
+      {/* Vegan */}
       <button
         onClick={() => setActiveFilter("vegan")}
         className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 ${
@@ -328,6 +431,8 @@ const Menu = () => {
           Vegan
         </div>
       </button>
+
+      {/* On Sale */}
       <button
         onClick={() => setActiveFilter("discounted")}
         className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 ${
@@ -356,17 +461,26 @@ const Menu = () => {
     </div>
   );
 
-  // Loading state UI
+  // ===========================================================================
+  // CONDITIONAL RENDERING (GUARD CLAUSES)
+  // ===========================================================================
+
+  // ---- Loading State ----
   if (loading) {
     return (
       <ProtectedRoute>
         <div className="min-h-screen bg-gray-50 pt-24">
           <div className="container mx-auto px-4 py-8 max-w-7xl">
+            {/* Skeleton header */}
             <div className="mb-10">
               <div className="h-8 bg-gray-200 rounded-xl w-64 mb-4 animate-pulse"></div>
               <div className="h-4 bg-gray-200 rounded-xl w-96 animate-pulse"></div>
             </div>
+
+            {/* Skeleton filter buttons (same layout) */}
             <FilterButtons />
+
+            {/* Skeleton menu cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {[...Array(6)].map((_, i) => (
                 <div
@@ -392,7 +506,7 @@ const Menu = () => {
     );
   }
 
-  // Error state UI
+  // ---- Error State ----
   if (error) {
     return (
       <ProtectedRoute>
@@ -431,14 +545,16 @@ const Menu = () => {
     );
   }
 
-  // Calculate discount stats
-  const discountedItems = menuItems.filter((item) => item.appliedPromotion);
-
+  // ===========================================================================
+  // MAIN RENDER
+  // ===========================================================================
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-gray-50 pt-24">
         <div className="container mx-auto px-4 py-8 max-w-7xl">
-          {/* Header Section */}
+          {/* ----------------------------------------------------------------- */}
+          {/* HEADER SECTION – Title, CTA, Stats Bar                           */}
+          {/* ----------------------------------------------------------------- */}
           <div className="mb-12">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-8">
               <div>
@@ -471,7 +587,7 @@ const Menu = () => {
               </Link>
             </div>
 
-            {/* Stats Bar */}
+            {/* Quick Stats */}
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-10">
               <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
                 <div className="text-2xl font-bold text-gray-900">
@@ -505,10 +621,13 @@ const Menu = () => {
               </div>
             </div>
 
+            {/* Filter Buttons */}
             <FilterButtons />
           </div>
 
-          {/* Special Offers Section */}
+          {/* ----------------------------------------------------------------- */}
+          {/* SPECIAL OFFERS SECTION (conditional)                             */}
+          {/* ----------------------------------------------------------------- */}
           {discountedItems.length > 0 &&
             (activeFilter === "all" || activeFilter === "discounted") && (
               <section className="mb-12">
@@ -553,7 +672,9 @@ const Menu = () => {
               </section>
             )}
 
-          {/* Featured Sections */}
+          {/* ----------------------------------------------------------------- */}
+          {/* TRENDING NOW SECTION (conditional)                               */}
+          {/* ----------------------------------------------------------------- */}
           {(activeFilter === "all" || activeFilter === "trending") &&
             menuItems.filter((item) => item.reviewCount > 10).length > 0 && (
               <section className="mb-12">
@@ -602,7 +723,9 @@ const Menu = () => {
               </section>
             )}
 
-          {/* Main Menu Grid */}
+          {/* ----------------------------------------------------------------- */}
+          {/* MAIN MENU GRID – Filtered Items                                  */}
+          {/* ----------------------------------------------------------------- */}
           <section className="mb-12">
             <div className="flex justify-between items-center mb-8">
               <h2 className="text-2xl font-bold text-gray-900">
@@ -662,7 +785,9 @@ const Menu = () => {
             )}
           </section>
 
-          {/* CTA Section */}
+          {/* ----------------------------------------------------------------- */}
+          {/* CALL TO ACTION – Full Menu                                       */}
+          {/* ----------------------------------------------------------------- */}
           <div className="bg-indigo-600 rounded-3xl p-8 md:p-12 text-white shadow-xl">
             <div className="flex flex-col md:flex-row items-center justify-between gap-8">
               <div>

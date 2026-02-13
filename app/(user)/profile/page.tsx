@@ -1,26 +1,94 @@
 "use client";
 
+// ============================================================================
+// Third-Party Libraries
+// ============================================================================
 import React, { useState, useEffect } from "react";
-import { useAuth } from "../../contexts/AuthContext";
-import { useSocket } from "../../contexts/SocketContext"; // Import socket context
 import axios from "axios";
-import { User } from "../../contexts/AuthContext";
 
+// ============================================================================
+// Application Contexts and Types
+// ============================================================================
+import { useAuth, User } from "../../contexts/AuthContext";
+import { useSocket } from "../../contexts/SocketContext";
+
+// ============================================================================
+// Type Definitions (Internal)
+// ============================================================================
+
+/** Form state for editable user profile fields. */
+interface EditProfileForm {
+  name: string;
+  email: string;
+  phone: string;
+}
+
+/** Status message displayed after profile update attempt. */
+interface UpdateStatus {
+  type: "success" | "error" | "";
+  message: string;
+}
+
+/** Structure of error response from Axios. */
+interface AxiosErrorWithResponse {
+  response?: {
+    data?: {
+      message?: string;
+    };
+  };
+}
+
+// ============================================================================
+// UserProfile Component
+// ============================================================================
+
+/**
+ * UserProfile – Displays and allows editing of the authenticated user's profile.
+ * - Shows user details, role, account status, and member since date.
+ * - Supports real-time profile and online status updates via Socket.IO.
+ * - Falls back to polling when socket connection is unavailable.
+ * - Includes an edit mode for modifying name, email, and phone.
+ *
+ * @component
+ * @returns {JSX.Element} The rendered user profile page.
+ */
 const UserProfile: React.FC = () => {
+  // --------------------------------------------------------------------------
+  // Hooks & Context
+  // --------------------------------------------------------------------------
   const { user, token, updateUser } = useAuth();
-  const { socket, isConnected } = useSocket(); // Get socket instance
-  const [isEditing, setIsEditing] = useState(false);
-  const [editData, setEditData] = useState({
+  const { socket, isConnected } = useSocket();
+
+  // --------------------------------------------------------------------------
+  // Local State
+  // --------------------------------------------------------------------------
+  /** Controls whether the form is in edit mode. */
+  const [isEditing, setIsEditing] = useState<boolean>(false);
+
+  /** Form data for editable fields, initialised from the current user. */
+  const [editData, setEditData] = useState<EditProfileForm>({
     name: user?.name || "",
     email: user?.email || "",
     phone: user?.phone || "",
   });
-  const [updateStatus, setUpdateStatus] = useState<{
-    type: "success" | "error" | "";
-    message: string;
-  }>({ type: "", message: "" });
-  const [isOnline, setIsOnline] = useState(true); // Track online status
 
+  /** Status message for update feedback (success/error). */
+  const [updateStatus, setUpdateStatus] = useState<UpdateStatus>({
+    type: "",
+    message: "",
+  });
+
+  /** Current online status of the user (real-time if socket connected). */
+  const [isOnline, setIsOnline] = useState<boolean>(true);
+
+  // --------------------------------------------------------------------------
+  // Effects – Data Synchronisation
+  // --------------------------------------------------------------------------
+
+  /**
+   * Sync local edit form state with the user object when it changes.
+   * Also initialises the online status from user.isActive.
+   */
   useEffect(() => {
     if (user) {
       setEditData({
@@ -28,16 +96,20 @@ const UserProfile: React.FC = () => {
         email: user.email,
         phone: user.phone || "",
       });
-      // Set initial online status based on user data
       setIsOnline(user.isActive);
     }
   }, [user]);
 
-  // Socket.io real-time updates
+  /**
+   * Socket.IO real-time event listeners.
+   * - Joins a private room for this user.
+   * - Listens for status and profile updates broadcasted from the server.
+   * - Emits online status on mount and offline on unmount.
+   */
   useEffect(() => {
     if (!socket || !user) return;
 
-    // Listen for user status updates
+    // ----- Event Handlers -----
     const handleUserStatusUpdate = (updatedUser: User) => {
       if (updatedUser._id === user._id) {
         updateUser(updatedUser);
@@ -46,7 +118,6 @@ const UserProfile: React.FC = () => {
       }
     };
 
-    // Listen for user profile updates
     const handleUserProfileUpdate = (updatedUser: User) => {
       if (updatedUser._id === user._id) {
         updateUser(updatedUser);
@@ -54,10 +125,10 @@ const UserProfile: React.FC = () => {
       }
     };
 
-    // Join user-specific room for real-time updates
+    // ----- Join user-specific room -----
     socket.emit("join_user_room", user._id);
 
-    // Set up event listeners
+    // ----- Register listeners -----
     socket.on("user_status_updated", handleUserStatusUpdate);
     socket.on("user_profile_updated", handleUserProfileUpdate);
     socket.on("user_online", (userId: string) => {
@@ -73,22 +144,24 @@ const UserProfile: React.FC = () => {
       }
     });
 
-    // Emit user online status when component mounts
+    // ----- Announce online status -----
     socket.emit("user_online", user._id);
 
+    // ----- Cleanup on unmount -----
     return () => {
-      // Clean up event listeners
       socket.off("user_status_updated", handleUserStatusUpdate);
       socket.off("user_profile_updated", handleUserProfileUpdate);
       socket.off("user_online");
       socket.off("user_offline");
-
-      // Emit user offline status when component unmounts
       socket.emit("user_offline", user._id);
     };
   }, [socket, user, updateUser]);
 
-  // Fallback polling (only if socket is not connected)
+  /**
+   * Fallback polling mechanism.
+   * Only active when socket is **not** connected.
+   * Fetches the latest user data every 30 seconds.
+   */
   useEffect(() => {
     if (!user || isConnected) return;
 
@@ -110,11 +183,25 @@ const UserProfile: React.FC = () => {
     return () => clearInterval(interval);
   }, [user, token, updateUser, isConnected]);
 
+  // --------------------------------------------------------------------------
+  // Event Handlers
+  // --------------------------------------------------------------------------
+
+  /**
+   * Updates the local edit form state when input fields change.
+   * @param {React.ChangeEvent<HTMLInputElement>} e - Input change event.
+   */
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setEditData((prev) => ({ ...prev, [name]: value }));
   };
 
+  /**
+   * Submits the updated profile data to the API.
+   * On success: updates the global user context, emits a socket event,
+   * shows a success message, and exits edit mode.
+   * On failure: shows an error message.
+   */
   const handleSave = async () => {
     try {
       const response = await axios.put(`/api/users/${user?._id}`, editData, {
@@ -128,34 +215,35 @@ const UserProfile: React.FC = () => {
           message: "Profile updated successfully!",
         });
 
-        // Emit profile update via socket
+        // Notify other clients about the profile update
         if (socket) {
           socket.emit("user_profile_update", response.data.user);
         }
       }
     } catch (error: unknown) {
-      const axiosError = error as {
-        response?: { data?: { message?: string } };
-      };
+      const axiosError = error as AxiosErrorWithResponse;
       setUpdateStatus({
         type: "error",
         message:
           axiosError.response?.data?.message || "Failed to update profile",
       });
     }
+
+    // Clear status message after 3 seconds
     setTimeout(() => setUpdateStatus({ type: "", message: "" }), 3000);
     setIsEditing(false);
   };
 
-  if (!user) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-gray-500">Please log in to view your profile</div>
-      </div>
-    );
-  }
+  // --------------------------------------------------------------------------
+  // Helper Functions
+  // --------------------------------------------------------------------------
 
-  const getRoleColor = (role: string) => {
+  /**
+   * Returns Tailwind CSS background and text color classes based on user role.
+   * @param {string} role - The user's role (admin, manager, chef, waiter, cashier, etc.).
+   * @returns {string} Space‑separated CSS classes.
+   */
+  const getRoleColor = (role: string): string => {
     switch (role) {
       case "admin":
         return "bg-red-100 text-red-800";
@@ -172,13 +260,27 @@ const UserProfile: React.FC = () => {
     }
   };
 
-  // Use real-time online status or fallback to user.isActive
+  // --------------------------------------------------------------------------
+  // Conditional Rendering (No User)
+  // --------------------------------------------------------------------------
+  if (!user) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-gray-500">Please log in to view your profile</div>
+      </div>
+    );
+  }
+
+  // Use real-time online status if available, otherwise fallback to user.isActive
   const displayStatus = isOnline;
 
+  // --------------------------------------------------------------------------
+  // Main Render
+  // --------------------------------------------------------------------------
   return (
     <div className="min-h-screen bg-white py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
-        {/* Connection Status Indicator */}
+        {/* -------------------- Connection Status Indicator -------------------- */}
         <div className="mb-4 flex items-center justify-end">
           <div
             className={`flex items-center text-sm ${
@@ -194,6 +296,7 @@ const UserProfile: React.FC = () => {
           </div>
         </div>
 
+        {/* -------------------- Main Profile Card -------------------- */}
         <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
           {/* Profile Header */}
           <div className="bg-black p-8 text-white">
@@ -245,6 +348,7 @@ const UserProfile: React.FC = () => {
 
           {/* Profile Content */}
           <div className="p-8">
+            {/* Update Status Banner */}
             {updateStatus.type && (
               <div
                 className={`mb-6 p-4 rounded-lg ${
@@ -262,6 +366,7 @@ const UserProfile: React.FC = () => {
             </h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Email */}
               <div>
                 <label className="block text-sm font-medium text-gray-600 mb-1">
                   Email Address
@@ -281,6 +386,7 @@ const UserProfile: React.FC = () => {
                 )}
               </div>
 
+              {/* Phone Number */}
               <div>
                 <label className="block text-sm font-medium text-gray-600 mb-1">
                   Phone Number
@@ -301,6 +407,7 @@ const UserProfile: React.FC = () => {
                 )}
               </div>
 
+              {/* User ID (read‑only) */}
               <div>
                 <label className="block text-sm font-medium text-gray-600 mb-1">
                   User ID
@@ -310,6 +417,7 @@ const UserProfile: React.FC = () => {
                 </p>
               </div>
 
+              {/* Online Status */}
               <div>
                 <label className="block text-sm font-medium text-gray-600 mb-1">
                   Status
@@ -329,6 +437,7 @@ const UserProfile: React.FC = () => {
               </div>
             </div>
 
+            {/* Form Actions */}
             <div className="mt-8 pt-6 border-t border-gray-200 flex justify-end space-x-4">
               {isEditing ? (
                 <>
@@ -357,7 +466,7 @@ const UserProfile: React.FC = () => {
           </div>
         </div>
 
-        {/* Additional Info Card */}
+        {/* -------------------- Additional Info Card -------------------- */}
         <div className="mt-8 bg-white rounded-2xl shadow-xl p-6">
           <h2 className="text-xl font-semibold text-gray-800 mb-4">
             Account Details

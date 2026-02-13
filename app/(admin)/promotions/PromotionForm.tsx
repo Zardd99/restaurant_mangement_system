@@ -1,29 +1,55 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import axios, { AxiosRequestConfig } from "axios";
-import Cookies from "js-cookie";
+// ============================================================================
+// Third-Party Libraries
+// ============================================================================
+import { useState } from "react";
+
+// ============================================================================
+// Application Services
+// ============================================================================
 import { promotionApi } from "../../services/promotionApi";
 
+// ============================================================================
+// Types & Interfaces
+// ============================================================================
+
+/**
+ * Promotion data structure as stored in the backend.
+ * Used to pre-fill the form when editing an existing promotion.
+ */
+export interface Promotion {
+  _id: string;
+  name: string;
+  description: string;
+  discountType: "percentage" | "fixed";
+  discountValue: number;
+  appliesTo: "all" | "category" | "menuItem";
+  targetIds: string[];
+  startDate: string;
+  endDate: string;
+  isActive: boolean;
+  minimumOrderAmount?: number;
+  maxUsagePerCustomer?: number;
+}
+
+/**
+ * Props for the PromotionForm component.
+ */
 interface PromotionFormProps {
-  promotion?: {
-    _id: string;
-    name: string;
-    description: string;
-    discountType: "percentage" | "fixed";
-    discountValue: number;
-    appliesTo: "all" | "category" | "menuItem";
-    targetIds: string[];
-    startDate: string;
-    endDate: string;
-    isActive: boolean;
-    minimumOrderAmount?: number;
-    maxUsagePerCustomer?: number;
-  };
+  /** Existing promotion data (if editing) – undefined indicates create mode. */
+  promotion?: Promotion;
+  /** Callback invoked after successful creation or update. */
   onSuccess: () => void;
+  /** Callback invoked when user cancels the form. */
   onCancel: () => void;
 }
 
+/**
+ * Form state structure.
+ * All numeric fields are stored as strings to allow flexible input handling.
+ * Dates are stored in YYYY-MM-DD format.
+ */
 interface FormData {
   name: string;
   description: string;
@@ -38,11 +64,30 @@ interface FormData {
   maxUsagePerCustomer: string;
 }
 
+// ============================================================================
+// PromotionForm Component
+// ============================================================================
+
+/**
+ * PromotionForm – Renders a form for creating or editing a promotion.
+ *
+ * @component
+ * @param {PromotionFormProps} props - Component props.
+ * @returns {JSX.Element} The rendered form.
+ */
 export default function PromotionForm({
   promotion,
   onSuccess,
   onCancel,
 }: PromotionFormProps) {
+  // --------------------------------------------------------------------------
+  // State
+  // --------------------------------------------------------------------------
+
+  /**
+   * Form fields state, initialised from the provided promotion (if any).
+   * Dates are stored as the date part (YYYY-MM-DD) by splitting the ISO string.
+   */
   const [formData, setFormData] = useState<FormData>({
     name: promotion?.name || "",
     description: promotion?.description || "",
@@ -57,23 +102,27 @@ export default function PromotionForm({
     maxUsagePerCustomer: promotion?.maxUsagePerCustomer?.toString() || "",
   });
 
-  const [loading, setLoading] = useState(false);
+  /** API request in progress flag. */
+  const [loading, setLoading] = useState<boolean>(false);
+
+  /** Local error message to display to the user. */
   const [error, setError] = useState<string | null>(null);
 
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
-  const axiosOptions: AxiosRequestConfig = {
-    headers: {
-      "Content-Type": "application/json",
-      "ngrok-skip-browser-warning": "true",
-    } as Record<string, string>,
-    withCredentials: true,
-  };
+  // --------------------------------------------------------------------------
+  // Event Handlers
+  // --------------------------------------------------------------------------
 
+  /**
+   * Generic input change handler for all form fields.
+   * Handles text inputs, textarea, select, and checkboxes.
+   *
+   * @param {React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>} e
+   */
   const handleInputChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
     >,
-  ) => {
+  ): void => {
     const { name, value, type } = e.target;
 
     if (type === "checkbox") {
@@ -90,7 +139,20 @@ export default function PromotionForm({
     }
   };
 
-  const validateForm = () => {
+  // --------------------------------------------------------------------------
+  // Validation
+  // --------------------------------------------------------------------------
+
+  /**
+   * Validates form data before submission.
+   * - Required fields must be filled.
+   * - Percentage discount must be between 0 and 100.
+   * - Discount value must be positive.
+   * - End date must be after start date.
+   *
+   * @returns {boolean} True if the form passes all validation rules.
+   */
+  const validateForm = (): boolean => {
     if (!formData.name.trim()) {
       setError("Promotion name is required");
       return false;
@@ -122,6 +184,22 @@ export default function PromotionForm({
     return true;
   };
 
+  // --------------------------------------------------------------------------
+  // Form Submission
+  // --------------------------------------------------------------------------
+
+  /**
+   * Handles form submission.
+   * - Prevents default form behaviour.
+   * - Clears previous errors.
+   * - Validates the form.
+   * - Converts string numeric fields to numbers.
+   * - Calls the appropriate API method (create or update).
+   * - Invokes onSuccess callback upon success.
+   * - Catches and displays API errors.
+   *
+   * @param {React.FormEvent<HTMLFormElement>} e - Form submission event.
+   */
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
@@ -132,6 +210,8 @@ export default function PromotionForm({
 
     try {
       setLoading(true);
+
+      // Convert string values to appropriate types for the API.
       const payload = {
         ...formData,
         discountValue: parseFloat(formData.discountValue),
@@ -139,20 +219,21 @@ export default function PromotionForm({
           ? parseFloat(formData.minimumOrderAmount)
           : undefined,
         maxUsagePerCustomer: formData.maxUsagePerCustomer
-          ? parseInt(formData.maxUsagePerCustomer)
+          ? parseInt(formData.maxUsagePerCustomer, 10)
           : undefined,
       };
 
       if (promotion?._id) {
-        // Update existing promotion
+        // Edit mode: update existing promotion.
         await promotionApi.update(promotion._id, payload);
       } else {
-        // Create new promotion
+        // Create mode: create new promotion.
         await promotionApi.create(payload);
       }
 
       onSuccess();
     } catch (err: any) {
+      // Display error returned by the API or a generic message.
       setError(err.response?.data?.error || "Failed to save promotion");
       console.error(err);
     } finally {
@@ -160,16 +241,22 @@ export default function PromotionForm({
     }
   };
 
+  // --------------------------------------------------------------------------
+  // Render
+  // --------------------------------------------------------------------------
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Error banner */}
       {error && (
         <div className="bg-red-600 text-white p-4 rounded-lg text-sm">
           {error}
         </div>
       )}
 
+      {/* Two‑column layout for most fields */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Name */}
+        {/* ---------- Promotion Name ---------- */}
         <div>
           <label className="block text-sm font-medium mb-2">
             Promotion Name *
@@ -184,7 +271,7 @@ export default function PromotionForm({
           />
         </div>
 
-        {/* Discount Type */}
+        {/* ---------- Discount Type ---------- */}
         <div>
           <label className="block text-sm font-medium mb-2">
             Discount Type *
@@ -200,7 +287,7 @@ export default function PromotionForm({
           </select>
         </div>
 
-        {/* Discount Value */}
+        {/* ---------- Discount Value ---------- */}
         <div>
           <label className="block text-sm font-medium mb-2">
             Discount Value * (
@@ -218,7 +305,7 @@ export default function PromotionForm({
           />
         </div>
 
-        {/* Applies To */}
+        {/* ---------- Applies To ---------- */}
         <div>
           <label className="block text-sm font-medium mb-2">Applies To *</label>
           <select
@@ -233,7 +320,7 @@ export default function PromotionForm({
           </select>
         </div>
 
-        {/* Start Date */}
+        {/* ---------- Start Date ---------- */}
         <div>
           <label className="block text-sm font-medium mb-2">Start Date *</label>
           <input
@@ -245,7 +332,7 @@ export default function PromotionForm({
           />
         </div>
 
-        {/* End Date */}
+        {/* ---------- End Date ---------- */}
         <div>
           <label className="block text-sm font-medium mb-2">End Date *</label>
           <input
@@ -257,7 +344,7 @@ export default function PromotionForm({
           />
         </div>
 
-        {/* Minimum Order Amount */}
+        {/* ---------- Minimum Order Amount (Optional) ---------- */}
         <div>
           <label className="block text-sm font-medium mb-2">
             Minimum Order Amount (Optional)
@@ -274,7 +361,7 @@ export default function PromotionForm({
           />
         </div>
 
-        {/* Max Usage Per Customer */}
+        {/* ---------- Max Usage Per Customer (Optional) ---------- */}
         <div>
           <label className="block text-sm font-medium mb-2">
             Max Usage Per Customer (Optional)
@@ -292,7 +379,7 @@ export default function PromotionForm({
         </div>
       </div>
 
-      {/* Description */}
+      {/* ---------- Description (Optional) ---------- */}
       <div>
         <label className="block text-sm font-medium mb-2">
           Description (Optional)
@@ -307,7 +394,7 @@ export default function PromotionForm({
         />
       </div>
 
-      {/* Is Active */}
+      {/* ---------- Active Status ---------- */}
       <div className="flex items-center gap-3">
         <input
           type="checkbox"
@@ -319,7 +406,7 @@ export default function PromotionForm({
         <label className="text-sm font-medium">Active</label>
       </div>
 
-      {/* Actions */}
+      {/* ---------- Form Actions ---------- */}
       <div className="flex gap-3 justify-end">
         <button
           type="button"

@@ -1,5 +1,5 @@
 @import "tailwindcss";
-@plugin "@midudev/tailwind-animations";
+/* @plugin "@midudev/tailwind-animations"; */
 
 :root {
   --foreground-rgb: 0, 0, 0;

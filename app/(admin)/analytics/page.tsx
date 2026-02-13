@@ -1,5 +1,20 @@
 "use client";
 
+/**
+ * =============================================================================
+ * ANALYTICS PAGE
+ * =============================================================================
+ * Full‑page kitchen analytics dashboard.
+ * Provides a comprehensive overview of kitchen performance,
+ * including revenue, orders, preparation times, and menu item analysis.
+ * Uses the shared `KitchenStatsPanel` component for detailed stats.
+ *
+ * @module AnalyticsPage
+ */
+
+// -----------------------------------------------------------------------------
+// IMPORTS
+// -----------------------------------------------------------------------------
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import KitchenStatsPanel from "../../presentation/components/KitchenStatsPanel/KitchenStatsPanel";
@@ -21,15 +36,40 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
+// -----------------------------------------------------------------------------
+// COMPONENT: AnalyticsPage
+// -----------------------------------------------------------------------------
 const AnalyticsPage = () => {
+  // ===========================================================================
+  // AUTHENTICATION
+  // ===========================================================================
   const { token } = useAuth();
+
+  // ===========================================================================
+  // STATE DECLARATIONS
+  // ===========================================================================
+  /** Whether the main content is being loaded (simulated delay). */
   const [isLoading, setIsLoading] = useState(true);
+
+  /** Holds any error that occurs during data fetching. */
   const [error, setError] = useState<string | null>(null);
+
+  /** Controls the visibility of the embedded KitchenStatsPanel. */
   const [isStatsPanelOpen, setIsStatsPanelOpen] = useState(true);
+
+  /** Currently selected time range for analytics data. */
   const [timeRange, setTimeRange] = useState<string>("today");
+
+  /** Active tab in the analytics section. */
   const [activeTab, setActiveTab] = useState<string>("overview");
 
-  // Simulate loading delay for better UX
+  // ===========================================================================
+  // EFFECTS
+  // ===========================================================================
+  /**
+   * Simulates initial data loading for a smooth user experience.
+   * Resets `isLoading` after 800ms.
+   */
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsLoading(false);
@@ -38,7 +78,13 @@ const AnalyticsPage = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  // Handle retry for error state
+  // ===========================================================================
+  // EVENT HANDLERS (memoized with useCallback)
+  // ===========================================================================
+  /**
+   * Retries loading after an error.
+   * Resets error state and triggers the loading simulation again.
+   */
   const handleRetry = useCallback(() => {
     setError(null);
     setIsLoading(true);
@@ -48,19 +94,27 @@ const AnalyticsPage = () => {
     }, 800);
   }, []);
 
-  // Handle closing the stats panel (not used in full page, but kept for consistency)
+  /**
+   * Closes the stats panel and navigates back to the kitchen.
+   * Used when the panel is rendered in full‑page mode.
+   */
   const handleStatsPanelClose = useCallback(() => {
-    // In full page view, redirect back to kitchen
-    window.location.href = "/kitchen";
+    window.location.href = "/waiter_order";
   }, []);
 
-  // Handle time range change
+  /**
+   * Updates the selected time range.
+   * In a real implementation this would trigger a data refetch.
+   */
   const handleTimeRangeChange = useCallback((range: string) => {
     setTimeRange(range);
-    // Here you would typically refetch data based on the time range
     console.log(`Changed time range to: ${range}`);
   }, []);
 
+  // ===========================================================================
+  // CONDITIONAL RENDERING (Guard Clauses)
+  // ===========================================================================
+  // Loading state – full‑screen skeleton
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 p-4 md:p-6">
@@ -71,7 +125,7 @@ const AnalyticsPage = () => {
             <div className="h-4 w-96 bg-gray-200 rounded animate-pulse"></div>
           </div>
 
-          {/* Stats skeleton */}
+          {/* Stats cards skeleton */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
             {[...Array(4)].map((_, i) => (
               <div
@@ -95,6 +149,7 @@ const AnalyticsPage = () => {
     );
   }
 
+  // Error state – displays error message with retry button
   if (error) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 p-4 md:p-6 flex items-center justify-center">
@@ -105,9 +160,14 @@ const AnalyticsPage = () => {
     );
   }
 
+  // ===========================================================================
+  // MAIN RENDER
+  // ===========================================================================
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
-      {/* Navigation */}
+      {/* -------------------------------------------------------------------- */}
+      {/* Breadcrumb Navigation                                                */}
+      {/* -------------------------------------------------------------------- */}
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 md:px-6 py-3">
           <div className="flex items-center text-sm text-gray-600">
@@ -126,9 +186,15 @@ const AnalyticsPage = () => {
         </div>
       </div>
 
+      {/* -------------------------------------------------------------------- */}
+      {/* Main Content Container                                               */}
+      {/* -------------------------------------------------------------------- */}
       <div className="max-w-7xl mx-auto p-4 md:p-6">
-        {/* Header */}
+        {/* ================================================================= */}
+        {/* Header Section – Title, Actions, and Quick Stats                  */}
+        {/* ================================================================= */}
         <div className="mb-8">
+          {/* Title and action buttons */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
             <div>
               <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
@@ -156,7 +222,7 @@ const AnalyticsPage = () => {
             </div>
           </div>
 
-          {/* Time Range Selector */}
+          {/* Time range selector */}
           <div className="mb-6">
             <div className="flex items-center mb-3">
               <Calendar className="w-5 h-5 text-gray-500 mr-2" />
@@ -170,7 +236,11 @@ const AnalyticsPage = () => {
                   <button
                     key={range}
                     onClick={() => handleTimeRangeChange(range)}
-                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${timeRange === range ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
+                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                      timeRange === range
+                        ? "bg-blue-600 text-white"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    }`}
                   >
                     {range.charAt(0).toUpperCase() + range.slice(1)}
                   </button>
@@ -179,8 +249,9 @@ const AnalyticsPage = () => {
             </div>
           </div>
 
-          {/* Quick Stats Overview */}
+          {/* Quick Stats Overview – four key metrics */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            {/* Today's Revenue */}
             <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
               <div className="flex items-center mb-3">
                 <div className="p-2 bg-green-50 rounded-lg mr-3">
@@ -197,6 +268,7 @@ const AnalyticsPage = () => {
               </div>
             </div>
 
+            {/* Total Orders */}
             <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
               <div className="flex items-center mb-3">
                 <div className="p-2 bg-blue-50 rounded-lg mr-3">
@@ -212,6 +284,7 @@ const AnalyticsPage = () => {
               </div>
             </div>
 
+            {/* Average Preparation Time */}
             <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
               <div className="flex items-center mb-3">
                 <div className="p-2 bg-purple-50 rounded-lg mr-3">
@@ -228,6 +301,7 @@ const AnalyticsPage = () => {
               </div>
             </div>
 
+            {/* Top Selling Dish */}
             <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
               <div className="flex items-center mb-3">
                 <div className="p-2 bg-orange-50 rounded-lg mr-3">
@@ -247,7 +321,9 @@ const AnalyticsPage = () => {
           </div>
         </div>
 
-        {/* Tabs for different analytics views */}
+        {/* ================================================================= */}
+        {/* Tab Navigation – switch between different analytics views        */}
+        {/* ================================================================= */}
         <div className="mb-6">
           <div className="border-b border-gray-200">
             <div className="flex flex-wrap gap-2">
@@ -264,7 +340,11 @@ const AnalyticsPage = () => {
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`px-4 py-2 rounded-t-lg font-medium transition-colors flex items-center ${activeTab === tab.id ? "bg-white border-t border-l border-r border-gray-200 text-blue-600" : "text-gray-600 hover:text-blue-600"}`}
+                    className={`px-4 py-2 rounded-t-lg font-medium transition-colors flex items-center ${
+                      activeTab === tab.id
+                        ? "bg-white border-t border-l border-r border-gray-200 text-blue-600"
+                        : "text-gray-600 hover:text-blue-600"
+                    }`}
                   >
                     <Icon className="w-4 h-4 mr-2" />
                     {tab.label}
@@ -275,7 +355,9 @@ const AnalyticsPage = () => {
           </div>
         </div>
 
-        {/* Main Analytics Content */}
+        {/* ================================================================= */}
+        {/* Main Analytics Content – Embedded KitchenStatsPanel              */}
+        {/* ================================================================= */}
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-8">
           <KitchenStatsPanel
             isOpen={isStatsPanelOpen}
@@ -284,8 +366,11 @@ const AnalyticsPage = () => {
           />
         </div>
 
-        {/* Additional Analytics Sections */}
+        {/* ================================================================= */}
+        {/* Additional Analytics Sections – Charts & Detailed Analysis        */}
+        {/* ================================================================= */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          {/* Performance Trends */}
           <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-gray-900">
@@ -319,6 +404,7 @@ const AnalyticsPage = () => {
             </div>
           </div>
 
+          {/* Menu Item Analysis */}
           <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-gray-900">
@@ -337,6 +423,7 @@ const AnalyticsPage = () => {
               </p>
             </div>
             <div className="mt-4 space-y-2">
+              {/* Classic Burger */}
               <div className="flex justify-between items-center p-2 hover:bg-gray-50 rounded">
                 <span>Classic Burger</span>
                 <div className="flex items-center">
@@ -349,6 +436,7 @@ const AnalyticsPage = () => {
                   <span className="font-semibold">85%</span>
                 </div>
               </div>
+              {/* Margherita Pizza */}
               <div className="flex justify-between items-center p-2 hover:bg-gray-50 rounded">
                 <span>Margherita Pizza</span>
                 <div className="flex items-center">
@@ -361,6 +449,7 @@ const AnalyticsPage = () => {
                   <span className="font-semibold">72%</span>
                 </div>
               </div>
+              {/* Caesar Salad */}
               <div className="flex justify-between items-center p-2 hover:bg-gray-50 rounded">
                 <span>Caesar Salad</span>
                 <div className="flex items-center">
@@ -377,12 +466,15 @@ const AnalyticsPage = () => {
           </div>
         </div>
 
-        {/* Insights and Recommendations */}
+        {/* ================================================================= */}
+        {/* Insights & Recommendations – actionable suggestions               */}
+        {/* ================================================================= */}
         <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm mb-8">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">
             Insights & Recommendations
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Revenue Opportunity */}
             <div className="p-4 bg-blue-50 rounded-lg">
               <div className="flex items-center mb-2">
                 <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
@@ -398,6 +490,7 @@ const AnalyticsPage = () => {
               </p>
             </div>
 
+            {/* Efficiency Improvement */}
             <div className="p-4 bg-green-50 rounded-lg">
               <div className="flex items-center mb-2">
                 <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-3">
@@ -413,6 +506,7 @@ const AnalyticsPage = () => {
               </p>
             </div>
 
+            {/* Inventory Alert */}
             <div className="p-4 bg-purple-50 rounded-lg">
               <div className="flex items-center mb-2">
                 <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center mr-3">
@@ -428,7 +522,9 @@ const AnalyticsPage = () => {
           </div>
         </div>
 
-        {/* Footer Note */}
+        {/* ================================================================= */}
+        {/* Footer Note – Data freshness and contact information              */}
+        {/* ================================================================= */}
         <div className="text-center text-sm text-gray-500 bg-white p-4 rounded-lg border border-gray-200">
           <p>
             Analytics update in real-time. Data is collected from all order
