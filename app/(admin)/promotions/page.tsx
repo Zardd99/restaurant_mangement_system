@@ -1,5 +1,18 @@
 "use client";
 
+/**
+ * =============================================================================
+ * PROMOTIONS MANAGEMENT PAGE
+ * =============================================================================
+ * Administrative page for creating, viewing, editing, and deleting promotions.
+ * Access restricted to users with 'admin' role.
+ *
+ * @module PromotionsPage
+ */
+
+// -----------------------------------------------------------------------------
+// IMPORTS
+// -----------------------------------------------------------------------------
 import { useEffect, useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { formatDate } from "../../utils/dateUtils";
@@ -7,6 +20,13 @@ import { Plus, Edit, Trash2, Calendar, Zap } from "lucide-react";
 import PromotionForm from "../promotions/PromotionForm";
 import { promotionApi } from "../../services/promotionApi";
 
+// -----------------------------------------------------------------------------
+// TYPES & INTERFACES
+// -----------------------------------------------------------------------------
+
+/**
+ * Represents a single promotion entity as returned by the API.
+ */
 interface Promotion {
   _id: string;
   name: string;
@@ -24,31 +44,72 @@ interface Promotion {
   usageCount?: number;
 }
 
+// -----------------------------------------------------------------------------
+// COMPONENT: PromotionsPage
+// -----------------------------------------------------------------------------
 export default function PromotionsPage() {
+  // ===========================================================================
+  // AUTHENTICATION & STATE
+  // ===========================================================================
   const { user, isLoading: authLoading } = useAuth();
-  const [promotions, setPromotions] = useState<Promotion[]>([]); // Add type annotation here
+
+  /** List of all promotions fetched from the backend. */
+  const [promotions, setPromotions] = useState<Promotion[]>([]);
+
+  /** Loading state for the initial data fetch. */
   const [loading, setLoading] = useState(true);
+
+  /** Holds any error message encountered during API calls. */
   const [error, setError] = useState<string | null>(null);
+
+  /** Controls visibility of the "Create New Promotion" form. */
   const [showForm, setShowForm] = useState(false);
+
+  /** The promotion currently being edited (null if creating new). */
   const [editingPromotion, setEditingPromotion] = useState<Promotion | null>(
     null,
   );
 
-  // Check authorization
-  useEffect(() => {
-    if (user && user.role !== "admin") {
-      setError("You do not have permission to manage promotions.");
-      setLoading(false);
-    }
-  }, [user]);
+  // ===========================================================================
+  // HELPER FUNCTIONS (Pure / Computed)
+  // ===========================================================================
 
-  // Fetch promotions
-  useEffect(() => {
-    if (user?.role === "admin") {
-      fetchPromotions();
-    }
-  }, [user]);
+  /**
+   * Determines whether a promotion is currently active.
+   * A promotion is active if its `isActive` flag is true and the current date
+   * falls within its start and end date range.
+   *
+   * @param promotion - The promotion to evaluate.
+   * @returns True if the promotion is active, otherwise false.
+   */
+  const isPromotionActive = (promotion: Promotion): boolean => {
+    const now = new Date();
+    const start = new Date(promotion.startDate);
+    const end = new Date(promotion.endDate);
+    return promotion.isActive && now >= start && now <= end;
+  };
 
+  /**
+   * Formats the discount value into a human‑readable string.
+   *
+   * @param promotion - The promotion containing discount data.
+   * @returns e.g. "25% OFF" or "$5.00 OFF".
+   */
+  const getDiscountDisplay = (promotion: Promotion): string => {
+    if (promotion.discountType === "percentage") {
+      return `${promotion.discountValue}% OFF`;
+    }
+    return `$${promotion.discountValue.toFixed(2)} OFF`;
+  };
+
+  // ===========================================================================
+  // DATA FETCHING (API)
+  // ===========================================================================
+
+  /**
+   * Retrieves all promotions from the API and updates the state.
+   * Resets error and loading states appropriately.
+   */
   const fetchPromotions = async () => {
     try {
       setLoading(true);
@@ -63,39 +124,67 @@ export default function PromotionsPage() {
     }
   };
 
+  // ===========================================================================
+  // EVENT HANDLERS
+  // ===========================================================================
+
+  /**
+   * Deletes a promotion after user confirmation.
+   * If successful, removes the promotion from the local state.
+   *
+   * @param promotionId - ID of the promotion to delete.
+   */
   const handleDeletePromotion = async (promotionId: string) => {
-    if (confirm("Are you sure you want to delete this promotion?")) {
-      try {
-        await promotionApi.delete(promotionId);
-        setPromotions(promotions.filter((p) => p._id !== promotionId));
-      } catch (err: any) {
-        setError(err.response?.data?.error || "Failed to delete promotion");
-        console.error("Delete promotion error:", err);
-      }
+    if (!confirm("Are you sure you want to delete this promotion?")) return;
+
+    try {
+      await promotionApi.delete(promotionId);
+      setPromotions((prev) => prev.filter((p) => p._id !== promotionId));
+    } catch (err: any) {
+      setError(err.response?.data?.error || "Failed to delete promotion");
+      console.error("Delete promotion error:", err);
     }
   };
 
+  /**
+   * Callback invoked after a promotion is successfully created or updated.
+   * Refreshes the promotion list and closes the form.
+   */
   const handleFormSuccess = () => {
     fetchPromotions();
     setShowForm(false);
     setEditingPromotion(null);
   };
 
-  const isPromotionActive = (promotion: Promotion) => {
-    const now = new Date();
-    const start = new Date(promotion.startDate);
-    const end = new Date(promotion.endDate);
-    return promotion.isActive && now >= start && now <= end;
-  };
+  // ===========================================================================
+  // SIDE EFFECTS
+  // ===========================================================================
 
-  const getDiscountDisplay = (promotion: Promotion) => {
-    if (promotion.discountType === "percentage") {
-      return `${promotion.discountValue}% OFF`;
-    } else {
-      return `$${promotion.discountValue.toFixed(2)} OFF`;
+  /**
+   * Authorization check: if the user is logged in but not an admin,
+   * set an error and stop loading.
+   */
+  useEffect(() => {
+    if (user && user.role !== "admin") {
+      setError("You do not have permission to manage promotions.");
+      setLoading(false);
     }
-  };
+  }, [user]);
 
+  /**
+   * Fetch promotions only when the authenticated user is an admin.
+   */
+  useEffect(() => {
+    if (user?.role === "admin") {
+      fetchPromotions();
+    }
+  }, [user]);
+
+  // ===========================================================================
+  // CONDITIONAL RENDERING (Guard Clauses)
+  // ===========================================================================
+
+  // Authentication loading state
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white mt-16">
@@ -104,6 +193,7 @@ export default function PromotionsPage() {
     );
   }
 
+  // Access denied – user is not an admin
   if (user?.role !== "admin") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white mt-16">
@@ -115,10 +205,15 @@ export default function PromotionsPage() {
     );
   }
 
+  // ===========================================================================
+  // MAIN RENDER
+  // ===========================================================================
   return (
     <div className="min-h-screen bg-white text-gray-900 p-4 md:p-8 mt-16">
       <div className="max-w-6xl mx-auto">
-        {/* Header */}
+        {/* ------------------------------------------------------------------ */}
+        {/* Header – Title, New Promotion Button, Error Display                */}
+        {/* ------------------------------------------------------------------ */}
         <div className="mb-8">
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-3xl font-bold">Promotions Management</h1>
@@ -139,7 +234,9 @@ export default function PromotionsPage() {
           )}
         </div>
 
-        {/* Form Section */}
+        {/* ------------------------------------------------------------------ */}
+        {/* Promotion Form (Create / Edit)                                     */}
+        {/* ------------------------------------------------------------------ */}
         {(showForm || editingPromotion) && (
           <div className="bg-gray-100 rounded-lg p-6 mb-8">
             <h2 className="text-xl font-bold mb-4 text-gray-900">
@@ -156,12 +253,16 @@ export default function PromotionsPage() {
           </div>
         )}
 
-        {/* Promotions List */}
+        {/* ------------------------------------------------------------------ */}
+        {/* Promotions List – Loading, Empty, or Grid View                     */}
+        {/* ------------------------------------------------------------------ */}
         {loading ? (
+          // Loading state
           <div className="text-center py-12">
             <p className="text-gray-600">Loading promotions...</p>
           </div>
         ) : promotions.length === 0 ? (
+          // Empty state – no promotions exist
           <div className="bg-gray-100 rounded-lg p-12 text-center">
             <Zap className="w-16 h-16 mx-auto text-gray-400 mb-4" />
             <h3 className="text-xl font-semibold mb-2 text-gray-900">
@@ -179,6 +280,7 @@ export default function PromotionsPage() {
             </button>
           </div>
         ) : (
+          // Promotion grid – display all active/inactive promotions
           <div className="grid gap-4">
             {promotions.map((promotion) => {
               const isActive = isPromotionActive(promotion);
@@ -189,6 +291,7 @@ export default function PromotionsPage() {
                     isActive ? "border-red-600" : "border-gray-300"
                   }`}
                 >
+                  {/* Header with name, status, and discount badge */}
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
@@ -214,7 +317,7 @@ export default function PromotionsPage() {
                     </div>
                   </div>
 
-                  {/* Promotion Details Grid */}
+                  {/* Key details – applicability, date range, minimum order */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 py-4 border-t border-b border-gray-300">
                     <div>
                       <p className="text-gray-600 text-sm mb-1">Applies To</p>
@@ -247,7 +350,7 @@ export default function PromotionsPage() {
                     )}
                   </div>
 
-                  {/* Usage Stats */}
+                  {/* Usage statistics (if available) */}
                   {promotion.usageCount !== undefined && (
                     <div className="mb-4 text-sm text-gray-600">
                       Used {promotion.usageCount} times
@@ -256,7 +359,7 @@ export default function PromotionsPage() {
                     </div>
                   )}
 
-                  {/* Actions */}
+                  {/* Action buttons – Edit and Delete */}
                   <div className="flex gap-2 justify-end">
                     <button
                       onClick={() => setEditingPromotion(promotion)}

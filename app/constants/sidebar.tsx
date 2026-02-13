@@ -1,17 +1,53 @@
-export type SidebarContent = {
-  label: string;
-  content: {
-    icon: React.ReactNode;
-    text: string;
-    link: string;
-  }[];
-};
+// ============================================================================
+// External Dependencies
+// ============================================================================
+import React from "react";
 
-const sidebarContents = [
+// ============================================================================
+// Type Definitions
+// ============================================================================
+
+/**
+ * Represents a single navigation item inside a sidebar group.
+ */
+export interface SidebarItem {
+  /** React node (usually an SVG icon) displayed to the left of the text. */
+  icon: React.ReactNode;
+  /** Display label for the navigation link. */
+  text: string;
+  /** URL or path the link points to. Use "#" for dropdown placeholders. */
+  link: string;
+}
+
+/**
+ * Represents a group of navigation items with a common label.
+ */
+export interface SidebarContent {
+  /** Heading text for the group (e.g., "Home", "Page"). */
+  label: string;
+  /** Array of navigation items belonging to this group. */
+  content: SidebarItem[];
+}
+
+// ============================================================================
+// Sidebar Navigation Structure
+// ============================================================================
+
+/**
+ * Defines the complete sidebar navigation menu.
+ * Each top‑level entry is a group with a label and a list of navigation items.
+ *
+ * @constant
+ */
+const sidebarContents: SidebarContent[] = [
+  // --------------------------------------------------------------------------
+  // Group: Home
+  // --------------------------------------------------------------------------
   {
     label: "Home",
     content: [
       {
+        // Dashboard icon – 4‑square grid (dashboard overview)
         icon: (
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -30,10 +66,14 @@ const sidebarContents = [
     ],
   },
 
+  // --------------------------------------------------------------------------
+  // Group: Page
+  // --------------------------------------------------------------------------
   {
     label: "Page",
     content: [
       {
+        // Special / UI components icon – window with four panes
         icon: (
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -50,6 +90,7 @@ const sidebarContents = [
         link: "/user_interface",
       },
       {
+        // Authentication icon – shield with checkmark (security)
         icon: (
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -63,9 +104,10 @@ const sidebarContents = [
           </svg>
         ),
         text: "Authentication",
-        link: "#", // Keep as placeholder for dropdown
+        link: "#", // Placeholder – actual route may be nested in a dropdown
       },
       {
+        // Users icon – single person silhouette (user management)
         icon: (
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -79,9 +121,10 @@ const sidebarContents = [
           </svg>
         ),
         text: "Users",
-        link: "#", // Keep as placeholder for dropdown
+        link: "#", // Placeholder – likely a parent for nested routes
       },
       {
+        // Chef / Kitchen icon – cooking pot with steam
         icon: (
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -100,4 +143,7 @@ const sidebarContents = [
   },
 ];
 
+// ============================================================================
+// Export
+// ============================================================================
 export default sidebarContents;

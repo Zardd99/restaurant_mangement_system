@@ -6,6 +6,14 @@ import { APIIngredientRepository } from "../../../infrastructure/repositories/AP
 import { createEmailJSNotificationService } from "../../../services/emailjsNotificationService";
 import { checkEmailJSConfig } from "../../../utils/emailjsConfig";
 
+// ============================================================================
+// TYPES & INTERFACES
+// ============================================================================
+
+/**
+ * Represents the complete stock and usage information for a single ingredient.
+ * Used throughout the dashboard for display and business logic.
+ */
 interface IngredientStock {
   id: string;
   name: string;
@@ -24,17 +32,47 @@ interface IngredientStock {
   }>;
 }
 
+// ============================================================================
+// COMPONENT: IngredientStockDashboard
+// ============================================================================
+
 export const IngredientStockDashboard: React.FC = () => {
+  // --------------------------------------------------------------------------
+  // 1. AUTHENTICATION
+  // --------------------------------------------------------------------------
   const { token } = useAuth();
+
+  // --------------------------------------------------------------------------
+  // 2. STATE DECLARATIONS
+  // --------------------------------------------------------------------------
+
+  /** Raw ingredient data fetched from the API */
   const [ingredients, setIngredients] = useState<IngredientStock[]>([]);
+
+  /** UI loading state during API calls */
   const [loading, setLoading] = useState(true);
+
+  /** Holds any error message encountered during data fetching */
   const [error, setError] = useState<string | null>(null);
+
+  /** ID of the ingredient whose "used in" details are currently expanded */
   const [expandedIngredient, setExpandedIngredient] = useState<string | null>(
     null,
   );
+
+  /** Current filter applied to the ingredient list: all / low / critical */
   const [filter, setFilter] = useState<"all" | "low" | "critical">("all");
+
+  /** Search term used to filter ingredients by name */
   const [searchTerm, setSearchTerm] = useState("");
+
+  /**
+   * EmailJS notification service instance.
+   * Created once and memoized via useState initializer.
+   */
   const [emailService] = useState(() => createEmailJSNotificationService());
+
+  /** Tracks the last email notification attempt status */
   const [emailStatus, setEmailStatus] = useState<{
     lastSent: Date | null;
     success: boolean;
@@ -44,12 +82,52 @@ export const IngredientStockDashboard: React.FC = () => {
     success: false,
   });
 
-  useEffect(() => {
-    if (token) {
-      fetchIngredientStock();
-    }
-  }, [token]);
+  // --------------------------------------------------------------------------
+  // 3. DERIVED DATA (COMPUTED FROM STATE)
+  // --------------------------------------------------------------------------
 
+  /**
+   * Filters the ingredients array based on the current search term
+   * and the selected filter (all / low / critical).
+   */
+  const filteredIngredients = ingredients.filter((ingredient) => {
+    // Apply search term filter (case‑insensitive partial match)
+    if (
+      searchTerm &&
+      !ingredient.name.toLowerCase().includes(searchTerm.toLowerCase())
+    ) {
+      return false;
+    }
+
+    // Apply stock status filter
+    switch (filter) {
+      case "low":
+        return ingredient.isLowStock;
+      case "critical":
+        return ingredient.needsReorder;
+      default:
+        return true;
+    }
+  });
+
+  /**
+   * Calculates the total monetary value of the current inventory.
+   * @returns Sum of (currentStock * costPerUnit) for all ingredients
+   */
+  const calculateTotalInventoryValue = () => {
+    return ingredients.reduce((total, ingredient) => {
+      return total + ingredient.currentStock * ingredient.costPerUnit;
+    }, 0);
+  };
+
+  // --------------------------------------------------------------------------
+  // 4. API & DATA FETCHING
+  // --------------------------------------------------------------------------
+
+  /**
+   * Fetches the latest ingredient stock dashboard data from the backend.
+   * Updates component state and sends automatic low‑stock email alerts.
+   */
   const fetchIngredientStock = async () => {
     if (!token) {
       setError("Authentication required");
@@ -59,6 +137,7 @@ export const IngredientStockDashboard: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
+
       const repo = new APIIngredientRepository(
         process.env.NEXT_PUBLIC_API_URL || "",
         token,
@@ -82,7 +161,9 @@ export const IngredientStockDashboard: React.FC = () => {
       const newIngredients = dashboardData.inventory.ingredients;
       setIngredients(newIngredients);
 
-      // Send email alerts if there are low stock items
+      // ----------------------------------------------------------------------
+      // Automatic email alerts for low / critical stock items
+      // ----------------------------------------------------------------------
       const config = checkEmailJSConfig();
       if (config.isConfigured && config.managerEmail) {
         const lowStockItems = newIngredients.filter(
@@ -128,44 +209,15 @@ export const IngredientStockDashboard: React.FC = () => {
     }
   };
 
-  const filteredIngredients = ingredients.filter((ingredient) => {
-    if (
-      searchTerm &&
-      !ingredient.name.toLowerCase().includes(searchTerm.toLowerCase())
-    ) {
-      return false;
-    }
+  // --------------------------------------------------------------------------
+  // 5. EVENT HANDLERS (USER INTERACTIONS)
+  // --------------------------------------------------------------------------
 
-    switch (filter) {
-      case "low":
-        return ingredient.isLowStock;
-      case "critical":
-        return ingredient.needsReorder;
-      default:
-        return true;
-    }
-  });
-
-  const getStockStatusColor = (ingredient: IngredientStock) => {
-    if (ingredient.needsReorder)
-      return "bg-red-100 text-red-800 border-red-300";
-    if (ingredient.isLowStock)
-      return "bg-yellow-100 text-yellow-800 border-yellow-300";
-    return "bg-green-100 text-green-800 border-green-300";
-  };
-
-  const getStockStatusText = (ingredient: IngredientStock) => {
-    if (ingredient.needsReorder) return "Critical - Reorder Now";
-    if (ingredient.isLowStock) return "Low Stock";
-    return "In Stock";
-  };
-
-  const calculateTotalInventoryValue = () => {
-    return ingredients.reduce((total, ingredient) => {
-      return total + ingredient.currentStock * ingredient.costPerUnit;
-    }, 0);
-  };
-
+  /**
+   * Initiates a reorder for a specific ingredient by calling the API.
+   * After a successful reorder, refreshes the ingredient list.
+   * @param ingredientId - ID of the ingredient to reorder
+   */
   const handleReorder = async (ingredientId: string) => {
     if (!token) return;
 
@@ -188,6 +240,10 @@ export const IngredientStockDashboard: React.FC = () => {
     }
   };
 
+  /**
+   * Prompts the user for a new stock level and updates the ingredient.
+   * @param ingredientId - ID of the ingredient to update
+   */
   const handleUpdateStock = async (ingredientId: string) => {
     if (!token) return;
 
@@ -221,6 +277,47 @@ export const IngredientStockDashboard: React.FC = () => {
     }
   };
 
+  // --------------------------------------------------------------------------
+  // 6. UI HELPER FUNCTIONS
+  // --------------------------------------------------------------------------
+
+  /**
+   * Returns Tailwind CSS classes for the stock status badge
+   * based on the ingredient's current state.
+   */
+  const getStockStatusColor = (ingredient: IngredientStock) => {
+    if (ingredient.needsReorder)
+      return "bg-red-100 text-red-800 border-red-300";
+    if (ingredient.isLowStock)
+      return "bg-yellow-100 text-yellow-800 border-yellow-300";
+    return "bg-green-100 text-green-800 border-green-300";
+  };
+
+  /**
+   * Returns a human‑readable stock status description.
+   */
+  const getStockStatusText = (ingredient: IngredientStock) => {
+    if (ingredient.needsReorder) return "Critical - Reorder Now";
+    if (ingredient.isLowStock) return "Low Stock";
+    return "In Stock";
+  };
+
+  // --------------------------------------------------------------------------
+  // 7. SIDE EFFECTS
+  // --------------------------------------------------------------------------
+
+  // Automatically load inventory data when authentication token is available.
+  useEffect(() => {
+    if (token) {
+      fetchIngredientStock();
+    }
+  }, [token]);
+
+  // --------------------------------------------------------------------------
+  // 8. EARLY RETURNS (GUARD CLAUSES)
+  // --------------------------------------------------------------------------
+
+  // Authentication required
   if (!token) {
     return (
       <div className="p-6 text-center">
@@ -234,6 +331,7 @@ export const IngredientStockDashboard: React.FC = () => {
     );
   }
 
+  // Loading state
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -242,6 +340,7 @@ export const IngredientStockDashboard: React.FC = () => {
     );
   }
 
+  // Empty state (no ingredients)
   if (ingredients.length === 0 && !loading && !error) {
     return (
       <div className="p-6">
@@ -276,6 +375,7 @@ export const IngredientStockDashboard: React.FC = () => {
     );
   }
 
+  // Error state
   if (error) {
     return (
       <div className="p-6">
@@ -293,9 +393,13 @@ export const IngredientStockDashboard: React.FC = () => {
     );
   }
 
+  // --------------------------------------------------------------------------
+  // 9. MAIN RENDER
+  // --------------------------------------------------------------------------
+
   return (
     <div className="p-6 space-y-6 mt-16">
-      {/* Header */}
+      {/* Header Section */}
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
@@ -316,19 +420,31 @@ export const IngredientStockDashboard: React.FC = () => {
         <div className="flex gap-2">
           <button
             onClick={() => setFilter("all")}
-            className={`px-4 py-2 rounded-lg ${filter === "all" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700"}`}
+            className={`px-4 py-2 rounded-lg ${
+              filter === "all"
+                ? "bg-blue-600 text-white"
+                : "bg-gray-100 text-gray-700"
+            }`}
           >
             All Ingredients
           </button>
           <button
             onClick={() => setFilter("low")}
-            className={`px-4 py-2 rounded-lg ${filter === "low" ? "bg-yellow-600 text-white" : "bg-gray-100 text-gray-700"}`}
+            className={`px-4 py-2 rounded-lg ${
+              filter === "low"
+                ? "bg-yellow-600 text-white"
+                : "bg-gray-100 text-gray-700"
+            }`}
           >
             Low Stock
           </button>
           <button
             onClick={() => setFilter("critical")}
-            className={`px-4 py-2 rounded-lg ${filter === "critical" ? "bg-red-600 text-white" : "bg-gray-100 text-gray-700"}`}
+            className={`px-4 py-2 rounded-lg ${
+              filter === "critical"
+                ? "bg-red-600 text-white"
+                : "bg-gray-100 text-gray-700"
+            }`}
           >
             Critical
           </button>
@@ -357,7 +473,7 @@ export const IngredientStockDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Stats Summary */}
+      {/* Stats Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-white p-4 rounded-lg shadow border">
           <p className="text-sm text-gray-600">Total Ingredients</p>
@@ -442,14 +558,21 @@ export const IngredientStockDashboard: React.FC = () => {
                                 : "bg-green-600"
                           }`}
                           style={{
-                            width: `${Math.min(100, (ingredient.currentStock / (ingredient.minStock * 2)) * 100)}%`,
+                            width: `${Math.min(
+                              100,
+                              (ingredient.currentStock /
+                                (ingredient.minStock * 2)) *
+                                100,
+                            )}%`,
                           }}
                         ></div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span
-                        className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full border ${getStockStatusColor(ingredient)}`}
+                        className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full border ${getStockStatusColor(
+                          ingredient,
+                        )}`}
                       >
                         {getStockStatusText(ingredient)}
                       </span>

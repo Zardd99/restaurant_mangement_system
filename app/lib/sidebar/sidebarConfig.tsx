@@ -1,3 +1,24 @@
+/**
+ * =============================================================================
+ * SIDEBAR CONFIGURATION (Clean Architecture – UI Configuration Layer)
+ * =============================================================================
+ *
+ * Defines the structure, content, and access control for the application’s
+ * sidebar navigation. The configuration is role‑based and returns filtered
+ * sections and items according to the user’s role.
+ *
+ * ✅ Responsibilities:
+ *   - Provide a single source of truth for sidebar items.
+ *   - Enforce role‑based visibility (admin, manager, waiter, chef, guest).
+ *   - Support dynamic filtering and badge/update indicators.
+ *
+ * 🚫 Does NOT:
+ *   - Render any UI components.
+ *   - Manage authentication state (relies on caller to provide role).
+ *
+ * @module SidebarConfig
+ */
+
 import {
   LayoutDashboard,
   Palette,
@@ -22,28 +43,73 @@ import {
   Zap,
 } from "lucide-react";
 
+// =============================================================================
+// TYPES & INTERFACES
+// =============================================================================
+
+/**
+ * A single navigation item inside the sidebar.
+ */
 export interface SidebarItem {
+  /** Unique identifier for the item (used for active state look‑ups). */
   id: string;
+  /** Display label. */
   text: string;
+  /** Lucide React icon component (already instantiated with className). */
   icon: React.ReactNode;
+  /** Optional route path for client‑side navigation. */
   link?: string;
+  /** Optional click handler (overrides link if provided). */
   onClick?: () => void;
+  /** Nested child items (submenu). */
   children?: SidebarItem[];
+  /** Optional badge text or number (e.g., "Live", 3). */
   badge?: string | number;
+  /** Array of roles that are allowed to see this item. */
   roles?: string[];
+  /** If true, shows a "New" indicator. */
   isNew?: boolean;
 }
 
+/**
+ * A logical grouping of sidebar items.
+ */
 export interface SidebarSection {
   id: string;
+  /** Section title displayed above its items. */
   label: string;
+  /** Items belonging to this section. */
   items: SidebarItem[];
+  /** Optional role restrictions for the entire section. */
   roles?: string[];
 }
 
+// =============================================================================
+// SIDEBAR CONFIGURATION – STATIC BUILDER
+// =============================================================================
+
+/**
+ * SidebarConfig
+ * -------------
+ * Static utility class that builds and filters sidebar navigation based on
+ * user roles. All methods are pure; no side effects.
+ */
 export class SidebarConfig {
+  /** Consistent icon size applied to every Lucide icon. */
   private static readonly ICON_SIZE = "w-5 h-5";
 
+  // ---------------------------------------------------------------------------
+  // PUBLIC API METHODS
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Returns all sidebar sections, unfiltered except for the top‑level
+   * section role check. This method is primarily used internally; external
+   * callers should prefer `getFilteredItems()`.
+   *
+   * @param role - Current user role (default "guest").
+   * @returns Array of sections that the role is permitted to see.
+   */
   static getAllSections(role: string = "guest"): SidebarSection[] {
     const allSections = [
       this.getDashboardSection(),
@@ -53,29 +119,95 @@ export class SidebarConfig {
       this.getSystemSection(),
     ];
 
-    // Filter sections based on role
+    // Section‑level filtering: if section.roles is defined, the role must be included.
     return allSections.filter((section) => {
-      // If section has no roles defined, show to all
       if (!section.roles || section.roles.length === 0) return true;
-
-      // If section has "all" in roles, show to all
       if (section.roles.includes("all")) return true;
-
-      // If role is "guest", only show authentication section
       if (role === "guest") {
+        // Guests can only see the authentication section.
         return section.id === "authentication";
       }
-
-      // Check if role is included in section roles
       return section.roles.includes(role);
     });
   }
 
+  /**
+   * Returns sidebar sections with **both** section‑level and item‑level
+   * role filtering applied. Empty sections are removed.
+   *
+   * @param userRole - Current user role (e.g., "admin", "guest").
+   * @returns Fully filtered sidebar sections ready for rendering.
+   */
+  static getFilteredItems(userRole: string): SidebarSection[] {
+    const sections = this.getAllSections(userRole);
+
+    return sections
+      .map((section) => ({
+        ...section,
+        items: section.items.filter((item) => {
+          if (!item.roles || item.roles.length === 0) return true;
+          if (item.roles.includes("all")) return true;
+          if (userRole === "guest") {
+            return item.roles.includes("guest");
+          }
+          return item.roles.includes(userRole);
+        }),
+      }))
+      .filter((section) => section.items.length > 0);
+  }
+
+  /**
+   * Retrieves a single sidebar item by its unique ID.
+   * Useful for programmatically setting active states.
+   *
+   * @param itemId   - ID of the item to find.
+   * @param userRole - Role used to filter which sections/items are visible.
+   * @returns The matching SidebarItem, or null if not found.
+   */
+  static getItemById(
+    itemId: string,
+    userRole: string = "guest",
+  ): SidebarItem | null {
+    const allSections = this.getAllSections(userRole);
+    for (const section of allSections) {
+      const item = section.items.find((item) => item.id === itemId);
+      if (item) return item;
+    }
+    return null;
+  }
+
+  /**
+   * Generates a compact list of sidebar items suitable for mobile bottom
+   * navigation. Takes the first two items from each filtered section,
+   * up to a maximum of eight items.
+   *
+   * @param userRole - Current user role.
+   * @returns Array of up to 8 SidebarItem objects.
+   */
+  static getMobileSidebarItems(userRole: string): SidebarItem[] {
+    const sections = this.getFilteredItems(userRole);
+    const primaryItems: SidebarItem[] = [];
+
+    sections.forEach((section) => {
+      // Take first 2 items from each section for mobile brevity
+      primaryItems.push(...section.items.slice(0, 2));
+    });
+
+    return primaryItems.slice(0, 8); // Cap at 8 items for mobile
+  }
+
+  // ---------------------------------------------------------------------------
+  // PRIVATE SECTION BUILDERS
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Dashboard section – general overview and UI component showcase.
+   */
   private static getDashboardSection(): SidebarSection {
     return {
       id: "dashboard",
       label: "Dashboard",
-      roles: ["admin", "manager", "waiter", "chef", "all"], // Added "all"
+      roles: ["admin", "manager", "waiter", "chef", "all"],
       items: [
         {
           id: "main-dashboard",
@@ -90,19 +222,22 @@ export class SidebarConfig {
           icon: <Palette className={this.ICON_SIZE} />,
           link: "/user_interface",
           isNew: true,
-          roles: ["admin", "manager"], // Only for admin and manager
+          roles: ["admin", "manager"],
         },
         {
           id: "analytics",
           text: "Analytics",
           icon: <BarChart className={this.ICON_SIZE} />,
           link: "/analytics",
-          roles: ["admin", "manager"], // Only for admin and manager
+          roles: ["admin", "manager"],
         },
       ],
     };
   }
 
+  /**
+   * Operations section – core restaurant workflows (ordering, kitchen, inventory).
+   */
   private static getOperationsSection(): SidebarSection {
     return {
       id: "operations",
@@ -149,6 +284,9 @@ export class SidebarConfig {
     };
   }
 
+  /**
+   * User management section – staff, promotions, profiles.
+   */
   private static getUserManagementSection(): SidebarSection {
     return {
       id: "user-management",
@@ -195,6 +333,12 @@ export class SidebarConfig {
     };
   }
 
+  /**
+   * Authentication / Account section – login, register, or account
+   * related items. Dynamically adjusts its label based on the user role.
+   *
+   * @param role - Current user role.
+   */
   private static getAuthenticationSection(role: string): SidebarSection {
     const items = [
       {
@@ -216,7 +360,7 @@ export class SidebarConfig {
     return {
       id: "authentication",
       label: role === "guest" ? "Authentication" : "Account",
-      roles: ["all"], // This section is always visible
+      roles: ["all"],
       items: items.filter((item) => {
         if (!item.roles || item.roles.includes("all")) return true;
         return item.roles.includes(role);
@@ -224,6 +368,9 @@ export class SidebarConfig {
     };
   }
 
+  /**
+   * System section – settings, notifications, help, feedback, performance.
+   */
   private static getSystemSection(): SidebarSection {
     return {
       id: "system",
@@ -268,55 +415,5 @@ export class SidebarConfig {
         },
       ],
     };
-  }
-
-  static getFilteredItems(userRole: string): SidebarSection[] {
-    const sections = this.getAllSections(userRole);
-
-    // Filter items within each section based on roles
-    return sections
-      .map((section) => ({
-        ...section,
-        items: section.items.filter((item) => {
-          // If item has no roles defined, show to all
-          if (!item.roles || item.roles.length === 0) return true;
-
-          // If item has "all" in roles, show to all
-          if (item.roles.includes("all")) return true;
-
-          // For guest users, only show guest items
-          if (userRole === "guest") {
-            return item.roles.includes("guest");
-          }
-
-          // Check if user role is included in item roles
-          return item.roles.includes(userRole);
-        }),
-      }))
-      .filter((section) => section.items.length > 0); // Remove empty sections
-  }
-
-  static getItemById(
-    itemId: string,
-    userRole: string = "guest",
-  ): SidebarItem | null {
-    const allSections = this.getAllSections(userRole);
-    for (const section of allSections) {
-      const item = section.items.find((item) => item.id === itemId);
-      if (item) return item;
-    }
-    return null;
-  }
-
-  static getMobileSidebarItems(userRole: string): SidebarItem[] {
-    const sections = this.getFilteredItems(userRole);
-    const primaryItems: SidebarItem[] = [];
-
-    sections.forEach((section) => {
-      // Take first 2 items from each section for mobile
-      primaryItems.push(...section.items.slice(0, 2));
-    });
-
-    return primaryItems.slice(0, 8); // Limit to 8 items for mobile
   }
 }
