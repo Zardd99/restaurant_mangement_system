@@ -10,7 +10,7 @@
     "test": "jest",
     "test:watch": "jest --watchAll",
     "test:coverage": "jest --coverage",
-    "deploy": "vercel --prod"
+    "deploy": "npx vercel --prod --token=$VERCEL_TOKEN"
   },
   "type": "module",
   "dependencies": {
