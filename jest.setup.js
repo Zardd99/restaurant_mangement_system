@@ -1,6 +1,8 @@
-import "@testing-library/jest-dom/extend-expect";
-// jest.setup.js
+import { config } from "dotenv";
+config({ path: ".env.local" });
 import "@testing-library/jest-dom";
+
+process.env.NEXT_PUBLIC_API_URL = "http://localhost:5000";
 
 // Mock next/navigation
 jest.mock("next/navigation", () => ({

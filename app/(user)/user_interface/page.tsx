@@ -224,6 +224,7 @@ const Menu = () => {
               setCategoryFilter(["all"]);
               setAvailabilityFilter("all");
               setChefSpecialFilter("all");
+              setActiveFilter("all");
             }}
           />
         </div>
