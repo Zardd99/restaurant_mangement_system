@@ -6,9 +6,26 @@ import SidebarSectionComponent from "./SidebarSection";
 import { SidebarProps } from "./types";
 import { SidebarConfig } from "../../../../lib/sidebar/sidebarConfig";
 
+/**
+ * Sidebar – Main navigation sidebar component.
+ *
+ * Renders a collapsible sidebar with user profile, role‑based navigation sections,
+ * and a system status footer. It supports keyboard (Escape) closing and handles
+ * overlay clicks. State and logic are delegated to a custom view model hook
+ * (`useSidebarViewModel`) for separation of concerns and testability.
+ *
+ * @param isOpen        - Controls visibility of the sidebar.
+ * @param onClose       - Callback to close the sidebar.
+ * @param user          - Current user object (or null/undefined).
+ * @param onLogout      - Logout handler passed to view model.
+ */
 const Sidebar = ({ isOpen, onClose, user, onLogout }: SidebarProps) => {
+  // Ref to the sidebar DOM element – could be used for focus trapping or click‑outside,
+  // though overlay click is handled separately. Kept for potential future enhancements.
   const sidebarRef = useRef<HTMLDivElement>(null);
 
+  // Delegate all internal state and logic to the view model.
+  // This includes sections, expanded items, toggle handlers, and a memoized handleClose.
   const {
     sections,
     expandedItems,
@@ -16,7 +33,7 @@ const Sidebar = ({ isOpen, onClose, user, onLogout }: SidebarProps) => {
     isItemExpanded,
     handleClose,
     handleItemClick,
-    isOpen: internalIsOpen,
+    isOpen: internalIsOpen, // internal sync of open state (not used directly here)
   } = useSidebarViewModel({
     isOpen,
     onClose,
@@ -24,6 +41,8 @@ const Sidebar = ({ isOpen, onClose, user, onLogout }: SidebarProps) => {
     onLogout,
   });
 
+  // Effect: Close sidebar on Escape key press.
+  // Uses the memoized handleClose from view model to ensure stable reference.
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === "Escape" && isOpen) {
@@ -35,18 +54,24 @@ const Sidebar = ({ isOpen, onClose, user, onLogout }: SidebarProps) => {
     return () => document.removeEventListener("keydown", handleEscape);
   }, [isOpen, handleClose]);
 
+  // Early return: render nothing if sidebar is not open.
+  // This avoids rendering the overlay and sidebar DOM elements when hidden.
   if (!isOpen) return null;
 
   return (
     <>
-      {/* Overlay */}
+      {/* Overlay – dims background and closes sidebar on click.
+          backdrop‑blur provides a modern frosted‑glass effect.
+          aria‑hidden because it's decorative and not focusable. */}
       <div
         className="fixed inset-0 bg-black/50 z-40 transition-opacity backdrop-blur-sm"
         onClick={handleClose}
         aria-hidden="true"
       />
 
-      {/* Sidebar */}
+      {/* Sidebar container – fixed position, slides in from left.
+          transform + transition create the slide animation.
+          z‑50 ensures it appears above the overlay. */}
       <div
         ref={sidebarRef}
         data-sidebar
@@ -54,7 +79,8 @@ const Sidebar = ({ isOpen, onClose, user, onLogout }: SidebarProps) => {
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        {/* Header */}
+        {/* Header – brand logo, title, and close button.
+            Fixed height (h‑16) to align with typical app bars. */}
         <div className="h-16 flex items-center justify-between px-4 border-b border-gray-800">
           <div className="flex items-center space-x-3">
             <div className="w-8 h-8 bg-black rounded-lg flex items-center justify-center shadow-lg">
@@ -86,7 +112,9 @@ const Sidebar = ({ isOpen, onClose, user, onLogout }: SidebarProps) => {
           </button>
         </div>
 
-        {/* User Profile */}
+        {/* User Profile – shown only if user object exists.
+            Displays avatar (initial), name, email, and role badge.
+            Green dot indicates online status (static for now). */}
         {user && (
           <div className="p-4 border-b border-gray-800">
             <div className="flex items-center space-x-3">
@@ -113,7 +141,9 @@ const Sidebar = ({ isOpen, onClose, user, onLogout }: SidebarProps) => {
           </div>
         )}
 
-        {/* Navigation */}
+        {/* Navigation – scrollable area containing sidebar sections.
+            Uses SidebarSectionComponent to render each section and its items.
+            The view model provides sections, expanded state, and handlers. */}
         <div className="flex-1 overflow-y-auto py-4">
           <div className="space-y-6">
             {sections.map((section) => (
@@ -128,7 +158,9 @@ const Sidebar = ({ isOpen, onClose, user, onLogout }: SidebarProps) => {
           </div>
         </div>
 
-        {/* Footer */}
+        {/* Footer – system status and version.
+            Animated pulse dot gives a sense of liveness.
+            Version number is hardcoded; could be moved to config. */}
         <div className="p-4 border-t border-gray-800 bg-gray-900/50">
           <div className="flex items-center justify-between text-sm text-gray-400">
             <div className="flex items-center space-x-2">
