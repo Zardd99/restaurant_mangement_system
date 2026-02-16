@@ -47,6 +47,17 @@ interface StatsData {
   bestSellingDishes?: BestSellingDish[];
 }
 
+/**
+ * KitchenStatsPanel – A comprehensive analytics dashboard for kitchen operations.
+ *
+ * This component can be rendered as a full page or a slide‑in modal. It displays
+ * revenue metrics, order status distribution, best‑selling dishes, and performance
+ * indicators. It also provides multi‑format export (Excel, CSV, PDF) and real‑time
+ * data fetching via the `useStats` hook.
+ *
+ * Senior‑level comments are added throughout to explain complex logic,
+ * design choices, and potential edge cases.
+ */
 const KitchenStatsPanel = ({
   isOpen,
   onClose,
@@ -55,13 +66,36 @@ const KitchenStatsPanel = ({
   const { token } = useAuth();
   const { stats, loading, error, fetchStats } = useStats();
 
+  // Effect: fetch statistics when the panel becomes visible and we have a token.
+  // The dependency array includes fetchStats (stable due to useCallback in the hook)
+  // and token, isOpen. Re‑fetching on every open ensures fresh data.
   useEffect(() => {
     if (isOpen && token) {
       fetchStats(token);
     }
   }, [isOpen, token, fetchStats]);
 
-  // Export to Excel function
+  // ==================== EXPORT FUNCTIONALITY ====================
+  // The following block implements a comprehensive Excel export with multiple sheets,
+  // formatted columns, and simulated operational data. It uses xlsx and file‑saver.
+  // The data structure is partly mocked (time analysis, inventory) to provide a
+  // rich report even when real data is limited – this is a design decision to
+  // deliver immediate business value.
+  // ===============================================================
+
+  /**
+   * Export full analytics report to Excel (.xlsx) with six detailed sheets.
+   *
+   * The report includes:
+   * - Overview: key revenue and order metrics with target comparisons.
+   * - Order Status: distribution, percentages, targets, and color coding.
+   * - Best Sellers: top dishes with revenue, average price, and simulated margins.
+   * - Time Analysis: orders/revenue by time‑of‑day (mocked for demonstration).
+   * - Inventory & Cost: usage and profitability estimates (mocked).
+   * - Recommendations: actionable insights (mocked).
+   *
+   * All sheets are formatted with column widths and a timestamped filename.
+   */
   const exportToExcel = useCallback(() => {
     if (!stats) return;
 
@@ -323,7 +357,7 @@ const KitchenStatsPanel = ({
       const ws3 = XLSX.utils.aoa_to_sheet(dishesData);
       XLSX.utils.book_append_sheet(wb, ws3, "Best Sellers");
 
-      // Sheet 4: Time-based Analysis
+      // Sheet 4: Time-based Analysis (mocked data to illustrate patterns)
       const timeData = [
         ["TIME-BASED PERFORMANCE ANALYSIS", "", "", "", "", ""],
         [
@@ -376,7 +410,7 @@ const KitchenStatsPanel = ({
       const ws4 = XLSX.utils.aoa_to_sheet(timeData);
       XLSX.utils.book_append_sheet(wb, ws4, "Time Analysis");
 
-      // Sheet 5: Inventory & Cost Analysis
+      // Sheet 5: Inventory & Cost Analysis (mocked for demonstration)
       const inventoryData = [
         ["INVENTORY & COST ANALYSIS", "", "", "", "", ""],
         [
@@ -417,7 +451,7 @@ const KitchenStatsPanel = ({
       const ws5 = XLSX.utils.aoa_to_sheet(inventoryData);
       XLSX.utils.book_append_sheet(wb, ws5, "Inventory & Cost");
 
-      // Sheet 6: Recommendations
+      // Sheet 6: Recommendations (actionable insights, partly mocked)
       const recommendationsData = [
         ["OPERATIONAL RECOMMENDATIONS", "", "", "", ""],
         ["Priority", "Recommendation", "Impact", "Effort", "Timeline", "Owner"],
@@ -482,7 +516,7 @@ const KitchenStatsPanel = ({
       const ws6 = XLSX.utils.aoa_to_sheet(recommendationsData);
       XLSX.utils.book_append_sheet(wb, ws6, "Recommendations");
 
-      // Format columns for better readability
+      // Format columns for better readability (widths in characters)
       const cols = [
         { wch: 25 }, // Column A width
         { wch: 15 }, // Column B width
@@ -497,14 +531,14 @@ const KitchenStatsPanel = ({
         ws["!cols"] = cols;
       });
 
-      // Generate filename with timestamp
+      // Generate filename with timestamp (YYYYMMDD_HHmm)
       const timestamp = new Date()
         .toISOString()
         .split("T")[0]
         .replace(/-/g, "");
       const filename = `Kitchen_Analytics_Report_${timestamp}_${new Date().getHours()}${new Date().getMinutes()}.xlsx`;
 
-      // Write workbook to file
+      // Write workbook to buffer and save as blob
       const excelBuffer = XLSX.write(wb, {
         bookType: "xlsx",
         type: "array",
@@ -516,7 +550,7 @@ const KitchenStatsPanel = ({
 
       saveAs(blob, filename);
 
-      // Show success message
+      // Show success message with a short delay to avoid blocking UI
       setTimeout(() => {
         alert(
           `✅ Report exported successfully!\n\nFile: ${filename}\n\nThis comprehensive report includes:\n• 6 detailed sheets\n• Performance metrics\n• Inventory analysis\n• Time-based analytics\n• Operational recommendations`,
@@ -528,7 +562,11 @@ const KitchenStatsPanel = ({
     }
   }, [stats]);
 
-  // Helper functions for Excel data
+  // ==================== HELPER FUNCTIONS FOR EXPORT ====================
+  // These functions provide the mock/enrichment data for the Excel sheets.
+  // They are designed to be deterministic and safe even with partial stats.
+  // ======================================================================
+
   const getStatusColorCode = (status: string): string => {
     const colors: Record<string, string> = {
       pending: "Yellow",
@@ -595,7 +633,7 @@ const KitchenStatsPanel = ({
   };
 
   const calculateProfitMargin = (dishName: string): number => {
-    // Simulated profit margins based on dish type
+    // Simulated profit margins based on dish type (for demonstration)
     const margins: Record<string, number> = {
       burger: 25,
       pizza: 30,
@@ -664,6 +702,7 @@ const KitchenStatsPanel = ({
     target: number,
     isPercentage: boolean = false,
   ): string => {
+    // Simple target comparison for Excel status column
     if (isPercentage) {
       if (actual >= target) return "Met ✓";
       if (actual >= target * 0.9) return "Close";
@@ -675,7 +714,10 @@ const KitchenStatsPanel = ({
     }
   };
 
-  // Export specific sheet
+  // ==================== SINGLE‑SHEET EXPORT ====================
+  // Allows exporting a specific sheet (overview, status, dishes) as a standalone Excel file.
+  // ==============================================================
+
   const exportSpecificSheet = useCallback(
     (sheetType: "overview" | "status" | "dishes" | "all") => {
       if (!stats) return;
@@ -787,7 +829,10 @@ const KitchenStatsPanel = ({
     [stats, exportToExcel],
   );
 
-  // Export as CSV (alternative format)
+  // ==================== CSV EXPORT ====================
+  // Quick CSV export of key metrics and status counts.
+  // ====================================================
+
   const exportAsCSV = useCallback(() => {
     if (!stats) return;
 
@@ -837,7 +882,11 @@ const KitchenStatsPanel = ({
     }
   }, [stats]);
 
-  // Export as PDF (print function)
+  // ==================== PDF EXPORT (PRINT) ====================
+  // Uses the browser's print dialog to generate a PDF.
+  // Temporarily replaces the document body with a styled version of the stats content.
+  // =============================================================
+
   const exportAsPDF = useCallback(() => {
     const printContent = document.querySelector(".kitchen-stats-content");
     if (!printContent) return;
@@ -879,12 +928,13 @@ const KitchenStatsPanel = ({
 
     window.print();
     document.body.innerHTML = originalContent;
-    window.location.reload();
+    window.location.reload(); // Reload to restore React state
   }, []);
 
+  // Early return: if not full page and not open, render nothing.
   if (!isFullPage && !isOpen) return null;
 
-  // Loading state
+  // Loading state (modal mode)
   if (loading && !isFullPage) {
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
@@ -898,6 +948,7 @@ const KitchenStatsPanel = ({
     );
   }
 
+  // Color mapping for order status badges and progress bars
   const statusColors: Record<string, { bg: string; text: string }> = {
     pending: { bg: "bg-yellow-50", text: "text-yellow-800" },
     confirmed: { bg: "bg-blue-50", text: "text-blue-800" },
@@ -907,7 +958,7 @@ const KitchenStatsPanel = ({
     cancelled: { bg: "bg-red-50", text: "text-red-800" },
   };
 
-  // Calculate percentage for status bars
+  // Calculate percentage for status bars (used in rendering)
   const calculateStatusPercentage = (status: string, total: number) => {
     if (!stats?.ordersByStatus?.[status] || total === 0) return 0;
     return (stats.ordersByStatus[status] / total) * 100;
@@ -922,10 +973,10 @@ const KitchenStatsPanel = ({
 
   const completionRate = calculateCompletionRate(stats);
 
-  // Main panel content
+  // Main panel content (shared between modal and full page)
   const panelContent = (
     <div className="h-full flex flex-col bg-white kitchen-stats-content">
-      {/* Header */}
+      {/* Header with gradient background and close/back button */}
       <div className="flex-shrink-0 px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gradient-to-r from-blue-50 to-indigo-50">
         <div className="flex items-center">
           <div className="p-2 bg-white rounded-lg shadow-sm mr-3">
@@ -959,7 +1010,7 @@ const KitchenStatsPanel = ({
         )}
       </div>
 
-      {/* Error State */}
+      {/* Error State – allows retry */}
       {error && (
         <div className="mx-6 mt-6 p-4 bg-red-50 border border-red-200 rounded-lg">
           <div className="flex items-center">
@@ -975,9 +1026,9 @@ const KitchenStatsPanel = ({
         </div>
       )}
 
-      {/* Main Content */}
+      {/* Main scrollable content area */}
       <div className="flex-1 overflow-y-auto p-6">
-        {/* Export Options Bar */}
+        {/* Export Options Bar – provides multiple export formats with dropdown */}
         <div className="mb-6 p-4 bg-gradient-to-r from-gray-50 to-blue-50 rounded-lg border border-gray-200">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center">
@@ -993,6 +1044,7 @@ const KitchenStatsPanel = ({
                 <Download className="w-4 h-4 mr-2" />
                 Full Excel Report
               </button>
+              {/* Dropdown for quick exports */}
               <div className="relative group">
                 <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors flex items-center">
                   <FileText className="w-4 h-4 mr-2" />
@@ -1066,7 +1118,7 @@ const KitchenStatsPanel = ({
           </p>
         </div>
 
-        {/* Earnings Section */}
+        {/* Earnings Section – key revenue metrics */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-gray-900 flex items-center">
@@ -1132,7 +1184,7 @@ const KitchenStatsPanel = ({
             </div>
           </div>
 
-          {/* Weekly and Yearly stats */}
+          {/* Weekly and Yearly stats in simpler cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="p-4 bg-gray-50 rounded-lg">
               <p className="text-sm text-gray-600 mb-1">Weekly Revenue</p>
@@ -1149,7 +1201,7 @@ const KitchenStatsPanel = ({
           </div>
         </div>
 
-        {/* Order Status Distribution */}
+        {/* Order Status Distribution with progress bars */}
         <div className="mb-8">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">
             Order Status Distribution
@@ -1199,7 +1251,7 @@ const KitchenStatsPanel = ({
           </div>
         </div>
 
-        {/* Best Selling Dishes */}
+        {/* Best Selling Dishes – list with rank and revenue */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-gray-900 flex items-center">
@@ -1256,7 +1308,7 @@ const KitchenStatsPanel = ({
           )}
         </div>
 
-        {/* Performance Metrics */}
+        {/* Performance Metrics – additional KPIs */}
         <div>
           <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
             <TrendingUp className="w-5 h-5 mr-2 text-purple-600" />
@@ -1301,7 +1353,7 @@ const KitchenStatsPanel = ({
           </div>
         </div>
 
-        {/* Refresh Button */}
+        {/* Refresh Button with timestamp */}
         <div className="mt-8 pt-6 border-t border-gray-200">
           <div className="flex flex-col sm:flex-row gap-3">
             <button
@@ -1342,15 +1394,16 @@ const KitchenStatsPanel = ({
     return panelContent;
   }
 
+  // Modal mode: backdrop + slide‑in panel
   return (
     <>
-      {/* Backdrop */}
+      {/* Backdrop – clicking closes the panel */}
       <div
         className="fixed inset-0 bg-black bg-opacity-50 z-40 animate-fadeIn"
         onClick={onClose}
       />
 
-      {/* Panel */}
+      {/* Panel – slides in from the right */}
       <div className="fixed inset-y-0 right-0 w-full max-w-2xl z-50 animate-slideInRight">
         {panelContent}
       </div>

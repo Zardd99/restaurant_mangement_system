@@ -25,6 +25,8 @@ import { Edit, Delete, Add } from "@mui/icons-material";
 import { useAuth } from "../../../../contexts/AuthContext";
 import { promotionApi } from "../../../../services/promotionApi";
 
+// Type definition for a promotion object, matching the API response structure.
+// This ensures type safety throughout the component.
 interface Promotion {
   _id: string;
   name: string;
@@ -41,6 +43,16 @@ interface Promotion {
   usageCount: number;
 }
 
+/**
+ * PromotionManagement Component
+ *
+ * This component provides a full CRUD interface for managing promotions.
+ * It is restricted to admin users only. The component handles:
+ * - Listing all promotions in a table with key details.
+ * - Creating, editing, and deleting promotions via a modal form.
+ * - Validation and formatting of promotion data.
+ * - API interactions through a dedicated service layer.
+ */
 const PromotionManagement: React.FC = () => {
   const { user } = useAuth();
   const [promotions, setPromotions] = useState<Promotion[]>([]);
@@ -49,6 +61,9 @@ const PromotionManagement: React.FC = () => {
   const [editingPromotion, setEditingPromotion] = useState<Promotion | null>(
     null,
   );
+
+  // Form state for creating/editing a promotion.
+  // Default values are set for a new promotion (e.g., startDate today, endDate in 7 days).
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -65,12 +80,19 @@ const PromotionManagement: React.FC = () => {
     maxUsagePerCustomer: undefined as number | undefined,
   });
 
+  // Only fetch promotions if the user is an admin.
+  // This useEffect runs once when the component mounts and when the user changes.
   useEffect(() => {
     if (user?.role === "admin") {
       fetchPromotions();
     }
   }, [user]);
 
+  /**
+   * Fetches all promotions from the API.
+   * Sets loading state while waiting for the response.
+   * Errors are logged and not shown to the user in this version.
+   */
   const fetchPromotions = async () => {
     try {
       const response = await promotionApi.getAll();
@@ -82,6 +104,12 @@ const PromotionManagement: React.FC = () => {
     }
   };
 
+  /**
+   * Opens the dialog for creating a new promotion or editing an existing one.
+   * If a promotion is passed, it populates the form with its data.
+   * Otherwise, resets the form to default values.
+   * @param promotion - Optional promotion object to edit.
+   */
   const handleOpenDialog = (promotion?: Promotion) => {
     if (promotion) {
       setEditingPromotion(promotion);
@@ -124,6 +152,12 @@ const PromotionManagement: React.FC = () => {
     setEditingPromotion(null);
   };
 
+  /**
+   * Handles form submission for creating or updating a promotion.
+   * Calls the appropriate API method based on whether we are editing.
+   * On success, refreshes the list and closes the dialog.
+   * On error, shows a simple alert (could be improved with toast notifications).
+   */
   const handleSubmit = async () => {
     try {
       if (editingPromotion) {
@@ -139,6 +173,10 @@ const PromotionManagement: React.FC = () => {
     }
   };
 
+  /**
+   * Deletes a promotion after user confirmation.
+   * @param id - The ID of the promotion to delete.
+   */
   const handleDelete = async (id: string) => {
     if (window.confirm("Are you sure you want to delete this promotion?")) {
       try {
@@ -151,10 +189,12 @@ const PromotionManagement: React.FC = () => {
     }
   };
 
+  // Helper to format date strings for display.
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString();
   };
 
+  // Helper to generate a human-readable discount text based on type and value.
   const getDiscountText = (promotion: Promotion) => {
     if (promotion.discountType === "percentage") {
       return `${promotion.discountValue}% OFF`;
@@ -163,6 +203,7 @@ const PromotionManagement: React.FC = () => {
     }
   };
 
+  // Security check: if user is not admin, show access denied.
   if (!user || user.role !== "admin") {
     return (
       <Box p={3}>
@@ -173,6 +214,7 @@ const PromotionManagement: React.FC = () => {
     );
   }
 
+  // Loading state while fetching promotions.
   if (loading) {
     return (
       <Box p={3}>
@@ -183,6 +225,7 @@ const PromotionManagement: React.FC = () => {
 
   return (
     <Box p={3}>
+      {/* Header with title and "Add New" button */}
       <Box
         display="flex"
         justifyContent="space-between"
@@ -200,6 +243,7 @@ const PromotionManagement: React.FC = () => {
         </Button>
       </Box>
 
+      {/* Table of promotions */}
       <TableContainer component={Paper}>
         <Table>
           <TableHead>
@@ -274,6 +318,7 @@ const PromotionManagement: React.FC = () => {
         </Table>
       </TableContainer>
 
+      {/* Dialog for creating/editing promotions */}
       <Dialog
         open={openDialog}
         onClose={handleCloseDialog}
