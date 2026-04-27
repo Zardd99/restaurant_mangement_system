@@ -1,6 +1,16 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+Restaurant Management System - GROUP 1, Software Enginee
+
+**Version:** 0.1.0  
+**Technology:** Next.js 16 with React 19 & TypeScript  
+**Last Updated:** February 2026  
+**Status:** Production Ready
 
 ## Getting Started
+
+production link: [https://restaurant-mangement-system-seven.vercel.app/]
+Admin Access Authentication:
+Email: admin.005@gmail.com
+Password: Admin_5
 
 First, run the development server:
 
@@ -15,42 +25,6 @@ bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-
-## restaurant_mangement_system\_\_planning
-
-[Restaurant_management_system planning documentation](https://sakdachin.atlassian.net/wiki/external/ZDBmZmNjYzM1NGFhNDIwMWE0OWZlMWU5YjQ3ZDg1Y2Q)
-
-## 🛠 Development
-
-### Submitting Changes
-
-Please follow our standard process for submitting changes:
-
-1.  Create a feature branch from `dev`.
-2.  Make your changes and write tests.
-3.  **Open a Pull Request (PR)** against the `dev` branch.
-4.  **Use our [Pull Request Template](.github/pull_request_templates/default.md)** when describing your changes.
-
-This helps reviewers understand the context and scope of your work quickly.
 
 # Restaurant Management System
 
@@ -140,43 +114,28 @@ A comprehensive, full-stack restaurant management solution built with modern web
 ### Backend Setup
 
 ```bash
-cd backend2
+cd backend_restaurant
 npm install
 cp .env.example .env
 # Configure environment variables
 npm run dev
+
+run on port 5000
+
+if you use the vercel deployed website
+npm run dev
+then
+use ngrok http 5000 to open a https API server
 ```
 
 ### Frontend Setup
 
 ```bash
-cd frontend/restaurant_assignment_projects
+cd cd restaurant_web_app
 npm install
 cp .env.local.example .env.local
 # Configure environment variables
 npm run dev
-```
-
-### Environment Variables
-
-#### Backend (.env)
-
-```env
-PORT=5000
-MONGODB_URI=mongodb://localhost:27017/restaurant
-JWT_SECRET=your_jwt_secret
-UPSTASH_REDIS_REST_URL=your_redis_url
-UPSTASH_REDIS_REST_TOKEN=your_redis_token
-CORS_ORIGIN=http://localhost:3000
-```
-
-#### Frontend (.env.local)
-
-```env
-NEXT_PUBLIC_API_URL=http://localhost:5000
-NEXT_PUBLIC_AUTH0_DOMAIN=your_auth0_domain
-NEXT_PUBLIC_AUTH0_CLIENT_ID=your_auth0_client_id
-NEXT_PUBLIC_AUTH0_AUDIENCE=your_auth0_audience
 ```
 
 ## 📖 API Documentation
@@ -300,7 +259,6 @@ restaurant_management_system/
 - `main` - Production-ready code
 - `dev` - Development branch
 - `feature/*` - Feature branches
-- `bugfix/*` - Bug fix branches
 
 ### Code Quality
 
@@ -372,7 +330,7 @@ Types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
 
 For support and questions:
 
-- Create an issue on GitHub
+- Create an issue on GitHub: [https://github.com/Zardd99][https://github.com/Zardd99/restaurant_mangement_system]
 - Contact the development team
 - Check the documentation wiki
 

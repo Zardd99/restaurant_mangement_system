@@ -6,33 +6,33 @@ This implementation follows Clean Architecture principles with strict separation
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│                    UI Layer                          │
-│  - WaiterOrderInterfaceV2.tsx (< 400 lines)        │
-│  - IngredientImpactPreview.tsx (< 200 lines)       │
+│                    UI Layer                         │
+│  - WaiterOrderInterfaceV2.tsx (< 400 lines)         │
+│  - IngredientImpactPreview.tsx (< 200 lines)        │
 └─────────────────────────────────────────────────────┘
                          ↓
 ┌─────────────────────────────────────────────────────┐
-│                 ViewModel Layer                      │
+│                 ViewModel Layer                     │
 │  - OrderViewModel.ts (< 250 lines)                  │
 │  - Manages UI state only                            │
 └─────────────────────────────────────────────────────┘
                          ↓
 ┌─────────────────────────────────────────────────────┐
-│              Business Logic Layer                    │
+│              Business Logic Layer                   │
 │  - OrderManager.ts (< 300 lines)                    │
-│  - IngredientDeductionService.ts (< 250 lines)     │
+│  - IngredientDeductionService.ts (< 250 lines)      │
 │  - Pure, testable, framework-independent            │
 └─────────────────────────────────────────────────────┘
                          ↓
 ┌─────────────────────────────────────────────────────┐
-│                Repository Layer                      │
+│                Repository Layer                     │
 │  - IngredientRepository.ts (interface)              │
-│  - APIIngredientRepository.ts (< 200 lines)        │
+│  - APIIngredientRepository.ts (< 200 lines)         │
 │  - OrderRepository.ts (interface)                   │
 └─────────────────────────────────────────────────────┘
                          ↓
 ┌─────────────────────────────────────────────────────┐
-│                 Backend API                          │
+│                 Backend API                         │
 │  - inventory-endpoints.ts (< 300 lines)             │
 │  - Uses existing domain models                      │
 └─────────────────────────────────────────────────────┘
