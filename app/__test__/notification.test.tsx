@@ -40,6 +40,21 @@ jest.mock("../contexts/SocketContext", () => ({
   useSocket: () => ({ socket: mockSocket }),
 }));
 
+jest.mock("../contexts/SettingsContext", () => ({
+  useSettings: () => ({
+    settings: {
+      soundEnabled: false,
+      toastsEnabled: true,
+      toastTypes: {
+        order_created:   true,
+        order_preparing: true,
+        order_ready:     true,
+        order_served:    true,
+      },
+    },
+  }),
+}));
+
 // Import after mocks are registered
 import {
   NotificationProvider,
