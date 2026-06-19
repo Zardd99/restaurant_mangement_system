@@ -1,6 +1,8 @@
 @import "tailwindcss";
 /* @plugin "@midudev/tailwind-animations"; */
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --foreground-rgb: 0, 0, 0;
   --background-start-rgb: 255, 255, 255;
@@ -31,6 +33,14 @@ body {
     )
     rgb(var(--background-start-rgb));
   font-family: var(--font-ibm-plex-sans, sans-serif);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.dark body,
+.dark {
+  --foreground-rgb: 229, 231, 235;
+  --background-start-rgb: 17, 24, 39;
+  --background-end-rgb: 17, 24, 39;
 }
 
 input,

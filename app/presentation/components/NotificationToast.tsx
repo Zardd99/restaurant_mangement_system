@@ -7,6 +7,7 @@ import {
   OrderNotification,
   NotificationType,
 } from "../../contexts/NotificationContext";
+import { useSettings } from "../../contexts/SettingsContext";
 
 // ---------------------------------------------------------------------------
 // Per-type visual config
@@ -211,14 +212,18 @@ function ToastCard({
 
 export default function NotificationToast() {
   const { notifications, dismiss } = useNotifications();
+  const { settings } = useSettings();
   const [mounted, setMounted] = useState(false);
 
-  // Avoid SSR mismatch — portals need the DOM
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  if (!mounted || notifications.length === 0) return null;
+  const visible = notifications.filter(
+    (n) => settings.toastsEnabled && settings.toastTypes[n.type],
+  );
+
+  if (!mounted || visible.length === 0) return null;
 
   return createPortal(
     <div
@@ -226,7 +231,7 @@ export default function NotificationToast() {
       aria-live="polite"
       aria-label="Order notifications"
     >
-      {notifications.map((n) => (
+      {visible.map((n) => (
         <div key={n.id} className="pointer-events-auto">
           <ToastCard notification={n} onDismiss={dismiss} />
         </div>
