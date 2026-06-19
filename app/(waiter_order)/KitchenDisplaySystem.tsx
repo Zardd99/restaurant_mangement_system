@@ -96,8 +96,8 @@ const KitchenDisplaySystem = () => {
   // Hooks & Context
   // --------------------------------------------------------------------------
   const { token } = useAuth();
-  const { orders, loading, error, fetchOrders } = useOrders(token, filter);
-  const { updateOrderStatus } = useOrderWebSocket(token, fetchOrders);
+  const { orders, loading, error, fetchOrders, updateOrderLocally } = useOrders(token, filter);
+  const { updateOrderStatus } = useOrderWebSocket(token);
   const { deductIngredientsForOrder } = useInventoryDeduction();
 
   // --------------------------------------------------------------------------
@@ -110,6 +110,7 @@ const KitchenDisplaySystem = () => {
   const tokenRef = useRef(token);
   const deductIngredientsRef = useRef(deductIngredientsForOrder);
   const updateOrderStatusRef = useRef(updateOrderStatus);
+  const updateOrderLocallyRef = useRef(updateOrderLocally);
 
   // Keep refs synchronised with the latest state / prop values
   useEffect(() => {
@@ -131,6 +132,10 @@ const KitchenDisplaySystem = () => {
   useEffect(() => {
     updateOrderStatusRef.current = updateOrderStatus;
   }, [updateOrderStatus]);
+
+  useEffect(() => {
+    updateOrderLocallyRef.current = updateOrderLocally;
+  }, [updateOrderLocally]);
 
   // --------------------------------------------------------------------------
   // Data Fetching
@@ -171,6 +176,7 @@ const KitchenDisplaySystem = () => {
     async (orderId: string, newStatus: string) => {
       const order = ordersRef.current.find((o) => o._id === orderId);
       if (!order) return;
+      const previousStatus = order.status;
 
       try {
         // ----- Inventory Deduction (only when moving to "preparing") -----
@@ -208,7 +214,6 @@ const KitchenDisplaySystem = () => {
               setShowDeductionWarning(true);
             }
 
-            // Record deduction result on the order (for audit/logging)
             await fetch(`${apiUrl}/api/orders/${orderId}/inventory`, {
               method: "POST",
               headers: {
@@ -216,9 +221,7 @@ const KitchenDisplaySystem = () => {
                 Authorization: `Bearer ${authToken}`,
               },
               body: JSON.stringify({
-                deductionStatus: deductionResult.success
-                  ? "completed"
-                  : "failed",
+                deductionStatus: deductionResult.success ? "completed" : "failed",
                 deductionData: deductionResult.data,
                 warning: deductionResult.warning,
                 timestamp: new Date().toISOString(),
@@ -227,14 +230,18 @@ const KitchenDisplaySystem = () => {
           }
         }
 
-        // ----- Update Order Status via WebSocket -----
-        updateOrderStatusRef.current(orderId, newStatus);
+        // ----- Optimistic update: change this card immediately -----
+        updateOrderLocallyRef.current(orderId, newStatus);
+
+        // ----- Persist to server (rollback on failure) -----
+        await updateOrderStatusRef.current(orderId, newStatus);
       } catch (error) {
         console.error("Error handling status update:", error);
+        updateOrderLocallyRef.current(orderId, previousStatus);
         alert("Failed to update order status");
       }
     },
-    [], // Intentionally empty – all dependencies are accessed via refs
+    [],
   );
 
   /** Opens the quick statistics panel. */

@@ -207,7 +207,24 @@ export const useOrders = (token: string | null, filter: string) => {
   }, [socket]);
 
   // --------------------------------------------------------------------------
+  // Optimistic Local Update
+  // --------------------------------------------------------------------------
+
+  const updateOrderLocally = useCallback(
+    (orderId: string, newStatus: string) => {
+      if (!isValidOrderStatus(newStatus)) return;
+      setOrders((prev) => {
+        const mapped = prev.map((o) =>
+          o._id === orderId ? { ...o, status: newStatus as Order["status"] } : o,
+        );
+        return filter !== "all" ? mapped.filter((o) => o.status === filter) : mapped;
+      });
+    },
+    [filter],
+  );
+
+  // --------------------------------------------------------------------------
   // Return Value
   // --------------------------------------------------------------------------
-  return { orders, loading, error, fetchOrders };
+  return { orders, loading, error, fetchOrders, updateOrderLocally };
 };
