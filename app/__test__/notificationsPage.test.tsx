@@ -14,6 +14,7 @@ const mockDelete = jest.fn();
 jest.mock("../contexts/AuthContext", () => ({
   useAuth: () => ({
     axiosInstance: { get: mockGet, delete: mockDelete },
+    isLoading: false,
   }),
 }));
 

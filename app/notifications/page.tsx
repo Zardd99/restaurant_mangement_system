@@ -110,7 +110,7 @@ function NotificationRow({ n }: { n: OrderNotification & { read: boolean } }) {
 // -----------------------------------------------------------------------------
 
 export default function NotificationsPage() {
-  const { axiosInstance } = useAuth();
+  const { axiosInstance, isLoading: authLoading } = useAuth();
   const axiosRef = useRef(axiosInstance);
   axiosRef.current = axiosInstance;
 
@@ -148,8 +148,8 @@ export default function NotificationsPage() {
   );
 
   useEffect(() => {
-    fetchPage(1, true);
-  }, [fetchPage]);
+    if (!authLoading) fetchPage(1, true);
+  }, [fetchPage, authLoading]);
 
   async function handleClearAll() {
     setClearing(true);
