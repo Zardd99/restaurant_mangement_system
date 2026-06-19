@@ -9,6 +9,7 @@ import { SearchProvider } from "./contexts/SearchContext";
 import { SocketProvider } from "./contexts/SocketContext";
 import { WebSocketProvider } from "./contexts/WebSocketContext";
 import { NotificationProvider } from "./contexts/NotificationContext";
+import { SettingsProvider } from "./contexts/SettingsContext";
 import NotificationToast from "./presentation/components/NotificationToast";
 import Layout from "./presentation/components/layout";
 
@@ -37,7 +38,11 @@ export const metadata: Metadata = {
 
 const RootLayout = async ({ children }: { children: ReactNode }) => {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        {/* Apply saved theme before first paint to prevent flash */}
+        <script dangerouslySetInnerHTML={{ __html: `(function(){try{var s=localStorage.getItem('rms_settings');var t=s?JSON.parse(s).theme:'light';var d=window.matchMedia('(prefers-color-scheme: dark)').matches;if(t==='dark'||(t==='system'&&d))document.documentElement.classList.add('dark');}catch(e){}})();` }} />
+      </head>
       <body
         className={`${ibmPlexSans.variable} ${bebasNeue.variable} font-ibm-plex-sans antialiased`}
       >
@@ -45,14 +50,15 @@ const RootLayout = async ({ children }: { children: ReactNode }) => {
           <SocketProvider>
             <WebSocketProvider>
               <NotificationProvider>
-                <SearchProvider>
-                  <div className="flex flex-col min-h-screen mx-auto">
-                    <Layout />
-                    <main className="flex-1 ml-[83.40px]">{children}</main>
-                  </div>
-                </SearchProvider>
-                {/* Global notification toasts — portal to document.body */}
-                <NotificationToast />
+                <SettingsProvider>
+                  <SearchProvider>
+                    <div className="flex flex-col min-h-screen mx-auto">
+                      <Layout />
+                      <main className="flex-1 ml-[83.40px]">{children}</main>
+                    </div>
+                  </SearchProvider>
+                  <NotificationToast />
+                </SettingsProvider>
               </NotificationProvider>
             </WebSocketProvider>
           </SocketProvider>

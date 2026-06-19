@@ -9,6 +9,7 @@ import React, {
   useRef,
 } from "react";
 import { useSocket } from "./SocketContext";
+import { useSettings } from "./SettingsContext";
 
 export type NotificationType =
   | "order_created"
@@ -47,6 +48,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const [notifications, setNotifications] = useState<OrderNotification[]>([]);
   const { socket } = useSocket();
+  const { settings } = useSettings();
   const timers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
   const dismiss = useCallback((id: string) => {
@@ -65,10 +67,26 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
         return [notification, ...prev].slice(0, MAX_VISIBLE);
       });
 
+      if (settings.soundEnabled) {
+        try {
+          const ctx = new AudioContext();
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.frequency.setValueAtTime(880, ctx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(440, ctx.currentTime + 0.15);
+          gain.gain.setValueAtTime(0.25, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+          osc.start(ctx.currentTime);
+          osc.stop(ctx.currentTime + 0.4);
+        } catch {}
+      }
+
       const timer = setTimeout(() => dismiss(notification.id), AUTO_DISMISS_MS);
       timers.current.set(notification.id, timer);
     },
-    [dismiss],
+    [dismiss, settings.soundEnabled],
   );
 
   useEffect(() => {
