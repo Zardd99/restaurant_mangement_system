@@ -78,14 +78,10 @@ function makeNotification(
 
 // Renders the context and exposes its state via data-testid attributes
 function NotificationSpy() {
-  const { notifications, history, dismiss, clearHistory } = useNotifications();
+  const { notifications, dismiss } = useNotifications();
   return (
     <div>
       <span data-testid="count">{notifications.length}</span>
-      <span data-testid="history-count">{history.length}</span>
-      <button data-testid="clear-history" onClick={clearHistory}>
-        Clear
-      </button>
       {notifications.map((n) => (
         <div key={n.id} data-testid={`notif-${n.id}`}>
           <span data-testid={`type-${n.id}`}>{n.type}</span>
@@ -96,11 +92,6 @@ function NotificationSpy() {
           >
             Dismiss
           </button>
-        </div>
-      ))}
-      {history.map((n) => (
-        <div key={`h-${n.id}`} data-testid={`history-${n.id}`}>
-          <span data-testid={`history-type-${n.id}`}>{n.type}</span>
         </div>
       ))}
     </div>
@@ -301,104 +292,6 @@ describe("NotificationContext", () => {
     });
   });
 
-  // ---- History ------------------------------------------------------------ //
-
-  it("history starts empty", () => {
-    render(
-      <NotificationProvider>
-        <NotificationSpy />
-      </NotificationProvider>,
-    );
-    expect(screen.getByTestId("history-count")).toHaveTextContent("0");
-  });
-
-  it("history accumulates every received notification", () => {
-    render(
-      <NotificationProvider>
-        <NotificationSpy />
-      </NotificationProvider>,
-    );
-    emitSocketNotification(makeNotification({ id: "h1" }));
-    emitSocketNotification(makeNotification({ id: "h2" }));
-    emitSocketNotification(makeNotification({ id: "h3" }));
-
-    expect(screen.getByTestId("history-count")).toHaveTextContent("3");
-    expect(screen.getByTestId("history-h1")).toBeInTheDocument();
-    expect(screen.getByTestId("history-h2")).toBeInTheDocument();
-    expect(screen.getByTestId("history-h3")).toBeInTheDocument();
-  });
-
-  it("history is not cleared by auto-dismiss", () => {
-    render(
-      <NotificationProvider>
-        <NotificationSpy />
-      </NotificationProvider>,
-    );
-    emitSocketNotification(makeNotification({ id: "persist" }));
-
-    act(() => {
-      jest.advanceTimersByTime(6_001);
-    });
-
-    // Active toast gone, history entry still present
-    expect(screen.getByTestId("count")).toHaveTextContent("0");
-    expect(screen.getByTestId("history-count")).toHaveTextContent("1");
-  });
-
-  it("history is not cleared by manual dismiss()", () => {
-    render(
-      <NotificationProvider>
-        <NotificationSpy />
-      </NotificationProvider>,
-    );
-    emitSocketNotification(makeNotification({ id: "keep-hist" }));
-    fireEvent.click(screen.getByTestId("dismiss-keep-hist"));
-
-    expect(screen.getByTestId("count")).toHaveTextContent("0");
-    expect(screen.getByTestId("history-count")).toHaveTextContent("1");
-  });
-
-  it("history deduplicates by id", () => {
-    render(
-      <NotificationProvider>
-        <NotificationSpy />
-      </NotificationProvider>,
-    );
-    const n = makeNotification({ id: "dup-h" });
-    emitSocketNotification(n);
-    emitSocketNotification(n);
-
-    expect(screen.getByTestId("history-count")).toHaveTextContent("1");
-  });
-
-  it("clearHistory empties the history list", () => {
-    render(
-      <NotificationProvider>
-        <NotificationSpy />
-      </NotificationProvider>,
-    );
-    emitSocketNotification(makeNotification({ id: "clr1" }));
-    emitSocketNotification(makeNotification({ id: "clr2" }));
-    expect(screen.getByTestId("history-count")).toHaveTextContent("2");
-
-    fireEvent.click(screen.getByTestId("clear-history"));
-
-    expect(screen.getByTestId("history-count")).toHaveTextContent("0");
-  });
-
-  it("new notifications are still enqueued after clearHistory", () => {
-    render(
-      <NotificationProvider>
-        <NotificationSpy />
-      </NotificationProvider>,
-    );
-    emitSocketNotification(makeNotification({ id: "before" }));
-    fireEvent.click(screen.getByTestId("clear-history"));
-    emitSocketNotification(makeNotification({ id: "after" }));
-
-    expect(screen.getByTestId("history-count")).toHaveTextContent("1");
-    expect(screen.getByTestId("history-after")).toBeInTheDocument();
-  });
 });
 
 // ---------------------------------------------------------------------------
