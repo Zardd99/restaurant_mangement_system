@@ -1,8 +1,8 @@
 # Restaurant Web Application - Technical Documentation
 
-**Version:** 0.1.0  
+**Version:** 0.1.1  
 **Technology:** Next.js 16 with React 19 & TypeScript  
-**Last Updated:** February 2026  
+**Last Updated:** June 2026  
 **Status:** Production Ready
 
 ---
@@ -1615,5 +1615,95 @@ docker-compose up
 ```
 
 ---
+
+---
+
+## Table Management Components
+
+### Overview
+
+Two presentation components handle table selection and floor-plan monitoring. Both subscribe to Socket.io events so their data updates in real time whenever any order is created or changes status — no polling lag.
+
+| Component | File | Used by |
+| --------- | ---- | ------- |
+| `TableSelect` | `app/presentation/components/TableSelect.tsx` | Waiter order-creation form — lets a waiter pick an available table |
+| `TableOccupancyManager` | `app/presentation/components/TableOccupancyManager.tsx` | Admin/manager floor-plan view — shows live occupancy and order details |
+
+---
+
+### TableSelect
+
+**Props:**
+
+| Prop | Type | Default | Description |
+| ---- | ---- | ------- | ----------- |
+| `value` | `number \| null` | — | Currently selected table number, controlled by the parent |
+| `onChange` | `(n: number \| null) => void` | — | Called when the selection changes |
+| `orderType` | `"dine-in" \| "takeaway" \| "delivery"` | — | Component renders nothing unless `"dine-in"` |
+| `disabled` | `boolean` | `false` | Disables all interactive elements |
+| `maxTables` | `number` | `50` | Upper bound for the table grid |
+
+**Behavior:**
+
+1. **Real-time availability** — subscribes to `order_created` and `order_updated` via `useSocket()`. Any order event triggers an immediate `fetchTables()` call, updating the green/red grid without waiting for the 10-second polling interval.
+2. **Stale-selection invalidation** — after each refresh, if `value` appears in the new `occupiedTables` list, `onChange(null)` is called automatically and a red warning is displayed, preventing the waiter from submitting an order to a table that was just taken.
+3. **Three selection paths** — visual grid (green = available, red = occupied, blue = selected), direct number input (validated against `availableTables`), and a "Change" button on the current selection display.
+4. **Polling fallback** — retains a 10-second `setInterval` as a fallback for environments where the WebSocket is unavailable.
+
+**Key implementation details:**
+
+```typescript
+// Real-time refresh effect
+useEffect(() => {
+  if (!socket || orderType !== "dine-in") return;
+  const refresh = () => fetchTables();
+  socket.on("order_created", refresh);
+  socket.on("order_updated", refresh);
+  return () => {
+    socket.off("order_created", refresh);
+    socket.off("order_updated", refresh);
+  };
+}, [socket, orderType, fetchTables]);
+
+// Stale-selection invalidation (inside fetchTables)
+if (value !== null && newOccupied.includes(value)) {
+  onChange(null);
+}
+```
+
+---
+
+### TableOccupancyManager
+
+**Props:**
+
+| Prop | Type | Default | Description |
+| ---- | ---- | ------- | ----------- |
+| `maxTables` | `number` | `50` | Number of tables shown in the floor plan |
+
+**Behavior:**
+
+1. **Real-time floor plan** — subscribes to `order_created` and `order_updated` via `useSocket()`. The grid and summary counts update within milliseconds of any order event.
+2. **Live indicator** — a green dot labelled "Live" is shown in the controls bar when `socket.connected` is `true`, giving staff instant confirmation that real-time data is active.
+3. **Selected-table sync** — after each refresh a `useEffect` re-looks up `selectedTable` in the new `tableStatus` array and updates the detail panel in-place, so order info (status, amount, item count) stays current without requiring the user to re-click the table.
+4. **Inline release errors** — release failures are displayed inside the detail panel rather than via `alert()`, keeping the UI non-blocking.
+5. **Polling fallback** — configurable auto-refresh interval (3 s / 5 s / 10 s / 30 s) retained as a fallback.
+
+**Floor-plan colour coding:**
+
+| Colour | Meaning |
+| ------ | ------- |
+| Green (`bg-green-100 border-green-400`) | Table available |
+| Red (`bg-red-100 border-red-400`) | Table occupied |
+| Blue ring (`ring-4 ring-blue-500`) | Currently selected in detail panel |
+
+**WebSocket event subscriptions:**
+
+```typescript
+socket.on("order_created", () => fetchTableStatus());
+socket.on("order_updated", () => fetchTableStatus());
+```
+
+Both events are cleaned up in the effect's return function to prevent listener accumulation on re-renders.
 
 **End of Restaurant Web Application Documentation**

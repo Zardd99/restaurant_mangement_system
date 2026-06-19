@@ -1,26 +1,37 @@
 {
   "compilerOptions": {
     "target": "ES2017",
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
     "noEmit": true,
     "esModuleInterop": true,
     "module": "esnext",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
     "jsx": "react-jsx",
     "incremental": true,
-    "types": ["jest", "node", "@testing-library/jest-dom"],
+    "noUncheckedSideEffectImports": false,
+    "types": [
+      "jest",
+      "node",
+      "@testing-library/jest-dom"
+    ],
     "plugins": [
       {
         "name": "next"
       }
     ],
     "paths": {
-      "@/*": ["./*"]
+      "@/*": [
+        "./*"
+      ]
     }
   },
   "include": [
@@ -28,12 +39,10 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    "backend/src/server.ts",
-    "backend/src/routes/orders.ts",
-    "jest.config.js",
     ".next/dev/types/**/*.ts",
-    "../backend_restaurant/application/managers/StatsManager.ts",
-    "../backend_restaurant/repositories/StatsRepository.ts"
+    "jest.config.js"
   ],
-  "exclude": ["node_modules"]
+  "exclude": [
+    "node_modules"
+  ]
 }
