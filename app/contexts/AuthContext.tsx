@@ -72,6 +72,8 @@ interface AuthContextType {
   isLoading: boolean;
   /** Optimistically update the local user object. */
   updateUser: (userData: Partial<User>) => void;
+  /** Pre-configured axios instance with auth headers. */
+  axiosInstance: AxiosInstance;
 }
 
 /**
@@ -323,6 +325,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     logout,
     isLoading,
     updateUser,
+    axiosInstance,
   };
 
   // ---------------------------------------------------------------------------
