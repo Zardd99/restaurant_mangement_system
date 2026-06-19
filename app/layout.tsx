@@ -8,6 +8,8 @@ import { AuthProvider } from "./contexts/AuthContext";
 import { SearchProvider } from "./contexts/SearchContext";
 import { SocketProvider } from "./contexts/SocketContext";
 import { WebSocketProvider } from "./contexts/WebSocketContext";
+import { NotificationProvider } from "./contexts/NotificationContext";
+import NotificationToast from "./presentation/components/NotificationToast";
 import Layout from "./presentation/components/layout";
 
 const ibmPlexSans = localFont({
@@ -42,12 +44,16 @@ const RootLayout = async ({ children }: { children: ReactNode }) => {
         <AuthProvider>
           <SocketProvider>
             <WebSocketProvider>
-              <SearchProvider>
-                <div className="flex flex-col min-h-screen mx-auto">
-                  <Layout />
-                  <main className="flex-1 ml-[83.40px]">{children}</main>
-                </div>
-              </SearchProvider>
+              <NotificationProvider>
+                <SearchProvider>
+                  <div className="flex flex-col min-h-screen mx-auto">
+                    <Layout />
+                    <main className="flex-1 ml-[83.40px]">{children}</main>
+                  </div>
+                </SearchProvider>
+                {/* Global notification toasts — portal to document.body */}
+                <NotificationToast />
+              </NotificationProvider>
             </WebSocketProvider>
           </SocketProvider>
         </AuthProvider>
