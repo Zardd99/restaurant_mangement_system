@@ -96,7 +96,8 @@ const UserProfile: React.FC = () => {
         email: user.email,
         phone: user.phone || "",
       });
-      setIsOnline(user.isActive);
+      // Do not read user.isActive here — it is a stale DB snapshot from login.
+      // The socket effect is the authoritative source for live presence.
     }
   }, [user]);
 
@@ -127,6 +128,11 @@ const UserProfile: React.FC = () => {
 
     // ----- Join user-specific room -----
     socket.emit("join_user_room", user._id);
+
+    // User is online the moment this effect runs — the socket is connected
+    // and the page is mounted. Mark active immediately so the UI never flashes
+    // "Inactive" while waiting for the server echo.
+    setIsOnline(true);
 
     // ----- Register listeners -----
     socket.on("user_status_updated", handleUserStatusUpdate);
