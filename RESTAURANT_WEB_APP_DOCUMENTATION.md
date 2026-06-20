@@ -1,319 +1,223 @@
-# Restaurant Web Application - Technical Documentation
+# Restaurant Management System — Frontend Documentation
 
-**Version:** 0.1.1  
-**Technology:** Next.js 16 with React 19 & TypeScript  
-**Last Updated:** June 2026  
-**Status:** Production Ready
+**Version:** 0.2.0  
+**Framework:** Next.js 16.1.6 · React 19.2.4 · TypeScript 6.0.3  
+**Last Updated:** June 2026
 
 ---
 
 ## Table of Contents
 
-1. [Executive Summary](#executive-summary)
-2. [Architecture & Design](#architecture--design)
-3. [Module Breakdown](#module-breakdown)
-4. [State Management](#state-management)
-5. [Component Architecture](#component-architecture)
-6. [Implementation Logic](#implementation-logic)
-7. [API Integration](#api-integration)
-8. [Setup & Deployment](#setup--deployment)
-9. [Performance Optimization](#performance-optimization)
-10. [Security Considerations](#security-considerations)
+1. [Project Overview](#1-project-overview)
+2. [Technology Stack](#2-technology-stack)
+3. [Repository Structure](#3-repository-structure)
+4. [Architecture](#4-architecture)
+5. [Context Providers](#5-context-providers)
+6. [Custom Hooks](#6-custom-hooks)
+7. [Domain & Application Layers](#7-domain--application-layers)
+8. [Infrastructure Layer](#8-infrastructure-layer)
+9. [Pages & Routes](#9-pages--routes)
+10. [Component Catalog](#10-component-catalog)
+11. [View Models](#11-view-models)
+12. [Sidebar & Navigation](#12-sidebar--navigation)
+13. [Real-Time System](#13-real-time-system)
+14. [Authentication & Authorization](#14-authentication--authorization)
+15. [Settings & Theming](#15-settings--theming)
+16. [Error Handling](#16-error-handling)
+17. [Data Flow Diagrams](#17-data-flow-diagrams)
+18. [Environment & Setup](#18-environment--setup)
+19. [Testing](#19-testing)
+20. [Adding New Features](#20-adding-new-features)
 
 ---
 
-## Executive Summary
+## 1. Project Overview
 
-### Project Overview
+The **Restaurant Management System frontend** is a multi-role, real-time web application that serves as the operational interface for all restaurant staff. It is an employee-only system — there is no customer-facing order portal. Every page is protected by role-based access control.
 
-**Restaurant Web Application** is a comprehensive multi-role web interface built with Next.js for restaurant management. It provides distinct user experiences for admin, manager, chef, waiter, and cashier roles, enabling real-time order management, inventory tracking, analytics dashboards, and customer interactions.
+### Role Capabilities
 
-### Primary Value Proposition
+| Role | Primary Access |
+|---|---|
+| **Admin** | Full system: menu CRUD, analytics, user management, billing, settings |
+| **Manager** | Operations, scheduling, billing, promotions, reporting |
+| **Waiter** | Take orders, track kitchen status, billing payments |
+| **Chef** | Chef's Special display, kitchen order queue |
+| **Cashier** | Billing & payments |
 
-- **Multi-Role Dashboard System**: Tailored interfaces for different restaurant staff based on role
-- **Real-Time Order Management**: Live updates using WebSocket (Socket.io) integration
-- **Kitchen Display System (KDS)**: Large-screen interface for kitchen staff to manage orders
-- **Inventory Management**: Staff can deduct ingredients and track low-stock alerts
-- **Admin Analytics**: Comprehensive dashboards with sales metrics and trend analysis
-- **Responsive Design**: Works seamlessly on desktop and mobile devices
-- **Modern Stack**: Built with Next.js 16 App Router, React 19, TypeScript, and Tailwind CSS
+### Core Feature Areas
 
-### Technology Stack
-
-| Technology             | Purpose                 | Version |
-| ---------------------- | ----------------------- | ------- |
-| **Next.js**            | Framework & SSR         | ^16.1.3 |
-| **React**              | UI Library              | ^19.2.3 |
-| **TypeScript**         | Type Safety             | Latest  |
-| **Tailwind CSS**       | Styling                 | ^4      |
-| **Socket.io-client**   | Real-time communication | ^4.8.1  |
-| **Axios**              | HTTP client             | ^1.12.1 |
-| **React Hook Form**    | Form management         | ^7.62.0 |
-| **Chart.js**           | Data visualization      | ^4.5.1  |
-| **JWT (jsonwebtoken)** | Authentication tokens   | ^9.0.2  |
-| **MongoDB/Mongoose**   | Backend database        | Latest  |
+- **Menu Management** — Create, edit, delete, and filter menu items with image upload
+- **Order Taking** — Compact tablet-optimised waiter interface with real-time cart
+- **Kitchen Display System (KDS)** — Live order queue for kitchen staff with status controls
+- **Billing & Payments** — Payment tracking, cash change calculator, receipt printing
+- **Inventory Dashboard** — Real-time stock levels and low-stock alerts
+- **Analytics** — Revenue, order counts, and top-dish reports
+- **Notifications** — In-app toast alerts for every order status transition
+- **Settings** — Per-user theme, notification preferences, sound alerts
+- **Help & Support** — FAQ, contact form, role tips
 
 ---
 
-## Architecture & Design
+## 2. Technology Stack
 
-### System Architecture Overview
+| Package | Version | Role |
+|---|---|---|
+| `next` | 16.1.6 | Framework, App Router, SSR |
+| `react` | 19.2.4 | UI library |
+| `typescript` | 6.0.3 | Type safety |
+| `tailwindcss` | 4 | Utility-first styling |
+| `socket.io-client` | 4.8.3 | Real-time WebSocket client |
+| `axios` | 1.13.5 | HTTP client with interceptors |
+| `react-hook-form` | 7.71.1 | Form state & validation |
+| `@mui/material` | 7.3.8 | Data grids and analytics charts |
+| `chart.js` + `react-chartjs-2` | 4.5.1 | Revenue/order charts |
+| `lucide-react` | 0.563.0 | Icon system |
+| `js-cookie` | 3.x | JWT cookie management |
+| `jest` + `@testing-library/react` | Latest | Unit & component tests |
 
-```
-┌──────────────────────────────────────────────────────────────────┐
-│                 Restaurant Web Application (Next.js)             │
-│                         Port: 3000                               │
-└───────┬────────────────────────────────────────────────────────┬─┘
-        │                                                         │
-   ┌────────────────────────────┬───────────────────────────┐    │
-   │    HTTP REST API           │   WebSocket (Socket.io)   │    │
-   └────────┬───────────────────┴───────────────┬───────────┘    │
-            │                                   │                │
-   ┌────────────────────────────────────────────────────────┐    │
-   │         Backend API Server (Express)                   │    │
-   │                 Port: 5000                             │    │
-   └────────┬──────────────────────────────┬────────────────┘    │
-            │                              │                     │
-     ┌──────────────────┐         ┌────────────────┐             │
-     │   MongoDB        │         │ Email Service  │             │
-     │   (Database)     │         │  (Nodemailer)  │             │
-     └──────────────────┘         └────────────────┘             │
-```
+---
 
-### Application Layer Architecture
+## 3. Repository Structure
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│              Client Application Layer                       │
-│                  (Next.js App Router)                       │
-├─────────────────────────────────────────────────────────────┤
-│  Presentation Layer                                         │
-│  ├─ Pages (Admin, Waiter, Chef, User routes)             │
-│  ├─ Components (Reusable UI components)                   │
-│  └─ Layouts (Navigation, sidebar, main content)           │
-├─────────────────────────────────────────────────────────────┤
-│  State Management Layer                                     │
-│  ├─ Context API (Auth, Socket, Search, WebSocket)        │
-│  ├─ React Hooks (useState, useEffect, useCallback)        │
-│  └─ Local Storage (Order persistence)                     │
-├─────────────────────────────────────────────────────────────┤
-│  Application Layer (Business Logic)                         │
-│  ├─ Hooks (useOrderManager, useMenuData, useStats)       │
-│  ├─ Use Cases (OrderUseCases, OrderManager)              │
-│  ├─ ViewModels (Data formatting)                          │
-│  └─ Managers (Inventory, Stats)                           │
-├─────────────────────────────────────────────────────────────┤
-│  Domain Layer                                               │
-│  ├─ Models (Order, MenuItem, User, etc.)                  │
-│  ├─ Repositories (LocalStorage, HTTP-based)              │
-│  └─ Business Rules (Validation, Constraints)             │
-├─────────────────────────────────────────────────────────────┤
-│  Infrastructure Layer                                       │
-│  ├─ API Client (Axios with Auth interceptors)            │
-│  ├─ WebSocket Client (Socket.io)                         │
-│  └─ Local Storage (IndexedDB, SessionStorage)            │
-└─────────────────────────────────────────────────────────────┘
-```
-
-### Design Patterns
-
-#### 1. **Container/Presentational Component Pattern**
-
-**Smart Components (Containers):**
-
-- Handle business logic and API calls
-- Manage state
-- Connect to contexts and hooks
-- Example: `WaiterOrderInterface.tsx`
-
-```typescript
-// Smart Component
-const WaiterOrderInterface = () => {
-  const { token, user } = useAuth();
-  const { socket, isConnected } = useSocket();
-  const { currentOrder } = useOrderManager();
-
-  useEffect(() => {
-    // Business logic
-    loadOrders();
-  }, [token]);
-
-  return <OrderDisplay items={currentOrder} />;
-};
-```
-
-**Dumb Components (Presentational):**
-
-- Receive props only
-- Render UI based on props
-- No business logic
-- Example: `OrderCard.tsx`
-
-```typescript
-// Dumb Component
-const OrderCard = ({ order, onStatusChange }) => {
-  return (
-    <div>
-      <h3>{order.items.length} items</h3>
-      <button onClick={() => onStatusChange("ready")}>Ready</button>
-    </div>
-  );
-};
-```
-
-#### 2. **Context API for State Management**
-
-Global state is managed through React Context:
-
-```
-AuthContext
-├─ user: User | null
-├─ token: string | null
-├─ login(): Promise<void>
-├─ logout(): void
-└─ updateUser(): void
-
-SocketContext
-├─ socket: Socket | null
-├─ isConnected: boolean
-└─ Events: order_created, order_updated, low_stock_alert
-
-SearchContext
-├─ query: string
-├─ results: MenuItem[]
-└─ search(query: string): void
-
-WebSocketContext
-├─ lastMessage: any
-├─ sendMessage(message: any): void
-└─ subscribe(event: string, handler: Function): void
-```
-
-#### 3. **Custom Hooks for Reusable Logic**
-
-Hooks encapsulate business logic and state management:
-
-```typescript
-// Hook for order management
-const useOrderManager = () => {
-  const [currentOrder, setCurrentOrder] = useLocalStorage("waiter_current_order", []);
-
-  const addToOrder = useCallback(async (item: MenuItem) => {
-    const res = await ucAddToOrder(repo, item);
-    if (res.ok) setCurrentOrder(res.value);
-  }, []);
-
-  return { currentOrder, addToOrder, ... };
-};
-
-// Hook for form handling
-const useRegisterForm = () => {
-  const form = useForm<RegisterFormData>({ ... });
-  const [isLoading, setIsLoading] = useState(false);
-
-  const onSubmit = async (data: RegisterFormData) => {
-    setIsLoading(true);
-    const response = await register(data);
-    // ...
-  };
-
-  return { form, onSubmit, isLoading };
-};
-```
-
-#### 4. **Repository Pattern for Data Access**
-
-```typescript
-// Abstract interface
-interface OrderRepository {
-  getOrders(): Promise<Result<Order[]>>;
-  createOrder(order: Order): Promise<Result<Order>>;
-  updateOrder(id: string, data: Partial<Order>): Promise<Result<Order>>;
-}
-
-// HTTP-based implementation
-class HttpOrderRepository implements OrderRepository {
-  constructor(private apiClient: AxiosInstance) {}
-
-  async getOrders() {
-    try {
-      const response = await this.apiClient.get("/orders");
-      return Ok(response.data);
-    } catch (error) {
-      return Err(error.message);
-    }
-  }
-}
-
-// Local storage implementation (for fallback)
-class LocalStorageOrderRepository implements OrderRepository {
-  async getOrders() {
-    const data = localStorage.getItem("orders");
-    return Ok(data ? JSON.parse(data) : []);
-  }
-}
-```
-
-#### 5. **Controller Pattern**
-
-Controllers coordinate components and business logic:
-
-```typescript
-// Order Controller
-class OrderController {
-  constructor(
-    private orderRepo: OrderRepository,
-    private inventoryService: InventoryService,
-  ) {}
-
-  async createOrder(orderData: CreateOrderDTO) {
-    // Validate data
-    // Check inventory
-    // Create order
-    // Broadcast to other users via WebSocket
-    // Return result
-  }
-}
+app/
+├── (admin)/                        # Admin & manager routes (route group)
+│   ├── analytics/page.tsx          # Revenue and kitchen analytics
+│   ├── dashboard/page.tsx          # Menu management dashboard
+│   ├── inventory/                  # Ingredient stock dashboard
+│   ├── promotions/                 # Discount/promotion management
+│   ├── schedule/                   # Staff shift scheduling
+│   └── users/                      # User & staff management
+│
+├── (auth)/                         # Public auth routes
+│   ├── login/page.tsx
+│   └── register/page.tsx
+│
+├── (user)/                         # Shared staff routes
+│   ├── chef_special/page.tsx       # Chef's featured items
+│   └── profile/page.tsx            # User profile editor
+│
+├── (waiter_order)/                 # Waiter order interface
+│   ├── waiter_order/page.tsx       # Page shell (tab host)
+│   ├── WaiterOrderInterface.tsx    # Compact order-taking UI
+│   ├── KitchenDisplaySystem.tsx    # KDS for kitchen staff
+│   └── common/                     # LoadingState, ErrorState, EmptyState
+│
+├── billing/page.tsx                # Billing & payments
+├── help/page.tsx                   # Help & support
+├── notifications/page.tsx          # Notification centre
+├── settings/page.tsx               # App settings
+│
+├── application/                    # Business logic layer
+│   ├── coordinators/               # Multi-step workflow coordinators
+│   ├── managers/                   # Feature orchestrators
+│   └── usecases/                   # Single-responsibility use cases
+│
+├── contexts/                       # React Context providers
+│   ├── AuthContext.tsx             # Session, token, axios instance
+│   ├── NotificationContext.tsx     # Toast notification queue
+│   ├── SearchContext.tsx           # Global search state
+│   ├── SettingsContext.tsx         # Theme, toasts, kitchen prefs
+│   ├── SocketContext.tsx           # Socket.IO client
+│   └── WebSocketContext.tsx        # Order status WebSocket wrapper
+│
+├── core/
+│   └── Result.ts                   # Functional error type (Ok / Err)
+│
+├── domain/                         # Domain entities & repository interfaces
+│   ├── models/
+│   └── repositories/
+│
+├── hooks/                          # Custom React hooks
+│   ├── useInventoryAlerts.ts
+│   ├── useInventoryDeduction.ts
+│   ├── useLocalStorage.ts
+│   ├── useMenuData.ts
+│   ├── useOrderManager.ts
+│   ├── useOrderWebSocket.ts
+│   ├── useOrders.ts
+│   ├── useRegisterForm.tsx
+│   └── useStats.ts
+│
+├── infrastructure/
+│   └── repositories/               # HTTP repository implementations
+│
+├── lib/
+│   ├── mongodb.ts                  # MongoDB connection (server components)
+│   └── sidebar/sidebarConfig.tsx   # Role-based navigation config
+│
+├── presentation/
+│   ├── components/                 # All reusable UI components
+│   └── viewModels/                 # Presentation-layer logic helpers
+│
+├── services/                       # Service layer adapters
+├── types/                          # Global TypeScript interfaces
+│
+├── globals.css                     # Tailwind base + dark mode overrides
+└── layout.tsx                      # Root layout with provider tree
 ```
 
 ---
 
-## Module Breakdown
+## 4. Architecture
 
-### 1. **Pages** (`/app/(auth), /app/(admin), /app/(user), /app/(waiter_order)`)
+The frontend follows **Clean Architecture** with four layers. Dependencies flow strictly inward: presentation → application → domain. Infrastructure is a plug-in detail.
 
-Organized using Next.js 16 App Router with route groups for layout isolation:
+```
+┌──────────────────────────────────────────────────────┐
+│  PRESENTATION LAYER                                  │
+│  Pages · Components · View Models · Hooks            │
+│  Renders UI. Calls hooks. Never calls API directly.  │
+├──────────────────────────────────────────────────────┤
+│  APPLICATION LAYER                                   │
+│  Use Cases · Managers · Coordinators                 │
+│  Orchestrates business operations. Returns Result.   │
+├──────────────────────────────────────────────────────┤
+│  DOMAIN LAYER                                        │
+│  Entities · Repository Interfaces                    │
+│  Business rules. No framework imports allowed.       │
+├──────────────────────────────────────────────────────┤
+│  INFRASTRUCTURE LAYER                                │
+│  APIIngredientRepository · IngredientDeductionService│
+│  Implements domain interfaces. Talks to the network. │
+└──────────────────────────────────────────────────────┘
+```
 
-#### Authentication Routes (`/(auth)`)
+### Root Layout Provider Tree
 
-- **`/login`** - User login page
-- **`/register`** - User registration page
+The provider nesting order matters — inner providers may consume outer ones:
 
-#### Admin Routes (`/(admin)`)
+```
+<html suppressHydrationWarning>          ← prevents dark-mode flash
+  <AuthProvider>                         ← token, user, axiosInstance
+    <SocketProvider>                     ← Socket.IO connection
+      <WebSocketProvider>                ← order status helper
+        <NotificationProvider>           ← toast queue
+          <SettingsProvider>             ← theme, prefs (reads localStorage)
+            <SearchProvider>             ← global search query
+              <Layout>                   ← Navbar + CollapsibleSidebar
+              <NotificationToast />      ← portal-rendered toasts
+              {children}
+            </SearchProvider>
+          </SettingsProvider>
+        </NotificationProvider>
+      </WebSocketProvider>
+    </SocketProvider>
+  </AuthProvider>
+</html>
+```
 
-- **`/dashboard`** - Main admin dashboard with KPIs
-- **`/users`** - User management (CRUD)
-- **`/users/[id]`** - User detail and edit page
-- **`/inventory`** - Inventory management and low-stock alerts
+---
 
-#### User Routes (`/(user)`)
+## 5. Context Providers
 
-- **`/chef_special`** - Special menu items viewing
-- **`/profile`** - User profile management
-- **`/user_interface`** - Customer order interface
+### AuthContext
 
-#### Waiter/Order Routes (`/(waiter_order)`)
+**File:** `app/contexts/AuthContext.tsx`  
+**Hook:** `useAuth()`
 
-- **`/waiter_order`** - Main waiter order creation interface
-- **`/KitchenDisplaySystem.tsx`** - Kitchen Display System (KDS)
-- **`/WaiterOrderInterface.tsx`** - Waiter order management
-- **`/FilterButtons.tsx`** - Order filtering controls
-
-### 2. **Contexts** (`/app/contexts`)
-
-Global state management using React Context API:
-
-#### AuthContext.tsx
+The most critical context. Manages the authenticated session and provides a pre-configured Axios instance used by every API call in the app.
 
 ```typescript
 interface User {
@@ -323,29 +227,43 @@ interface User {
   role: "admin" | "manager" | "chef" | "waiter" | "cashier";
   phone?: string;
   isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface AuthContextType {
   user: User | null;
   token: string | null;
+  isLoading: boolean;
+  axiosInstance: AxiosInstance;   // use this for ALL API calls
   login(email: string, password: string): Promise<void>;
   register(userData: RegisterData): Promise<void>;
   logout(): void;
-  isLoading: boolean;
   updateUser(userData: Partial<User>): void;
 }
 ```
 
-**Key Features:**
+**Key behaviours:**
 
-- Auto-restore session on app load
-- Token persistence in httpOnly cookies
-- Axios interceptor for auth headers
-- Error handling and logging
+- On app start, reads the saved JWT from cookies and verifies it with `GET /api/auth/me`. If valid, restores the session silently.
+- `axiosInstance` automatically injects `Authorization: Bearer <token>` on every request and adds `ngrok-skip-browser-warning` for development tunnels.
+- The response interceptor logs out the user automatically on `401 Unauthorized`.
+- Token is stored in a cookie with a 30-day expiry (not `httpOnly` — accessible to JS for the Axios interceptor).
 
-#### SocketContext.tsx
+**Usage:**
+```typescript
+const { user, axiosInstance, logout } = useAuth();
 
-Manages real-time WebSocket connection using Socket.io:
+// Always use axiosInstance, never raw axios:
+const response = await axiosInstance.get("/api/orders");
+```
+
+---
+
+### SocketContext
+
+**File:** `app/contexts/SocketContext.tsx`  
+**Hook:** `useSocket()`
 
 ```typescript
 interface SocketContextType {
@@ -354,1356 +272,996 @@ interface SocketContextType {
 }
 ```
 
-**Connection Flow:**
+Establishes a Socket.IO connection as soon as `token` and `user.role` are available from `AuthContext`. The connection carries `{ token, role, userId }` in the auth handshake so the server can authenticate the socket without a separate login step.
 
-1. User logs in, token is obtained
-2. SocketProvider establishes connection with token
-3. Server authenticates and sets user role
-4. Client joins role-based rooms
-5. Events are emitted/received based on role
+**Reconnection:** Socket.IO's built-in exponential back-off handles disconnections automatically. `isConnected` reflects the live connection state and can be used to show "Real-time / Polling" UI indicators.
 
-#### SearchContext.tsx
+**Usage:**
+```typescript
+const { socket, isConnected } = useSocket();
 
-Handles global search functionality:
+useEffect(() => {
+  if (!socket) return;
+  socket.on("order:notification", handleNotification);
+  return () => { socket.off("order:notification", handleNotification); };
+}, [socket]);
+```
+
+---
+
+### NotificationContext
+
+**File:** `app/contexts/NotificationContext.tsx`  
+**Hook:** `useNotifications()`
+
+Receives `order:notification` socket events and places them in a capped queue (max 5 visible at once). Each toast auto-dismisses after 6 seconds.
 
 ```typescript
-interface SearchContextType {
-  query: string;
-  results: MenuItem[];
-  setQuery(query: string): void;
+type NotificationType =
+  | "order_created"
+  | "order_preparing"
+  | "order_ready"
+  | "order_served";
+
+interface OrderNotification {
+  id: string;
+  type: NotificationType;
+  orderId: string;
+  tableNumber?: number;
+  customerName?: string;
+  itemCount: number;
+  actor: { id: string; name: string; role: string };
+  timestamp: string;
 }
 ```
 
-#### WebSocketContext.tsx
+**Filtering:** Before enqueuing, checks `settings.toastsEnabled` and `settings.toastTypes[notification.type]` from `SettingsContext`. A notification whose type is disabled in settings is silently dropped.
 
-Separate WebSocket context (additional real-time features):
+**Sound:** If `settings.soundEnabled`, generates a short two-tone chime via the Web Audio API (no external audio file required).
 
-```typescript
-interface WebSocketContextType {
-  lastMessage: any;
-  sendMessage(event: string, data: any): void;
-  subscribe(event: string, handler: Function): void;
-}
-```
+---
 
-### 3. **Hooks** (`/app/hooks`)
+### SettingsContext
 
-Custom React hooks for business logic:
-
-#### useOrderManager.ts
-
-Manages order creation and modification:
+**File:** `app/contexts/SettingsContext.tsx`  
+**Hook:** `useSettings()`  
+**Storage key:** `rms_settings` (localStorage)
 
 ```typescript
-export const useOrderManager = () => {
-  const [currentOrder, setCurrentOrder] = useLocalStorage<OrderItem[]>("waiter_current_order", []);
+type Theme = "light" | "dark" | "system";
 
-  return {
-    currentOrder: OrderItem[],
-    addToOrder(item: MenuItem): Promise<void>,
-    updateQuantity(itemId: string, newQuantity: number): Promise<void>,
-    updateInstructions(itemId: string, instructions: string): Promise<void>,
-    removeFromOrder(itemId: string): Promise<void>,
-    calculateTotal(): number,
-    clearOrder(): Promise<void>
+interface AppSettings {
+  theme: Theme;
+  toastsEnabled: boolean;
+  toastTypes: {
+    order_created: boolean;
+    order_preparing: boolean;
+    order_ready: boolean;
+    order_served: boolean;
   };
-};
-```
-
-**Implementation Details:**
-
-- Uses local storage for order persistence
-- Uses Result type for error handling
-- Supports special instructions per item
-- Calculates cart total in real-time
-
-#### useMenuData.ts
-
-Fetches and caches menu items:
-
-```typescript
-export const useMenuData = () => {
-  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [categories, setCategories] = useState<Category[]>([]);
-
-  useEffect(() => {
-    // Fetch from API on mount
-    const loadMenu = async () => {
-      const response = await apiClient.get("/api/menu");
-      setMenuItems(response.data);
-    };
-  }, []);
-
-  return {
-    menuItems: MenuItem[],
-    categories: Category[],
-    isLoading: boolean,
-    getItemsByCategory(categoryId: string): MenuItem[],
-    searchItems(query: string): MenuItem[]
-  };
-};
-```
-
-#### useOrders.ts
-
-Manages order list and filtering:
-
-```typescript
-export const useOrders = () => {
-  return {
-    orders: Order[],
-    isLoading: boolean,
-    filter: {
-      status?: string;
-      customerName?: string;
-      dateRange?: [Date, Date];
-    },
-    setFilter(filter: FilterOptions): void,
-    refreshOrders(): Promise<void>,
-    updateOrderStatus(orderId: string, newStatus: string): Promise<void>
-  };
-};
-```
-
-#### useOrderWebSocket.ts
-
-Handles real-time order updates:
-
-```typescript
-export const useOrderWebSocket = () => {
-  const { socket } = useSocket();
-
-  useEffect(() => {
-    if (!socket) return;
-
-    socket.on("order_created", (order) => {
-      updateLocalOrders(order);
-      notifyUser("New order placed");
-    });
-
-    socket.on("order_updated", (order) => {
-      updateLocalOrders(order);
-    });
-
-    socket.on("low_stock_alert", (alert) => {
-      notifyUser(`Low stock: ${alert.itemName}`);
-    });
-
-    return () => {
-      socket.off("order_created");
-      socket.off("order_updated");
-    };
-  }, [socket]);
-};
-```
-
-#### useStats.ts
-
-Retrieves analytics and metrics:
-
-```typescript
-export const useStats = () => {
-  return {
-    totalOrders: number,
-    totalRevenue: number,
-    averageOrderValue: number,
-    topItems: MenuItem[],
-    orderTrend: TrendData[],
-    isLoading: boolean,
-    refreshStats(): Promise<void>
-  };
-};
-```
-
-#### useLocalStorage.ts
-
-Generic hook for persisting state:
-
-```typescript
-export const useLocalStorage = <T>(key: string, initialValue: T) => {
-  const [storedValue, setStoredValue] = useState<T>(() => {
-    if (typeof window === "undefined") return initialValue;
-
-    const item = window.localStorage.getItem(key);
-    return item ? JSON.parse(item) : initialValue;
-  });
-
-  const setValue = (value: T) => {
-    setStoredValue(value);
-    window.localStorage.setItem(key, JSON.stringify(value));
-  };
-
-  return [storedValue, setValue] as const;
-};
-```
-
-### 4. **Components** (`/app/presentation/components`)
-
-Reusable UI components organized by feature:
-
-#### Layout Components
-
-- **`layout/Sidebar.tsx`** - Navigation sidebar with role-based menu
-- **`layout/Navbar.tsx`** - Top navigation bar
-- **`Navbar/Navbar.tsx`** - Alternate navigation component
-
-#### Order Components
-
-- **`OrderForm.tsx`** - Form for creating/editing orders
-- **`OrderCard.tsx`** - Card displaying order summary
-- **`OrderItem.tsx`** - Individual order item component
-- **`OrderSummary.tsx`** - Order total and details view
-
-#### Menu Components
-
-- **`Menu/Menu.tsx`** - Main menu display
-- **`MenuGrid.tsx`** - Grid view of menu items
-- **`MenuTable.tsx`** - Table view of menu items
-- **`MenuItemCard.tsx`** - Individual menu item card
-- **`MenuHeader.tsx`** - Menu section header
-- **`MenuFilters.tsx`** - Filter options component
-- **`MenuStats.tsx`** - Menu performance statistics
-
-#### Admin Components
-
-- **`KitchenStatsPanel.tsx`** - Real-time kitchen metrics
-- **`UserList.tsx`** - User management table
-- **`Pagination.tsx`** - Table pagination
-- **`ModalManager.tsx`** - Modal dialog controller
-
-#### Feature Components
-
-- **`SearchAndFilterBar.tsx`** - Search and filter UI
-- **`FilterButtons.tsx`** - Quick filter buttons
-- **`IngredientImpactPreview.tsx`** - Ingredient deduction preview
-- **`IngredientStockDashboard.tsx`** - Stock level display
-- **`StarRating.tsx`** - Rating component
-- **`FeaturedSection.tsx`** - Featured items display
-
-#### Authentication Components
-
-- **`RegisterForm.tsx`** - Registration form with validation
-- **`ProtectedRoute.tsx`** - Route wrapper for authorization
-
-### 5. **Application Layer** (`/app/application`)
-
-Business logic and use cases:
-
-#### Use Cases (`/usecases/OrderUseCases.ts`)
-
-```typescript
-// Order creation with inventory check
-export async function createOrder(
-  repo: OrderRepository,
-  orderData: CreateOrderDTO,
-): Promise<Result<Order>> {
-  // Validate items exist
-  // Check inventory
-  // Calculate total
-  // Create order in backend
-  // Return result
-}
-
-// Load order from storage
-export async function loadOrder(
-  repo: OrderRepository,
-): Promise<Result<OrderItem[]>> {
-  // Load persisted order
-  // Validate items
-  // Return order items
-}
-
-// Add item to cart
-export async function addToOrder(
-  repo: OrderRepository,
-  item: MenuItem,
-): Promise<Result<OrderItem[]>> {
-  // Add to cart
-  // Persist to storage
-  // Return updated order
+  soundEnabled: boolean;
+  kitchenDefaultFilter: "all" | "pending" | "confirmed" | "preparing" | "ready";
+  kitchenAutoRefreshSeconds: 0 | 30 | 60 | 120;
+  compactCards: boolean;
 }
 ```
 
-#### Managers (`/managers`)
+**Theme application:** Toggles the `dark` class on `document.documentElement`. An inline `<script>` in `layout.tsx` reads the same localStorage key and applies the class before the first paint, preventing a flash of unstyled light content on dark-mode loads. The `<html>` element carries `suppressHydrationWarning` to silence the expected mismatch.
 
-Orchestrate complex operations:
+**Dark mode CSS:** `globals.css` contains a universal override block (`html.dark .bg-white { … }`) that darkens hard-coded Tailwind utility classes without requiring per-component `dark:` variants.
+
+---
+
+### SearchContext
+
+**File:** `app/contexts/SearchContext.tsx`  
+**Hook:** `useSearch()`
+
+Holds a global search query string. Components that need to respond to search subscribe via `useSearch()`. Currently used in menu-related pages to filter items by name/description.
+
+---
+
+### WebSocketContext
+
+**File:** `app/contexts/WebSocketContext.tsx`  
+**Hook:** `useWebSocket()`
+
+A thin wrapper specifically for order status updates. When a component calls `updateOrderStatus(orderId, newStatus)`, this context handles the `PATCH /api/orders/:id/status` request and then emits the result over the Socket.IO connection so all connected clients see the change immediately.
+
+---
+
+## 6. Custom Hooks
+
+### `useOrderManager`
+
+**File:** `app/hooks/useOrderManager.ts`
+
+The core hook for the waiter order-taking flow. Persists the in-progress order to `localStorage` (`waiter_current_order`) so it survives page refreshes.
 
 ```typescript
-class OrderManager {
-  async submitOrder(orderId: string, paymentInfo: PaymentInfo) {
-    // Validate order state
-    // Process payment
-    // Create kitchen order
-    // Send to kitchen via WebSocket
-    // Update customer
-    // Return confirmation
-  }
+interface OrderItem {
+  menuItem: MenuItem;
+  quantity: number;
+  specialInstructions: string;
 }
 
-class InventoryManager {
-  async deductIngredients(orderItems: OrderItem[]) {
-    // Get ingredients for each menu item
-    // Calculate total deduction
-    // Send to backend
-    // Track for audit trail
-    // Monitor low stock
-  }
-}
-
-class StatsManager {
-  async getOrderMetrics(dateRange: DateRange) {
-    // Fetch orders in range
-    // Aggregate metrics
-    // Calculate trends
-    // Format for display
-  }
+// Returns:
+{
+  currentOrder: OrderItem[];
+  addToOrder(item: MenuItem): Promise<void>;
+  updateQuantity(itemId: string, qty: number): Promise<void>;
+  updateInstructions(itemId: string, text: string): Promise<void>;
+  removeFromOrder(itemId: string): Promise<void>;
+  calculateTotal(): number;
+  clearOrder(): Promise<void>;
 }
 ```
 
-#### Coordinators (`/coordinators`)
+All mutation methods route through `OrderUseCases` in the application layer, which returns a `Result<OrderItem[]>` — the hook checks `result.ok` before updating state.
 
-Coordinate between multiple managers:
+---
 
-```typescript
-class OrderCoordinator {
-  constructor(
-    private orderManager: OrderManager,
-    private inventoryManager: InventoryManager,
-    private paymentProcessor: PaymentProcessor,
-  ) {}
+### `useMenuData`
 
-  async processCompleteOrder(orderData: OrderData) {
-    // 1. Create order
-    // 2. Deduct inventory
-    // 3. Process payment
-    // 4. Send to kitchen
-    // 5. Update customer
-    // Handle errors at each step
-  }
-}
-```
+**File:** `app/hooks/useMenuData.ts`
 
-### 6. **Domain Layer** (`/app/domain`)
-
-Core business logic and models:
-
-#### Models
-
-- **User** - User profile and authentication
-- **Order** - Order details and items
-- **MenuItem** - Menu item information
-- **Ingredient** - Ingredient details and stock
-
-#### Repositories
+Fetches the complete menu from `GET /api/menu` and exposes CRUD operations used by the admin dashboard.
 
 ```typescript
-interface OrderRepository {
-  getAll(filters?: OrderFilter): Promise<Result<Order[]>>;
-  getById(id: string): Promise<Result<Order>>;
-  create(order: Order): Promise<Result<Order>>;
-  update(id: string, data: Partial<Order>): Promise<Result<Order>>;
-  delete(id: string): Promise<Result<void>>;
-  getStats(range?: DateRange): Promise<Result<OrderStats>>;
-}
-
-// HTTP implementation
-class HttpOrderRepository implements OrderRepository {
-  constructor(private apiClient: AxiosInstance) {}
-  // Implements all methods using HTTP calls
-}
-
-// Local storage implementation (fallback)
-class LocalStorageOrderRepository implements OrderRepository {
-  // Implements using localStorage
-}
-```
-
-### 7. **Infrastructure Layer** (`/app/infrastructure`)
-
-External service integrations:
-
-#### Repository Implementations
-
-```typescript
-class HttpOrderRepository {
-  async getOrders(filters?: OrderFilter) {
-    const response = await this.apiClient.get("/api/orders", {
-      params: filters,
-    });
-    return response.data;
-  }
-
-  async createOrder(order: Order) {
-    const response = await this.apiClient.post("/api/orders", order);
-    return response.data;
-  }
-}
-```
-
-#### Services (`/services`)
-
-**IngredientDeductionService.ts**
-
-```typescript
-class IngredientDeductionService {
-  async deductForOrder(orderId: string, items: OrderItem[]) {
-    const ingredientMap = await this.mapItemsToIngredients(items);
-    const deduction = await this.apiClient.post(
-      `/api/orders/${orderId}/inventory`,
-      ingredientMap,
-    );
-    return deduction.data;
-  }
-}
-```
-
-**low-stock-notifier.ts**
-
-```typescript
-class LowStockNotifier {
-  handleAlert(alert: LowStockAlert) {
-    // Show toast notification
-    // Log to analytics
-    // Send to backend for audit
-    // Update inventory dashboard
-  }
+interface MenuItem {
+  _id: string;
+  name: string;
+  description: string;
+  price: number;
+  category: string | { _id: string; name: string };
+  image: string;
+  dietaryTags: string[];
+  availability: boolean;
+  preparationTime: number;
+  chefSpecial: boolean;
+  averageRating: number;
+  reviewCount: number;
 }
 ```
 
 ---
 
-## State Management
+### `useStats`
 
-### Context API Structure
+**File:** `app/hooks/useStats.ts`
 
-#### AuthContext Flow
+Fetches aggregated kitchen stats (total revenue, order counts, top dishes) via `GET /api/orders/stats`. Exposes a manual `fetchStats()` trigger for pull-to-refresh. Routes through `StatsUseCase → StatsManager`.
 
-```
-User Login
-    ↓
-POST /api/auth/login
-    ↓
-Token received & stored
-    ↓
-setupAxiosInterceptors()
-    ├─ Add Authorization header to all requests
-    └─ Auto-refresh token if expired
-    ↓
-setUser(userData)
-    ↓
-Contexts updated globally
-    ↓
-All components re-render with new auth state
-```
+---
 
-#### SocketContext Flow
+### `useInventoryDeduction`
 
-```
-App Mount
-    ↓
-AuthProvider loads
-    ↓
-Token available
-    ↓
-SocketProvider connects
-    ├─ io(API_URL, { auth: { token } })
-    └─ Query: token, role, userId
-    ↓
-Server authenticates
-    ↓
-Client joins role-based rooms
-    ├─ room: "role-chef"
-    ├─ room: "role-waiter"
-    └─ room: "role-admin"
-    ↓
-Listen for events
-    ├─ order_created
-    ├─ order_updated
-    └─ low_stock_alert
-    ↓
-Components subscribe to socket events
-    ↓
-Real-time updates propagate to UI
-```
+**File:** `app/hooks/useInventoryDeduction.ts`
 
-### Local State Management
+Called after an order is submitted to `POST /api/orders/:id/inventory` with ingredient quantities. Returns `isDeducting` boolean so the submit button can show a spinner during processing.
 
-#### Component State
+---
+
+### `useInventoryAlerts`
+
+**File:** `app/hooks/useInventoryAlerts.ts`
+
+Monitors ingredient stock levels and surfaces `lowStock` / `criticalStock` arrays. Drives the alert badges in the Inventory Dashboard.
+
+---
+
+### `useLocalStorage`
+
+**File:** `app/hooks/useLocalStorage.ts`
+
+Generic `[value, setValue]` hook backed by `localStorage`. Handles SSR safely (`typeof window === "undefined"` guard) and JSON serialisation automatically.
 
 ```typescript
-const [orders, setOrders] = useState<Order[]>([]);
-const [filters, setFilters] = useState<OrderFilter>({});
-const [isLoading, setIsLoading] = useState(false);
-const [error, setError] = useState<string | null>(null);
-```
-
-#### Local Storage
-
-```typescript
-// Persistent across browser sessions
-const [currentOrder, setCurrentOrder] = useLocalStorage(
-  "waiter_current_order",
-  [],
-);
-```
-
-#### Server State (Queries)
-
-```typescript
-// Fetch from API and cache
-const { data: orders, isLoading } = useQuery(
-  "orders",
-  () => apiClient.get("/api/orders"),
-  { staleTime: 5 * 60 * 1000 }, // 5 minute cache
-);
+const [tableNumber, setTableNumber] = useLocalStorage<number>("waiter_table_number", 1);
 ```
 
 ---
 
-## Component Architecture
+### `useOrders`
 
-### Component Hierarchy Example
+**File:** `app/hooks/useOrders.ts`
 
-```
-RootLayout
-├─ AuthProvider
-│  ├─ SocketProvider
-│  │  ├─ WebSocketProvider
-│  │  │  ├─ SearchProvider
-│  │  │  │  ├─ Layout (Static)
-│  │  │  │  │  ├─ Sidebar
-│  │  │  │  │  └─ Navbar
-│  │  │  │  └─ main (Dynamic)
-│  │  │  │     ├─ (admin)
-│  │  │  │     │  ├─ /dashboard (AdminDashboard)
-│  │  │  │     │  ├─ /users (UserManagement)
-│  │  │  │     │  └─ /inventory (InventoryDashboard)
-│  │  │  │     ├─ (auth)
-│  │  │  │     │  ├─ /login (LoginPage)
-│  │  │  │     │  └─ /register (RegisterPage)
-│  │  │  │     ├─ (user)
-│  │  │  │     │  ├─ /profile (UserProfile)
-│  │  │  │     │  └─ /user_interface (CustomerInterface)
-│  │  │  │     └─ (waiter_order)
-│  │  │  │        ├─ /waiter_order (WaiterOrderInterface)
-│  │  │  │        └─ KitchenDisplaySystem
-│  │  │  │
-```
+Fetches and paginates orders from `GET /api/orders`. Accepts filter parameters (status, date range, customer name) and exposes `refreshOrders()` and `updateOrderStatus()`.
 
-### Smart Component Example
+---
 
-```typescript
-// WaiterOrderInterface.tsx (Container/Smart Component)
-"use client";
+### `useOrderWebSocket`
 
-export const WaiterOrderInterface = () => {
-  const { user, token } = useAuth();
-  const { socket, isConnected } = useSocket();
-  const { currentOrder, addToOrder, removeFromOrder } = useOrderManager();
-  const { menuItems, isLoading } = useMenuData();
+**File:** `app/hooks/useOrderWebSocket.ts`
 
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+Subscribes to `order_created` and `order_updated` socket events and keeps a local orders array in sync. Used by the Kitchen Display System to receive live order updates without polling.
 
-  // Load active orders on mount
-  useEffect(() => {
-    loadActiveOrders();
-  }, [token]);
+---
 
-  // Listen for real-time updates
-  useEffect(() => {
-    if (!socket) return;
+### `useRegisterForm`
 
-    socket.on("order_created", (newOrder) => {
-      setOrders(prev => [newOrder, ...prev]);
-    });
+**File:** `app/hooks/useRegisterForm.tsx`
 
-    socket.on("order_updated", (updatedOrder) => {
-      setOrders(prev =>
-        prev.map(o => o._id === updatedOrder._id ? updatedOrder : o)
-      );
-    });
+Wraps `react-hook-form` for the registration page. Handles field validation (required fields, email format, password strength) and calls `AuthContext.register()` on submit.
 
-    return () => {
-      socket.off("order_created");
-      socket.off("order_updated");
-    };
-  }, [socket]);
+---
 
-  const handleSubmitOrder = async () => {
-    const response = await apiClient.post("/api/orders", {
-      items: currentOrder,
-      tableNumber: selectedTable,
-      orderType: "dine-in"
-    });
+## 7. Domain & Application Layers
 
-    if (response.status === 201) {
-      // WebSocket will handle the update
-      clearOrder();
-    }
-  };
+### Core Result Type
 
-  return (
-    <div className="waiter-interface">
-      <MenuList items={menuItems} onSelectItem={addToOrder} />
-      <OrderCart
-        items={currentOrder}
-        onRemoveItem={removeFromOrder}
-        onSubmit={handleSubmitOrder}
-      />
-      <OrdersList orders={orders} selected={selectedOrderId} />
-    </div>
-  );
-};
-```
+**File:** `app/core/Result.ts`
 
-### Dumb Component Example
+All use cases and repositories return `Result<T, E>` rather than throwing exceptions:
 
 ```typescript
-// MenuItemCard.tsx (Presentational/Dumb Component)
-interface MenuItemCardProps {
-  item: MenuItem;
-  onAddToCart: (item: MenuItem) => void;
+type Result<T, E = string> =
+  | { ok: true;  value: T }
+  | { ok: false; error: E };
+
+const Ok  = <T>(value: T): Result<T>      => ({ ok: true,  value });
+const Err = <T>(error: string): Result<T> => ({ ok: false, error });
+```
+
+**Usage pattern:**
+```typescript
+const result = await addToOrder(repo, item);
+if (!result.ok) {
+  console.error(result.error);
+  return;
 }
-
-export const MenuItemCard: React.FC<MenuItemCardProps> = ({
-  item,
-  onAddToCart
-}) => {
-  return (
-    <div className="menu-item-card">
-      <img src={item.imageUrl} alt={item.name} />
-      <h3>{item.name}</h3>
-      <p>{item.description}</p>
-      <span className="price">${item.price}</span>
-      <button onClick={() => onAddToCart(item)}>Add to Cart</button>
-    </div>
-  );
-};
+setCurrentOrder(result.value);
 ```
 
 ---
 
-## Implementation Logic
+### Domain Models
 
-### Order Creation Flow
+| File | Entity | Purpose |
+|---|---|---|
+| `domain/models/menu-item.ts` | `MenuItem` | Core menu item entity |
+| `domain/models/ingredient.ts` | `Ingredient` | Ingredient stock entity |
+| `domain/models/ingredient-value-objects.ts` | `IngredientReference` | Links menu items to ingredients |
 
-```
-Waiter View (WaiterOrderInterface)
-    ↓
-Choose menu items from MenuGrid
-    ↓
-Click "Add to Cart" for each item
-    ├─ useOrderManager.addToOrder()
-    │  ├─ Calls OrderUseCases.addToOrder()
-    │  ├─ Persists to localStorage
-    │  └─ Updates local state
-    └─ UI shows updated cart
-    ↓
-Set table number and special instructions
-    ↓
-Review OrderSummary
-    ├─ Shows items, quantities, total
-    └─ Shows estimated preparation time
-    ↓
-Click "Submit Order"
-    ↓
-POST /api/orders
-├─ Backend validates items exist
-├─ Backend deducts inventory
-├─ Backend creates Order document
-└─ Backend returns 201 Created with order ID
-    ↓
-WebSocket broadcasts "order_created"
-├─ Kitchen receives update (KDS)
-├─ Order appears in queue
-└─ Waiter sees order in "Active Orders"
-    ↓
-Clear cart and reset form
-```
+### Repository Interfaces
 
-### Real-Time Order Updates Flow
+| Interface | File | Operations |
+|---|---|---|
+| `OrderRepository` | `domain/repositories/OrderRepository.ts` | `load()`, `save(items)` — localStorage-backed |
+| `IngredientRepository` | `domain/repositories/IngredientRepository.ts` | `checkAvailability()`, `deductIngredients()` |
 
-```
-Backend Order Status Change
-    ↓
-Chef updates status via API/UI
-    ↓
-Backend broadcasts via Socket.io
-├─ Event: "order_updated"
-├─ Room: Role-based (chef, waiter, admin)
-└─ Data: Updated order object
-    ↓
-All connected clients receive event
-    ↓
-Component handlers (useOrderWebSocket)
-├─ Update local order state
-├─ Trigger UI re-render
-└─ Show toast notification
-    ↓
-Different views update accordingly:
-├─ Waiter: Shows order status changed to "ready"
-├─ Chef: Sees order removed from queue if served
-└─ Admin: Sees analytics updated in dashboard
-```
+### Use Cases
 
-### Menu Item Filtering
+| File | Functions |
+|---|---|
+| `application/usecases/OrderUseCases.ts` | `loadOrder`, `addToOrder`, `updateQuantity`, `updateInstructions`, `removeItem`, `clearOrder` |
+| `application/usecases/StatsUseCase.ts` | `fetchKitchenStatsUseCase(token)` → `Result<StatsData>` |
+| `application/usecases/consume-ingredients-use-case.ts` | Deducts ingredient quantities for a prepared order |
 
-```
-User enters search query
-    ↓
-SearchContext.setQuery(query)
-    ↓
-useMenuData component receives update
-    ↓
-searchItems(query) is called
-├─ Filter by name
-├─ Filter by description
-└─ Filter by ingredients
-    ↓
-Filtered results passed to MenuGrid
-    ↓
-MenuGrid re-renders with filtered items
-```
+### Managers
 
-### Inventory Deduction on Order
-
-```
-Order created in backend
-    ↓
-Backend ConsumeIngredientsUseCase.execute()
-├─ Get menu items in order
-├─ Get ingredients for each item
-├─ Calculate total requirements
-├─ Deduct from MongoDB inventory
-└─ Create low stock notifications if needed
-    ↓
-Backend broadcasts low_stock_alert (if applicable)
-    ↓
-Frontend receives alert via Socket.io
-├─ Update InventoryDashboard (admin)
-└─ Show toast notification
-```
-
-### Authentication & Session Management
-
-```
-User navigates to /login
-    ↓
-LoginPage rendered
-    ↓
-User enters credentials
-    ↓
-Click "Login"
-    ↓
-POST /api/auth/login
-├─ Backend validates credentials
-├─ Backend creates JWT token
-└─ Backend returns token & user data
-    ↓
-AuthContext.login() stores:
-├─ Token in httpOnly cookie
-├─ User in state
-└─ Sets axios default Authorization header
-    ↓
-Token refresh interceptor setup
-└─ Auto-refresh before expiration
-    ↓
-SocketProvider connects with token
-    ↓
-Redirect to dashboard
-```
+| Class | File | Responsibility |
+|---|---|---|
+| `OrderManager` | `application/managers/OrderManager.ts` | Orchestrates order creation, update, and submission |
+| `StatsManager` | `application/managers/StatsManager.ts` | Aggregates raw stats into display-ready metrics |
+| `InventoryManager` | `application/managers/inventory-manager.ts` | Coordinates inventory read + deduction operations |
 
 ---
 
-## API Integration
+## 8. Infrastructure Layer
 
-### Axios Configuration
+### `APIIngredientRepository`
+
+**File:** `app/infrastructure/repositories/APIIngredientRepository.ts`
+
+Implements `IngredientRepository` using Axios. All methods return `Result<T>`:
 
 ```typescript
-// Created in AuthContext
-const apiClient = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL,
-  headers: {
-    "Content-Type": "application/json",
-    "ngrok-skip-browser-warning": "true",
-  },
-});
+class APIIngredientRepository implements IngredientRepository {
+  constructor(private axiosInstance: AxiosInstance) {}
 
-// Request interceptor adds auth token
-apiClient.interceptors.request.use((config) => {
-  const token = Cookies.get("token");
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
-
-// Response interceptor handles errors
-apiClient.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      // Token expired, refresh or logout
-      logout();
-    }
-    return Promise.reject(error);
-  },
-);
+  async checkAvailability(items: OrderItem[]): Promise<Result<AvailabilityMap>>;
+  async deductIngredients(orderId: string, items: OrderItem[]): Promise<Result<void>>;
+  async getDashboardData(): Promise<Result<DashboardData>>;
+}
 ```
 
-### API Endpoints Used
+### Services
 
-| Method | Endpoint                         | Purpose             | Roles               |
-| ------ | -------------------------------- | ------------------- | ------------------- |
-| POST   | `/api/auth/login`                | User authentication | All                 |
-| POST   | `/api/auth/register`             | User registration   | All                 |
-| GET    | `/api/orders`                    | Fetch all orders    | admin, chef, waiter |
-| POST   | `/api/orders`                    | Create new order    | waiter, admin       |
-| PATCH  | `/api/orders/:id/status`         | Update order status | chef, waiter        |
-| GET    | `/api/orders/stats`              | Get order analytics | admin               |
-| GET    | `/api/menu`                      | Get all menu items  | All                 |
-| GET    | `/api/inventory`                 | Get current stock   | admin               |
-| POST   | `/api/inventory/check-low-stock` | Trigger stock check | admin               |
-| GET    | `/api/users`                     | Get all users       | admin               |
-| PUT    | `/api/users/:id`                 | Update user profile | admin, self         |
+| File | Purpose |
+|---|---|
+| `services/IngredientDeductionService.ts` | Maps order items to ingredient quantities and calls the deduction API |
+| `services/low-stock-notifier.ts` | Generates low-stock alert payloads for the notification system |
+| `services/promotionApi.ts` | CRUD operations for promotions/discounts (`/api/promotions`) |
+| `services/emailjsNotificationService.ts` | EmailJS integration for client-side email notifications |
 
-### Error Handling
+---
+
+## 9. Pages & Routes
+
+### Route Overview
+
+| Path | Page | Roles |
+|---|---|---|
+| `/login` | Login | Guest |
+| `/register` | Register | Guest |
+| `/dashboard` | Menu Management | Admin, Manager |
+| `/analytics` | Revenue & Kitchen Analytics | Admin, Manager |
+| `/users` | User & Staff Management | Admin, Manager |
+| `/users/[id]` | User Detail | Admin |
+| `/inventory/IngredientStockDashboard` | Stock Dashboard | Admin, Manager |
+| `/promotions` | Promotions | Admin |
+| `/schedule` | Shift Scheduling | Admin, Manager |
+| `/waiter_order` | Order Taking + KDS | Admin, Manager, Waiter, Chef |
+| `/chef_special` | Chef's Special Display | Admin, Manager, Chef |
+| `/billing` | Billing & Payments | Admin, Manager, Waiter, Cashier |
+| `/profile` | User Profile | Admin, Manager, Waiter, Chef |
+| `/notifications` | Notification Centre | Admin, Manager, Waiter, Chef |
+| `/settings` | App Settings | Admin, Manager |
+| `/help` | Help & Support | Admin, Manager, Waiter, Chef |
+
+### Page Details
+
+#### `/dashboard` — Menu Management
+Admin CRUD interface for menu items. Uses `useMenuData` for data, `ModalManager` for create/edit/delete modals, `MenuFilters` for live search and filtering. The `MenuTable` component renders a sortable, paginated table of items; `MenuGrid` provides a card view.
+
+#### `/analytics` — Analytics
+Pulls aggregated stats from `GET /api/orders/stats` via `useStats`. Displays revenue charts (Chart.js line chart), order volume, and a top-dishes ranking. Auto-refreshes on a configurable interval from `SettingsContext.kitchenAutoRefreshSeconds`.
+
+#### `/waiter_order` — Order Taking + Kitchen Display
+A two-tab page (`Take Order` / `Kitchen`). The tab switcher is an inline segment control in the page header strip. The page is a full-viewport shell (`h-[calc(100vh-4rem)]`) that gives all remaining height to the child interface.
+
+**WaiterOrderInterface** (`(waiter_order)/WaiterOrderInterface.tsx`):
+- Default **list view** (`MenuItemRowWaiter`): 56 px compact rows showing name, category, dietary badge, price, and a one-tap `+` button. Shows 10–12 items at once on a tablet.
+- Optional **card view** toggled by the List/Grid button.
+- Scrollable **quick-filter pills** (All / Popular / Chef's Pick / Vegetarian / Fast Prep).
+- Scrollable **category pills** derived dynamically from the fetched menu.
+- Available items are sorted to the top; unavailable items are dimmed below.
+- Order panel sidebar appears at `md:` (≥ 768 px / iPad portrait). Below that, a floating cart button opens a slide-in drawer.
+- Order is persisted via `useLocalStorage` (`waiter_table_number`, `waiter_customer_name`, `waiter_current_order`).
+
+**KitchenDisplaySystem** (`(waiter_order)/KitchenDisplaySystem.tsx`):
+- Fetches active orders via `useOrders` and subscribes to `order_created` / `order_updated` socket events.
+- Filter bar (pending / confirmed / preparing / ready) sourced from `SettingsContext.kitchenDefaultFilter`.
+- Auto-refresh uses `SettingsContext.kitchenAutoRefreshSeconds` (0 = disabled).
+- `compactCards` setting toggles between full and compact order cards.
+
+#### `/billing` — Billing & Payments
+Two-panel layout: left panel lists served orders (pending / paid tabs), right panel shows the selected order detail and payment form.
+
+- Fetches `GET /api/billing/served` on mount.
+- Payment methods: Cash, Credit Card, Debit Card, KHQR.
+- Cash mode shows a "Customer Pays" input with instant change calculation and an "Insufficient funds" guard.
+- `PATCH /api/billing/:id/pay` marks the order paid. The UI updates optimistically; a `billing:payment_updated` socket event syncs other open sessions.
+- Print receipt: `window.print()` with a `@media print` CSS rule that makes a hidden `#receipt-print-area` div the only visible element.
+
+#### `/settings` — App Settings
+Sections: Appearance (theme picker, compact cards), Notifications (master toggle + per-type switches + sound), Kitchen Display (default filter, auto-refresh), Account (profile info, delete account).
+
+Theme picker writes to `SettingsContext` which applies the `dark` class to `<html>` immediately. Notification toggles control which socket events produce visible toasts. Delete account requires password confirmation plus typing `DELETE MY ACCOUNT`.
+
+#### `/help` — Help & Support
+Three tabs: **FAQ** (12 accordion Q&A), **Contact Us** (form that `POST`s to `/api/support/contact` → Nodemailer email to the support address), **Role Tips** (contextual guidance per role, highlighting the current user's role).
+
+#### `/notifications` — Notification Centre
+Historical view of all `order:notification` events. Renders the `useNotifications()` queue and also fetches persisted notifications from the backend via `GET /api/notifications`.
+
+#### `/profile` — User Profile
+Displays user info, role badge, and online status dot. Status is derived from the socket presence system — the component sets itself online (`socket.emit("user_online")`) on mount and offline on unmount. The displayed status always reflects the live socket state, not the stale `user.isActive` DB value.
+
+---
+
+## 10. Component Catalog
+
+### Layout
+
+| Component | File | Description |
+|---|---|---|
+| `Layout` | `layout/index.tsx` | Root shell — renders Navbar and CollapsibleSidebar |
+| `Navbar` | `layout/Navbar/index.tsx` | Fixed top bar (64 px). Shows user name, role badge, notifications bell, logout |
+| `CollapsibleSidebar` | `layout/Sidebar/CollapsibleSidebar.tsx` | Fixed left sidebar, collapses to 64 px icons, expands to 256 px on hover |
+| `LayoutCoordinator` | `layout/LayoutCoordinator.ts` | Shared mutable state class that coordinates sidebar and navbar without prop drilling |
+
+**Content offset:** `<main>` in `layout.tsx` carries `ml-[83.40px] pt-16` so all page content clears the sidebar and navbar. Individual pages do not add their own top margin.
+
+---
+
+### Auth
+
+| Component | File | Description |
+|---|---|---|
+| `ProtectedRoute` | `ProtectedRoute/ProtectedRoute.tsx` | Wraps any page. Redirects to `/login` if unauthenticated. Optional `requiredRoles` prop blocks unauthorised roles |
+
+---
+
+### Menu Item Cards
+
+| Component | Description |
+|---|---|
+| `MenuItemCard` | Full card (image + description + tags + price + Add button). Two variants: `"user"` (customer-facing) and `"waiter"` |
+| `MenuItemCardForWaiter` | Wraps `MenuItemCard` with a floating `+` button on hover and an unavailable overlay |
+| `MenuItemCardCompact` | Smaller card without image, for dense lists |
+| `MenuItemRowWaiter` | **Primary waiter UI.** 56 px compact row: availability dot · name + category · Veg/Chef badges · price · `+` button |
+
+---
+
+### Order Components
+
+| Component | File | Description |
+|---|---|---|
+| `OrderForm` | `OrderForm/OrderForm.tsx` | Table number, customer name, special notes fields |
+| `OrderSummary` | `OrderSummary/OrderSummary.tsx` | Lists cart items, quantity steppers, remove buttons, running total |
+| `OrderCard` | `OrderCard/OrderCard.tsx` | KDS order card showing items, status, table, timer |
+| `OrderItem` | `OrderItem/OrderItem.tsx` | Single line in an order card |
+
+---
+
+### Menu Management (Admin)
+
+| Component | Description |
+|---|---|
+| `MenuTable` | Sortable, paginated table of all menu items |
+| `MenuGrid` | Card grid of menu items |
+| `MenuFilters` | Search input + category / availability / chef-special dropdowns |
+| `MenuStats` | Summary cards: total items, available, chef specials, category count |
+| `MenuHeader` | Section heading with count badge |
+| `MenuTopItemsChart` | Bar chart of top-selling items (Chart.js) |
+| `ModalManager` | Renders `CreateItemModal`, `EditItemModal`, `ViewItemModal`, `DeleteItemModal` based on `activeModal` state |
+
+---
+
+### Table Components
+
+| Component | Description |
+|---|---|
+| `TableSelect` | Grid of table buttons (green = free, red = occupied, blue = selected). Subscribes to `order_created` / `order_updated` for real-time availability. Validates selection on each refresh — auto-clears if the table was taken |
+| `TableOccupancyManager` | Admin floor-plan view. Shows live occupancy, selected table detail panel, and a release-table button |
+
+---
+
+### Notifications
+
+| Component | Description |
+|---|---|
+| `NotificationToast` | Portal-rendered toast stack. Reads the `useNotifications()` queue and `useSettings()` filters. Auto-dismisses after 6 s |
+
+---
+
+### Kitchen
+
+| Component | Description |
+|---|---|
+| `KitchenStatsPanel` | Real-time kitchen metrics strip: orders today, pending, in-progress, revenue |
+
+---
+
+### Admin / Staff
+
+| Component | Description |
+|---|---|
+| `UserList` | Staff table with role badges, status indicators, edit/delete actions |
+| `PromotionManagement` | Promotions CRUD (create discount rules by %, fixed amount, or BOGO) |
+
+---
+
+### Shared UI
+
+| Component | Description |
+|---|---|
+| `StarRating` | Read-only 5-star display with fractional support |
+| `Pagination` | Page number controls with configurable page size |
+| `SearchAndFilterBar` | Combined search input + quick-filter pill row |
+| `FilterButtons` | Standalone pill-style filter toggles |
+| `IngredientImpactPreview` | Shows which ingredients will be consumed by a pending order |
+| `LoadingState` | Skeleton card grid (configurable `count`) |
+| `ErrorState` | Error message with retry button |
+| `EmptyState` | Empty placeholder with icon and message |
+
+---
+
+## 11. View Models
+
+View models are **static utility classes** that contain presentation logic, keeping components free of formatting code.
+
+### `MenuItemViewModel`
+
+**File:** `app/presentation/viewModels/MenuItemViewModel.ts`
 
 ```typescript
-const handleApiError = (error: AxiosError) => {
-  switch (error.response?.status) {
-    case 400:
-      return "Invalid request. Please check your input.";
-    case 401:
-      return "You are not authenticated. Please login.";
-    case 403:
-      return "You don't have permission to perform this action.";
-    case 404:
-      return "Resource not found.";
-    case 429:
-      return "Too many requests. Please wait a moment.";
-    case 500:
-      return "Server error. Please try again later.";
-    default:
-      return "An unexpected error occurred.";
-  }
+class MenuItemViewModel {
+  static isAvailable(item: MenuItem): boolean;
+  static getAvailabilityStatus(item: MenuItem): "available" | "out-of-stock";
+  static formatPrice(price: number): string;             // "$12.50"
+  static getChefSpecialBadge(item: MenuItem): string;
+  static shouldShowSpecialBadge(item: MenuItem): boolean;
+  static getDietaryTagsDisplay(item: MenuItem): string[];
+  static getRatingDisplay(item: MenuItem): string;       // "★ 4.8"
+  static getCardStateClasses(item: MenuItem): string;    // Tailwind classes
+  static getTruncatedDescription(item: MenuItem, maxLength?: number): string;
+}
+```
+
+### `KitchenStatsViewModel`
+
+**File:** `app/presentation/viewModels/KitchenStatsViewModel.ts`
+
+A hook-based view model (unlike the static `MenuItemViewModel`):
+
+```typescript
+const useKitchenStatsViewModel = () => {
+  // Returns { stats: StatsData | null, loading: boolean, error: string | null, fetchStats() }
 };
 ```
 
-### Loading & Error States
+### `OrderViewModel`
+
+**File:** `app/presentation/viewModels/OrderViewModel.ts`
+
+Formatting helpers for order display: `formatStatus(status)`, `getStatusColor(status)`, `formatOrderDate(date)`.
+
+---
+
+## 12. Sidebar & Navigation
+
+**File:** `app/lib/sidebar/sidebarConfig.tsx`
+
+`SidebarConfig` is a static class. The sidebar component calls `SidebarConfig.getFilteredItems(userRole)` which applies both section-level and item-level role filtering.
+
+### Navigation Structure
+
+```
+Dashboard
+  ├─ Dashboard        /dashboard       admin, manager, waiter, chef
+  ├─ User Interface   /user_interface  admin, manager
+  └─ Analytics        /analytics       admin, manager
+
+Restaurant Operations
+  ├─ Waiter Order     /waiter_order    admin, manager, waiter        [Live]
+  ├─ Chef Special     /chef_special    admin, manager, chef
+  ├─ Inventory        /inventory/…     admin, manager
+  ├─ Order Mgmt       /waiter_order    admin, manager
+  └─ Billing          /billing         admin, manager, cashier, waiter
+
+Management
+  ├─ Users            /users           admin                         [Admin]
+  ├─ Promotions       /promotions      admin
+  ├─ Profile          /profile         admin, manager, waiter, chef
+  ├─ Staff Mgmt       /users           admin, manager
+  └─ Shift Schedule   /schedule        admin, manager
+
+Authentication (guest only)
+  ├─ Login            /login
+  └─ Register         /register
+
+System
+  ├─ Settings         /settings        admin, manager
+  ├─ Notifications    /notifications   admin, manager, waiter, chef  [3]
+  └─ Help & Support   /help            admin, manager, waiter, chef
+```
+
+### Extending Navigation
+
+1. Add a new `SidebarItem` object in the relevant section builder method.
+2. Set the `roles` array to restrict visibility.
+3. The `getFilteredItems` method will include it automatically — no other changes needed.
+
+---
+
+## 13. Real-Time System
+
+### Socket Event Map
+
+| Event (direction) | Emitter | Listeners | Payload |
+|---|---|---|---|
+| `order:notification` (server→client) | Backend on order status change | `NotificationContext` | `OrderNotificationPayload` |
+| `order_created` (client→server) | `WaiterOrderInterface` after POST | KDS, `TableSelect`, `TableOccupancyManager` | Full order object |
+| `order_updated` (server→client) | Backend on PATCH | `KitchenDisplaySystem`, `TableSelect`, `TableOccupancyManager` | Full order object |
+| `billing:payment_updated` (server→client) | Backend on PATCH /billing/:id/pay | `BillingPage` | `{ orderId, paymentStatus, paymentMethod, tableNumber }` |
+| `low_stock_alert` (server→client) | Backend inventory check | `InventoryDashboard` | Alert object |
+| `user_online` / `user_offline` (client→server) | `ProfilePage` on mount/unmount | Profile's own socket listeners | `userId: string` |
+| `user_status_updated` (server→client) | Backend on presence change | `ProfilePage` | `User` object |
+| `set_role` (client→server) | `WaiterOrderInterface` on mount | Backend room assignment | role string |
+| `join_user_room` (client→server) | `ProfilePage` | Backend | `userId: string` |
+
+### Cleanup Pattern
+
+Every component that registers socket listeners must clean them up:
 
 ```typescript
-// All async operations follow this pattern
-const [state, setState] = useState({
-  data: null,
-  isLoading: false,
-  error: null,
-});
+useEffect(() => {
+  if (!socket) return;
 
-const fetchData = async () => {
-  setState((prev) => ({ ...prev, isLoading: true, error: null }));
+  const handler = (data: OrderData) => { /* … */ };
+  socket.on("order_updated", handler);
+
+  return () => {
+    socket.off("order_updated", handler);  // named handler — only removes this one
+  };
+}, [socket]);
+```
+
+> **Important:** Avoid `socket.off("event")` without a handler reference — this removes **all** listeners for that event, which can break other components.
+
+---
+
+## 14. Authentication & Authorization
+
+### Login Flow
+
+```
+POST /api/auth/login  { email, password }
+  ↓
+Backend returns  { token, user }
+  ↓
+AuthContext stores token in cookie (30-day expiry)
+AuthContext sets axiosInstance Authorization header
+AuthContext sets user in state
+  ↓
+SocketProvider sees token → connects Socket.IO
+  ↓
+Router pushes to /dashboard
+```
+
+### Session Restoration (on app load)
+
+```
+AuthProvider mounts
+  ↓
+Reads token from cookies
+  ↓
+GET /api/auth/me  (Authorization: Bearer <token>)
+  ↓
+  success → setUser(data.user), mark isLoading=false
+  failure → clear cookie, setUser(null), show login
+```
+
+### Route Protection
+
+Wrap any page with `<ProtectedRoute>` to enforce authentication:
+
+```tsx
+// Require authentication (any role):
+<ProtectedRoute>
+  <ProfilePage />
+</ProtectedRoute>
+
+// The sidebar already filters items by role — no per-page role checks needed
+// for pages reachable only through the sidebar.
+```
+
+### Role Enforcement
+
+Role checks happen at two points:
+
+1. **Sidebar config** — `SidebarConfig.getFilteredItems(role)` omits links not accessible to the role.
+2. **Backend** — Every API route uses `authorize("admin", "manager", …)` middleware. A forged frontend role gets a `403` from the server.
+
+---
+
+## 15. Settings & Theming
+
+### Theme System
+
+Three modes: `light`, `dark`, `system`.
+
+- `system` reads `window.matchMedia("(prefers-color-scheme: dark)")` and also subscribes to changes via the `change` event listener.
+- When dark mode is active, `document.documentElement.classList.add("dark")` is called. Removing it reverts to light.
+- `globals.css` overrides Tailwind utility classes under the `html.dark` selector:
+
+```css
+html.dark .bg-white       { background-color: #1c1c1e; }
+html.dark .text-gray-900  { color: #f5f5f5; }
+html.dark .border-gray-200 { border-color: #333333; }
+/* … */
+```
+
+This universal approach means existing components gain dark mode without per-component `dark:` variants.
+
+### Flash Prevention
+
+`layout.tsx` includes an inline `<script>` that runs synchronously before React hydrates:
+
+```js
+(function() {
   try {
-    const response = await apiClient.get("/api/endpoint");
-    setState({ data: response.data, isLoading: false, error: null });
-  } catch (error) {
-    setState((prev) => ({
-      ...prev,
-      error: error.message,
-      isLoading: false,
-    }));
-  }
-};
+    var s = localStorage.getItem("rms_settings");
+    var t = s ? JSON.parse(s).theme : "light";
+    var d = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    if (t === "dark" || (t === "system" && d))
+      document.documentElement.classList.add("dark");
+  } catch(e) {}
+})();
+```
+
+`<html suppressHydrationWarning>` suppresses the expected hydration class mismatch.
+
+---
+
+## 16. Error Handling
+
+### Result Type (domain / application layers)
+
+Use cases never throw. They return `Result<T>`:
+
+```typescript
+// Correct usage:
+const result = await loadOrder(repo);
+if (!result.ok) {
+  setError(result.error);
+  return;
+}
+setCurrentOrder(result.value);
+```
+
+### Axios Errors (infrastructure / presentation layers)
+
+The `axiosInstance` response interceptor handles `401` globally (auto-logout). Component-level errors are caught in try/catch and stored in local state:
+
+```typescript
+try {
+  const { data } = await axiosInstance.get("/api/orders");
+  setOrders(data.orders);
+} catch {
+  setError("Failed to load orders. Please try again.");
+}
+```
+
+Never surface raw Axios error objects to the UI — extract `error.response?.data?.message` or use a generic fallback string.
+
+### API Error Response Shape
+
+The backend consistently returns:
+
+```typescript
+// Success
+{ success: true, data?: any, message?: string }
+
+// Failure
+{ success: false, message: string }
 ```
 
 ---
 
-## Setup & Deployment
+## 17. Data Flow Diagrams
+
+### Order Creation (Waiter → Kitchen)
+
+```
+Waiter taps [+] on menu row
+  ↓
+MenuItemRowWaiter calls orderManager.addToOrder(item)
+  ↓
+useOrderManager → OrderUseCases.addToOrder(repo, item)
+  ↓
+LocalStorageOrderRepository saves to "waiter_current_order"
+  ↓
+State updates → cart count badge increments
+  ↓
+Waiter taps [Send to Kitchen]
+  ↓
+WaiterOrderInterface: POST /api/orders  { items, tableNumber, … }
+  ↓
+Backend: validates, creates Order doc, deducts inventory
+  ↓
+Backend emits order:notification to all clients
+  ↓
+NotificationContext enqueues toast (if type enabled in settings)
+  ↓
+socket.emit("order_created", responseData)  ← client notifies KDS
+  ↓
+KitchenDisplaySystem receives "order_created" → refreshes order list
+  ↓
+TableSelect marks table as occupied
+```
+
+### Payment Processing
+
+```
+Cashier/Waiter opens /billing
+  ↓
+GET /api/billing/served → list of served + unpaid orders
+  ↓
+Selects order → enters cash amount → change calculated client-side
+  ↓
+Taps [Mark as Paid]
+  ↓
+PATCH /api/billing/:id/pay  { paymentMethod }
+  ↓
+Backend sets paymentStatus="paid", emits billing:payment_updated
+  ↓
+All open billing sessions update order status via socket
+  ↓
+[Print Receipt] → window.print() → @media print shows receipt div only
+```
+
+### Dark Mode Activation
+
+```
+User opens /settings → selects "Dark"
+  ↓
+SettingsContext.updateSetting("theme", "dark")
+  ↓
+applyTheme("dark") → document.documentElement.classList.add("dark")
+  ↓
+settings saved to localStorage "rms_settings"
+  ↓
+globals.css html.dark overrides take effect immediately (no page reload)
+  ↓
+Next time user opens app:
+  inline <script> reads localStorage → adds "dark" class before first paint
+```
+
+---
+
+## 18. Environment & Setup
 
 ### Prerequisites
 
-- **Node.js** v18.0.0 or higher
-- **npm** v8.0.0 or higher
-- **Backend API** running on port 5000
-- **Environment variables** configured
+- Node.js ≥ 18
+- Backend API running on port 5000 (see backend documentation)
 
-### Local Development Setup
+### Environment Variables
 
-#### 1. Clone Repository
-
-```bash
-git clone https://github.com/Zardd99/restaurant_mangement_system.git
-cd restaurant_web_app
-```
-
-#### 2. Install Dependencies
-
-```bash
-npm install
-```
-
-#### 3. Environment Configuration
-
-Create `.env.local` file:
+Create `.env.local` in the project root:
 
 ```env
-# API Configuration
 NEXT_PUBLIC_API_URL=http://localhost:5000
-NEXT_PUBLIC_SOCKET_URL=http://localhost:5000
-
-# Environment
-NODE_ENV=development
-
-# Authentication
-NEXTAUTH_SECRET=your_secret_key_here_change_in_production
-NEXTAUTH_URL=http://localhost:3000
-
-#3rd Party Services
-NEXT_PUBLIC_GOOGLE_ANALYTICS_ID=your_ga_id (optional)
 ```
 
-#### 4. Start Development Server
+This is the only required variable. The socket connection uses the same URL.
 
-```bash
-npm run dev
-# Application runs on http://localhost:3000
+For ngrok / remote development:
+```env
+NEXT_PUBLIC_API_URL=https://your-tunnel.ngrok-free.app
 ```
-
-#### 5. Build for Production
-
-```bash
-npm run build
-npm start
-```
-
-### Deployment to Vercel
-
-#### 1. Push to GitHub
-
-```bash
-git add .
-git commit -m "Deploy to Vercel"
-git push origin main
-```
-
-#### 2. Connect to Vercel
-
-- Visit https://vercel.com/new
-- Import your GitHub repository
-- Configure environment variables from `.env.local`
-- Click Deploy
-
-#### 3. Set Production Environment Variables
-
-In Vercel dashboard:
-
-```
-NEXT_PUBLIC_API_URL=https://api.restaurant.com
-NEXT_PUBLIC_SOCKET_URL=https://api.restaurant.com
-NEXTAUTH_SECRET=production_secret_key_randomly_generated
-NEXTAUTH_URL=https://your-app.vercel.app
-```
-
-### Docker Deployment
-
-#### Dockerfile
-
-```dockerfile
-FROM node:18-alpine AS builder
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci
-COPY . .
-RUN npm run build
-
-FROM node:18-alpine
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci --only=production
-COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/public ./public
-EXPOSE 3000
-CMD ["npm", "start"]
-```
-
-#### docker-compose.yml
-
-```yaml
-version: "3.8"
-services:
-  web:
-    build: .
-    ports:
-      - "3000:3000"
-    environment:
-      NEXT_PUBLIC_API_URL: http://backend:5000
-      NEXT_PUBLIC_SOCKET_URL: http://backend:5000
-      NODE_ENV: production
-    depends_on:
-      - backend
-
-  backend:
-    image: backend-restaurant:latest
-    ports:
-      - "5000:5000"
-    environment:
-      MONGODB_URI: mongodb://mongo:27017/restaurant_db
-    depends_on:
-      - mongo
-
-  mongo:
-    image: mongo:latest
-    volumes:
-      - mongo_data:/data/db
-    ports:
-      - "27017:27017"
-
-volumes:
-  mongo_data:
-```
-
-### Build & Deployment Checklist
-
-- [ ] All environment variables configured
-- [ ] API backend is running and accessible
-- [ ] WebSocket connection tested
-- [ ] Database seeded with test data
-- [ ] Authentication flow tested
-- [ ] Role-based redirects working
-- [ ] Real-time updates functional
-- [ ] Responsive design verified across devices
-- [ ] Performance optimized (images, bundle size)
-- [ ] Security headers configured
-
----
-
-## Performance Optimization
-
-### Code Splitting
-
-Next.js automatically code-splits by page. For large components, use dynamic imports:
-
-```typescript
-import dynamic from 'next/dynamic';
-
-const KitchenDisplaySystem = dynamic(
-  () => import('./KitchenDisplaySystem'),
-  { loading: () => <LoadingSpinner /> }
-);
-```
-
-### Image Optimization
-
-Use Next.js Image component:
-
-```typescript
-import Image from 'next/image';
-
-<Image
-  src={menuItem.imageUrl}
-  alt={menuItem.name}
-  width={300}
-  height={300}
-  priority // For above-fold images
-/>
-```
-
-### Data Fetching Optimization
-
-```typescript
-// Cache frequently accessed data
-const getMenuItems = useCallback(async () => {
-  const cached = sessionStorage.getItem("menu_items");
-  if (cached) return JSON.parse(cached);
-
-  const response = await apiClient.get("/api/menu");
-  sessionStorage.setItem("menu_items", JSON.stringify(response.data));
-  return response.data;
-}, []);
-```
-
-### WebSocket Optimization
-
-```typescript
-// Debounce order updates
-const handleOrderUpdate = useCallback(
-  debounce((order) => {
-    setOrders((prev) => updateOrderInList(prev, order));
-  }, 500),
-  [],
-);
-
-socket.on("order_updated", handleOrderUpdate);
-```
-
-### Bundle Analysis
-
-```bash
-npm run build
-npm install -g webpack-bundle-analyzer
-npx analyze
-```
-
----
-
-## Security Considerations
-
-### Authentication
-
-- Token stored in httpOnly, secure cookies
-- CSRF protection via SameSite cookie setting
-- Token refresh before expiration
-- Logout clears all auth state
-
-### Authorization
-
-```typescript
-// Protected route wrapper
-const ProtectedRoute = ({ children, requiredRole }) => {
-  const { user } = useAuth();
-
-  if (!user) return <Redirect to="/login" />;
-  if (!requiredRole.includes(user.role)) {
-    return <Redirect to="/unauthorized" />;
-  }
-
-  return children;
-};
-
-// Usage
-<ProtectedRoute requiredRole={['admin']}>
-  <AdminDashboard />
-</ProtectedRoute>
-```
-
-### Data Validation
-
-All user inputs are validated:
-
-```typescript
-const createOrderSchema = z.object({
-  items: z.array(
-    z.object({
-      menuItem: z.string().min(24).max(24),
-      quantity: z.number().min(1).max(100),
-    }),
-  ),
-  tableNumber: z.number().min(1),
-  orderType: z.enum(["dine-in", "takeaway", "delivery"]),
-});
-```
-
-### Sensitive Data Handling
-
-- API keys not exposed in frontend code
-- Sensitive operations delegated to backend
-- User passwords never logged
-- Error messages don't expose system details
-
-### HTTPS Enforcement
-
-```typescript
-// Vercel automatically provides HTTPS
-// For self-hosted, configure SSL certificate
-// Force redirect in next.config.ts
-```
-
----
-
-## Testing
-
-### Unit Tests
-
-```bash
-npm test
-```
-
-### Component Tests with React Testing Library
-
-```typescript
-import { render, screen } from '@testing-library/react';
-
-test('MenuItemCard renders item details', () => {
-  const item = { name: 'Salmon', price: 24.99 };
-  render(<MenuItemCard item={item} onAddToCart={jest.fn()} />);
-
-  expect(screen.getByText('Salmon')).toBeInTheDocument();
-  expect(screen.getByText('$24.99')).toBeInTheDocument();
-});
-```
-
-### Integration Tests
-
-```bash
-npx playwright test
-```
-
----
-
-## Troubleshooting
-
-### API Connection Issues
-
-```bash
-# Check backend is running
-curl http://localhost:5000/api/health
-
-# Check CORS configuration
-# Verify NEXT_PUBLIC_API_URL in .env.local
-```
-
-### WebSocket Connection Issues
-
-```
-Check network tab in dev tools
-Verify token is being sent
-Check backend socket configuration
-Ensure Socket.io client version matches server
-```
-
-### Authentication Issues
-
-```
-Clear cookies: Application > Storage > Cookies
-Remove token from localStorage if used
-Check NEXTAUTH_SECRET is set
-Verify JWT expiration
-```
-
----
-
-## Performance Metrics
-
-### Target Metrics
-
-- **FCP (First Contentful Paint)**: < 1.5s
-- **LCP (Largest Contentful Paint)**: < 2.5s
-- **CLS (Cumulative Layout Shift)**: < 0.1
-- **TTL (Time to Interactive)**: < 3.5s
-
-### Monitoring
-
-Use Vercel Analytics or Google Analytics to monitor:
-
-- Page load times
-- User interactions
-- Error rates
-- Real-time active users
-
----
-
-## Appendix: Common Commands
 
 ### Development
 
 ```bash
-npm run dev                # Start dev server
-npm run build             # Build for production
-npm start                 # Start production server
-npm test                  # Run tests
-npm run lint              # Run ESLint
-npm run format            # Format code with Prettier
+cd restaurant_mangement_system
+npm install
+npm run dev          # http://localhost:3000 (Turbopack)
 ```
 
-### Docker
+### Production Build
 
 ```bash
-docker build -t restaurant-web:1.0 .
-docker run -p 3000:3000 restaurant-web:1.0
-docker-compose up
+npm run build        # Next.js build with Turbopack
+npm start            # Serve production build
+```
+
+### Linting
+
+```bash
+npm run lint         # ESLint
 ```
 
 ---
 
----
+## 19. Testing
 
-## Table Management Components
+Tests live in `app/__test__/`. The stack is Jest + React Testing Library.
 
-### Overview
+```bash
+npm test             # single run
+npm run test:watch   # watch mode
+npm run test:coverage
+```
 
-Two presentation components handle table selection and floor-plan monitoring. Both subscribe to Socket.io events so their data updates in real time whenever any order is created or changes status — no polling lag.
+### Test File Conventions
 
-| Component | File | Used by |
-| --------- | ---- | ------- |
-| `TableSelect` | `app/presentation/components/TableSelect.tsx` | Waiter order-creation form — lets a waiter pick an available table |
-| `TableOccupancyManager` | `app/presentation/components/TableOccupancyManager.tsx` | Admin/manager floor-plan view — shows live occupancy and order details |
+| File | What it tests |
+|---|---|
+| `settingsContext.test.tsx` | Theme application, localStorage persistence, updateSetting, resetSettings |
+| `settingsPage.test.tsx` | Theme picker render, toggle switches (aria-label), delete modal flow |
+| `notification.test.tsx` | Enqueue, auto-dismiss, max queue limit, type filtering |
 
----
+### Mocking Pattern
 
-### TableSelect
-
-**Props:**
-
-| Prop | Type | Default | Description |
-| ---- | ---- | ------- | ----------- |
-| `value` | `number \| null` | — | Currently selected table number, controlled by the parent |
-| `onChange` | `(n: number \| null) => void` | — | Called when the selection changes |
-| `orderType` | `"dine-in" \| "takeaway" \| "delivery"` | — | Component renders nothing unless `"dine-in"` |
-| `disabled` | `boolean` | `false` | Disables all interactive elements |
-| `maxTables` | `number` | `50` | Upper bound for the table grid |
-
-**Behavior:**
-
-1. **Real-time availability** — subscribes to `order_created` and `order_updated` via `useSocket()`. Any order event triggers an immediate `fetchTables()` call, updating the green/red grid without waiting for the 10-second polling interval.
-2. **Stale-selection invalidation** — after each refresh, if `value` appears in the new `occupiedTables` list, `onChange(null)` is called automatically and a red warning is displayed, preventing the waiter from submitting an order to a table that was just taken.
-3. **Three selection paths** — visual grid (green = available, red = occupied, blue = selected), direct number input (validated against `availableTables`), and a "Change" button on the current selection display.
-4. **Polling fallback** — retains a 10-second `setInterval` as a fallback for environments where the WebSocket is unavailable.
-
-**Key implementation details:**
+Components that call `useSettings()` or `useAuth()` need those contexts mocked:
 
 ```typescript
-// Real-time refresh effect
-useEffect(() => {
-  if (!socket || orderType !== "dine-in") return;
-  const refresh = () => fetchTables();
-  socket.on("order_created", refresh);
-  socket.on("order_updated", refresh);
-  return () => {
-    socket.off("order_created", refresh);
-    socket.off("order_updated", refresh);
-  };
-}, [socket, orderType, fetchTables]);
+jest.mock("../contexts/SettingsContext", () => ({
+  useSettings: () => ({
+    settings: {
+      soundEnabled: false,
+      toastsEnabled: true,
+      toastTypes: {
+        order_created: true,
+        order_preparing: true,
+        order_ready: true,
+        order_served: true,
+      },
+    },
+    updateSetting: jest.fn(),
+    resetSettings: jest.fn(),
+  }),
+}));
+```
 
-// Stale-selection invalidation (inside fetchTables)
-if (value !== null && newOccupied.includes(value)) {
-  onChange(null);
+---
+
+## 20. Adding New Features
+
+### Adding a New Page
+
+1. Create `app/<route>/page.tsx` with `"use client"` at the top.
+2. Use `axiosInstance` from `useAuth()` for all API calls.
+3. The page automatically gets the navbar + sidebar from the root layout — no layout wrapper needed.
+4. The content area starts below the navbar because `<main>` has `pt-16`. Do not add `mt-16` or `mt-18` to the page root — these are now handled globally.
+
+```tsx
+"use client";
+import { useEffect, useState } from "react";
+import { useAuth } from "../contexts/AuthContext";
+
+export default function NewFeaturePage() {
+  const { axiosInstance } = useAuth();
+  const [data, setData] = useState(null);
+
+  useEffect(() => {
+    axiosInstance.get("/api/new-feature").then(r => setData(r.data));
+  }, [axiosInstance]);
+
+  return <div className="p-4 md:p-6">{/* … */}</div>;
 }
 ```
 
----
+### Adding a Sidebar Link
 
-### TableOccupancyManager
-
-**Props:**
-
-| Prop | Type | Default | Description |
-| ---- | ---- | ------- | ----------- |
-| `maxTables` | `number` | `50` | Number of tables shown in the floor plan |
-
-**Behavior:**
-
-1. **Real-time floor plan** — subscribes to `order_created` and `order_updated` via `useSocket()`. The grid and summary counts update within milliseconds of any order event.
-2. **Live indicator** — a green dot labelled "Live" is shown in the controls bar when `socket.connected` is `true`, giving staff instant confirmation that real-time data is active.
-3. **Selected-table sync** — after each refresh a `useEffect` re-looks up `selectedTable` in the new `tableStatus` array and updates the detail panel in-place, so order info (status, amount, item count) stays current without requiring the user to re-click the table.
-4. **Inline release errors** — release failures are displayed inside the detail panel rather than via `alert()`, keeping the UI non-blocking.
-5. **Polling fallback** — configurable auto-refresh interval (3 s / 5 s / 10 s / 30 s) retained as a fallback.
-
-**Floor-plan colour coding:**
-
-| Colour | Meaning |
-| ------ | ------- |
-| Green (`bg-green-100 border-green-400`) | Table available |
-| Red (`bg-red-100 border-red-400`) | Table occupied |
-| Blue ring (`ring-4 ring-blue-500`) | Currently selected in detail panel |
-
-**WebSocket event subscriptions:**
+In `app/lib/sidebar/sidebarConfig.tsx`, add to the appropriate section builder:
 
 ```typescript
-socket.on("order_created", () => fetchTableStatus());
-socket.on("order_updated", () => fetchTableStatus());
+{
+  id: "new-feature",
+  text: "New Feature",
+  icon: <SomeIcon className={this.ICON_SIZE} />,
+  link: "/new-feature",
+  roles: ["admin", "manager"],   // restrict as needed
+},
 ```
 
-Both events are cleaned up in the effect's return function to prevent listener accumulation on re-renders.
+### Adding a New Socket Event
 
-**End of Restaurant Web Application Documentation**
+**Backend:** emit the event from the relevant Express controller.
+
+**Frontend:** subscribe in the component or hook that needs it:
+
+```typescript
+useEffect(() => {
+  if (!socket) return;
+  const handler = (payload: MyPayload) => { /* update state */ };
+  socket.on("my_new_event", handler);
+  return () => { socket.off("my_new_event", handler); };
+}, [socket]);
+```
+
+Add the event to the [Socket Event Map](#13-real-time-system) table.
+
+### Adding a New Use Case
+
+1. Define the function in `application/usecases/`:
+
+```typescript
+export async function myUseCase(
+  repo: MyRepository,
+  input: InputType,
+): Promise<Result<OutputType>> {
+  // business logic only — no UI, no direct API calls
+  const data = await repo.someMethod(input);
+  if (!data) return Err("Resource not found");
+  return Ok(data);
+}
+```
+
+2. Create a repository interface in `domain/repositories/`.
+3. Implement it in `infrastructure/repositories/` using `axiosInstance`.
+4. Call it from a custom hook in `hooks/` that provides `axiosInstance` from context.
+
+### Dark Mode in New Components
+
+New components automatically inherit dark mode via the global CSS overrides in `globals.css` if they use standard Tailwind colour utilities (`bg-white`, `text-gray-900`, etc.). You only need `dark:` variants for custom colours or components that need distinct dark-mode styling beyond the defaults.
+
+---
+
+*End of documentation.*
