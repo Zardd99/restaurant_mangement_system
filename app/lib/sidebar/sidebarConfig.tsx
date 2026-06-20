@@ -278,7 +278,7 @@ export class SidebarConfig {
           text: "Billing & Payments",
           icon: <CreditCard className={this.ICON_SIZE} />,
           link: "/billing",
-          roles: ["admin", "manager"],
+          roles: ["admin", "manager", "cashier", "waiter"],
         },
       ],
     };
