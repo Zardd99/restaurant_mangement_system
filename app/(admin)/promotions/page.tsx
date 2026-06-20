@@ -187,7 +187,7 @@ export default function PromotionsPage() {
   // Authentication loading state
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white mt-16">
+      <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="text-gray-800">Loading...</div>
       </div>
     );
@@ -196,7 +196,7 @@ export default function PromotionsPage() {
   // Access denied – user is not an admin
   if (user?.role !== "admin") {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white mt-16">
+      <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="text-gray-800 text-center">
           <h1 className="text-2xl font-bold mb-2">Access Denied</h1>
           <p>Only administrators can manage promotions.</p>
@@ -209,7 +209,7 @@ export default function PromotionsPage() {
   // MAIN RENDER
   // ===========================================================================
   return (
-    <div className="min-h-screen bg-white text-gray-900 p-4 md:p-8 mt-16">
+    <div className="min-h-screen bg-white text-gray-900 p-4 md:p-8">
       <div className="max-w-6xl mx-auto">
         {/* ------------------------------------------------------------------ */}
         {/* Header – Title, New Promotion Button, Error Display                */}

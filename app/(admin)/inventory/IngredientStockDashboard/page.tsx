@@ -398,7 +398,7 @@ export const IngredientStockDashboard: React.FC = () => {
   // --------------------------------------------------------------------------
 
   return (
-    <div className="p-6 space-y-6 mt-16">
+    <div className="p-6 space-y-6">
       {/* Header Section */}
       <div className="flex justify-between items-center">
         <div>

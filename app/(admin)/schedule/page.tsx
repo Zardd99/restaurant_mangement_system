@@ -403,7 +403,7 @@ export default function SchedulePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-6 mt-18">
+    <div className="min-h-screen bg-gray-50 p-4 md:p-6">
       {modal && (
         <ShiftModal state={modal} onSave={handleSave} onClose={() => setModal(null)} />
       )}

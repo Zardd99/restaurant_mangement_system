@@ -22,7 +22,7 @@ const WaiterOrderPage = () => {
   if (!user || !allowedRoles.includes(user.role)) {
     return (
       <ProtectedRoute>
-        <div className="container mx-auto mt-18 px-4 py-8">
+        <div className="container mx-auto px-4 py-8">
           <div className="bg-white rounded-lg shadow-md p-6 text-center">
             <h2 className="text-2xl font-bold text-red-600 mb-4">
               Access Denied
@@ -37,7 +37,7 @@ const WaiterOrderPage = () => {
   // Main UI
   return (
     <ProtectedRoute>
-      <div className="container mx-auto mt-18 px-4 py-8 max-w-7xl">
+      <div className="container mx-auto px-4 py-8 max-w-7xl">
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-gray-900">
             Waiter Order System

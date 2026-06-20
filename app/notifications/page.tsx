@@ -169,7 +169,7 @@ export default function NotificationsPage() {
   const unreadCount = items.filter((n) => !n.read).length;
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6 mt-18">
+    <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-3xl mx-auto">
 
         {/* Header */}

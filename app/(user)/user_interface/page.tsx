@@ -168,7 +168,7 @@ const Menu = () => {
   // --------------------------------------------------------------------------
   return (
     <ProtectedRoute>
-      <div className="container mx-auto mt-18 px-4 py-8 max-w-7xl">
+      <div className="container mx-auto px-4 py-8 max-w-7xl">
         {/* Page Header */}
         <MenuHeader />
 

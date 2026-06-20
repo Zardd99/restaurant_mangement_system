@@ -215,7 +215,7 @@ export default function SettingsPage() {
   }, [resetConfirm, resetSettings]);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6 mt-18 transition-colors duration-200">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6 transition-colors duration-200">
       <div className="max-w-2xl mx-auto space-y-5">
 
         {/* Header */}
