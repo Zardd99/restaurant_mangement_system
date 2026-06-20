@@ -36,10 +36,8 @@ import {
   BarChart,
   FileText,
   CreditCard,
-  MessageSquare,
   Shield,
   Calendar,
-  TrendingUp,
   Zap,
 } from "lucide-react";
 
@@ -398,20 +396,6 @@ export class SidebarConfig {
           icon: <HelpCircle className={this.ICON_SIZE} />,
           link: "/help",
           roles: ["admin", "manager", "waiter", "chef"],
-        },
-        {
-          id: "feedback",
-          text: "Feedback",
-          icon: <MessageSquare className={this.ICON_SIZE} />,
-          link: "/feedback",
-          roles: ["admin", "manager", "waiter", "chef"],
-        },
-        {
-          id: "performance",
-          text: "Performance",
-          icon: <TrendingUp className={this.ICON_SIZE} />,
-          link: "/performance",
-          roles: ["admin"],
         },
       ],
     };
