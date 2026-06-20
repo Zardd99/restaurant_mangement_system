@@ -54,7 +54,7 @@ const RootLayout = async ({ children }: { children: ReactNode }) => {
                   <SearchProvider>
                     <div className="flex flex-col min-h-screen mx-auto">
                       <Layout />
-                      <main className="flex-1 ml-[83.40px]">{children}</main>
+                      <main className="flex-1 ml-[83.40px] pt-16">{children}</main>
                     </div>
                   </SearchProvider>
                   <NotificationToast />

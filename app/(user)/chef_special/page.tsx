@@ -469,7 +469,7 @@ const Menu = () => {
   if (loading) {
     return (
       <ProtectedRoute>
-        <div className="min-h-screen bg-gray-50 pt-24">
+        <div className="min-h-screen bg-gray-50">
           <div className="container mx-auto px-4 py-8 max-w-7xl">
             {/* Skeleton header */}
             <div className="mb-10">
@@ -510,7 +510,7 @@ const Menu = () => {
   if (error) {
     return (
       <ProtectedRoute>
-        <div className="min-h-screen bg-gray-50 pt-24 flex items-center justify-center">
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
           <div className="container mx-auto px-4 py-8 max-w-7xl">
             <div className="bg-white rounded-3xl shadow-xl border border-gray-100 p-12 text-center">
               <div className="inline-flex items-center justify-center w-20 h-20 bg-red-100 rounded-full mb-6">
@@ -550,7 +550,7 @@ const Menu = () => {
   // ===========================================================================
   return (
     <ProtectedRoute>
-      <div className="min-h-screen bg-gray-50 pt-24">
+      <div className="min-h-screen bg-gray-50">
         <div className="container mx-auto px-4 py-8 max-w-7xl">
           {/* ----------------------------------------------------------------- */}
           {/* HEADER SECTION – Title, CTA, Stats Bar                           */}

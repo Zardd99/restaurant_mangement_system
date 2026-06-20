@@ -512,7 +512,7 @@ const AdminUserDashboard = () => {
   // Main Render
   // --------------------------------------------------------------------------
   return (
-    <div className="min-h-screen bg-white p-4 md:p-6 mt-18">
+    <div className="min-h-screen bg-white p-4 md:p-6">
       <div className="max-w-7xl mx-auto">
         {/* ========================================================================
             HEADER SECTION
