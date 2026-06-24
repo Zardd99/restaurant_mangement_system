@@ -36,6 +36,18 @@ import React, {
 import axios, { AxiosInstance } from "axios";
 import Cookies from "js-cookie";
 
+/**
+ * Cookie attributes for the auth token. `sameSite: strict` blocks CSRF-style
+ * cross-site sends; `secure` is enabled whenever the page is served over HTTPS.
+ * Note: js-cookie cannot set httpOnly — XSS hygiene is still required.
+ */
+const COOKIE_OPTIONS: Cookies.CookieAttributes = {
+  expires: 7,
+  sameSite: "strict",
+  secure:
+    typeof window !== "undefined" && window.location.protocol === "https:",
+};
+
 // -----------------------------------------------------------------------------
 // TYPES & INTERFACES
 // -----------------------------------------------------------------------------
@@ -244,8 +256,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       );
       const { token: newToken, user: userData } = response.data;
 
-      // Persist token in cookie (30 days expiry)
-      Cookies.set("token", newToken, { expires: 30 });
+      // Persist token in cookie (matches the 7-day JWT lifetime).
+      Cookies.set("token", newToken, COOKIE_OPTIONS);
       // Set default authorization header for all subsequent requests
       axiosInstance.defaults.headers.common["Authorization"] =
         `Bearer ${newToken}`;
@@ -276,7 +288,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const { token: newToken, user: newUser } = response.data;
 
       // Persist token
-      Cookies.set("token", newToken, { expires: 30 });
+      Cookies.set("token", newToken, COOKIE_OPTIONS);
       axiosInstance.defaults.headers.common["Authorization"] =
         `Bearer ${newToken}`;
 

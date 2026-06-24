@@ -3,28 +3,49 @@
 import { useAuth } from "../../../contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import { useEffect, ReactNode } from "react";
+import {
+  Permission,
+  Role,
+  hasPermission,
+} from "../../../config/rbac";
 
 interface ProtectedRouteProps {
   children: ReactNode;
+  /** Single role (legacy API, kept for backward compatibility). */
   requiredRole?: string;
+  /** Any-of role gate. */
+  requiredRoles?: Role[];
+  /** Permission gate (preferred) — checked against the user's role. */
+  requiredPermission?: Permission;
 }
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children,
   requiredRole,
+  requiredRoles,
+  requiredPermission,
 }) => {
   const { user, isLoading } = useAuth();
   const router = useRouter();
 
-  useEffect(() => {
-    if (!isLoading && !user) {
-      router.push("/login");
-    }
+  const isAuthorized = (() => {
+    if (!user) return false;
+    if (requiredRole && user.role !== requiredRole) return false;
+    if (requiredRoles && !requiredRoles.includes(user.role as Role))
+      return false;
+    if (requiredPermission && !hasPermission(user.role, requiredPermission))
+      return false;
+    return true;
+  })();
 
-    if (!isLoading && user && requiredRole && user.role !== requiredRole) {
+  useEffect(() => {
+    if (isLoading) return;
+    if (!user) {
+      router.push("/login");
+    } else if (!isAuthorized) {
       router.push("/unauthorized");
     }
-  }, [user, isLoading, router, requiredRole]);
+  }, [user, isLoading, isAuthorized, router]);
 
   if (isLoading) {
     return (
@@ -34,11 +55,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     );
   }
 
-  if (!user) {
-    return null;
-  }
-
-  if (requiredRole && user.role !== requiredRole) {
+  if (!user || !isAuthorized) {
     return null;
   }
 

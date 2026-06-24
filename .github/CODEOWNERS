@@ -1,0 +1,8 @@
+# Default owner for everything in the repo.
+* @Zardd99
+
+# Security-sensitive areas — review carefully.
+/app/config/rbac.ts                                       @Zardd99
+/app/contexts/AuthContext.tsx                             @Zardd99
+/app/presentation/components/ProtectedRoute/              @Zardd99
+/.github/                                                 @Zardd99
