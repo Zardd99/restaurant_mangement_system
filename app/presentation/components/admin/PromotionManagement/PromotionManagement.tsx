@@ -224,7 +224,7 @@ const PromotionManagement: React.FC = () => {
   }
 
   return (
-    <Box p={3}>
+    <Box sx={{ p: 3 }}>
       {/* Header with title and "Add New" button */}
       <Box
         sx={{
