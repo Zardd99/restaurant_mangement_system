@@ -206,7 +206,7 @@ const PromotionManagement: React.FC = () => {
   // Security check: if user is not admin, show access denied.
   if (!user || user.role !== "admin") {
     return (
-      <Box p={3}>
+      <Box sx={{ p: 3 }}>
         <Typography variant="h6" color="error">
           Access denied. Admin privileges required.
         </Typography>
@@ -217,7 +217,7 @@ const PromotionManagement: React.FC = () => {
   // Loading state while fetching promotions.
   if (loading) {
     return (
-      <Box p={3}>
+      <Box sx={{ p: 3 }}>
         <Typography>Loading promotions...</Typography>
       </Box>
     );
@@ -227,10 +227,12 @@ const PromotionManagement: React.FC = () => {
     <Box p={3}>
       {/* Header with title and "Add New" button */}
       <Box
-        display="flex"
-        justifyContent="space-between"
-        alignItems="center"
-        mb={3}
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 3,
+        }}
       >
         <Typography variant="h4">Promotion Management</Typography>
         <Button
@@ -329,7 +331,7 @@ const PromotionManagement: React.FC = () => {
           {editingPromotion ? "Edit Promotion" : "Create New Promotion"}
         </DialogTitle>
         <DialogContent>
-          <Box display="flex" flexDirection="column" gap={2} pt={2}>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 2 }}>
             <TextField
               label="Promotion Name"
               value={formData.name}
@@ -349,7 +351,7 @@ const PromotionManagement: React.FC = () => {
               multiline
               rows={2}
             />
-            <Box display="flex" gap={2}>
+            <Box sx={{ display: "flex", gap: 2 }}>
               <TextField
                 select
                 label="Discount Type"
@@ -376,9 +378,12 @@ const PromotionManagement: React.FC = () => {
                   })
                 }
                 fullWidth
-                inputProps={{
-                  min: 0,
-                  max: formData.discountType === "percentage" ? 100 : undefined,
+                slotProps={{
+                  htmlInput: {
+                    min: 0,
+                    max:
+                      formData.discountType === "percentage" ? 100 : undefined,
+                  },
                 }}
                 helperText={
                   formData.discountType === "percentage"
@@ -403,7 +408,7 @@ const PromotionManagement: React.FC = () => {
               <MenuItem value="category">Specific Categories</MenuItem>
               <MenuItem value="menuItem">Specific Menu Items</MenuItem>
             </TextField>
-            <Box display="flex" gap={2}>
+            <Box sx={{ display: "flex", gap: 2 }}>
               <TextField
                 label="Start Date"
                 type="date"
@@ -412,7 +417,7 @@ const PromotionManagement: React.FC = () => {
                   setFormData({ ...formData, startDate: e.target.value })
                 }
                 fullWidth
-                InputLabelProps={{ shrink: true }}
+                slotProps={{ inputLabel: { shrink: true } }}
               />
               <TextField
                 label="End Date"
@@ -422,7 +427,7 @@ const PromotionManagement: React.FC = () => {
                   setFormData({ ...formData, endDate: e.target.value })
                 }
                 fullWidth
-                InputLabelProps={{ shrink: true }}
+                slotProps={{ inputLabel: { shrink: true } }}
               />
             </Box>
             <TextField
@@ -436,7 +441,7 @@ const PromotionManagement: React.FC = () => {
                 })
               }
               fullWidth
-              inputProps={{ min: 0 }}
+              slotProps={{ htmlInput: { min: 0 } }}
             />
             <TextField
               label="Max Usage Per Customer (Optional)"
@@ -451,7 +456,7 @@ const PromotionManagement: React.FC = () => {
                 })
               }
               fullWidth
-              inputProps={{ min: 1 }}
+              slotProps={{ htmlInput: { min: 1 } }}
             />
             <FormControlLabel
               control={
