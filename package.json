@@ -19,7 +19,7 @@
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
     "@mui/icons-material": "^7.3.8",
-    "@mui/material": "^7.3.8",
+    "@mui/material": "^9.1.2",
     "@phosphor-icons/react": "^2.1.10",
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.38.0",
