@@ -17,11 +17,11 @@ jobs:
     steps:
       # 1. Pulls your code from the repository onto the runner
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       # 2. Sets up the environment (e.g., Node.js)
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: "22.22.0"
 
