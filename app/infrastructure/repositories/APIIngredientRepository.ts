@@ -79,6 +79,41 @@ export interface StockLevelItem {
   category: string;
 }
 
+/**
+ * Full ingredient record used by the management dashboard CRUD views.
+ */
+export interface IngredientItem {
+  id: string;
+  name: string;
+  description: string;
+  unit: string;
+  currentStock: number;
+  minStock: number;
+  reorderPoint: number;
+  costPerUnit: number;
+  category: string;
+  supplierId: string;
+  shelfLife?: number;
+  isActive: boolean;
+  status: "NORMAL" | "LOW" | "CRITICAL";
+  isLowStock: boolean;
+  needsReorder: boolean;
+}
+
+export type IngredientInput = {
+  name: string;
+  description?: string;
+  unit: string;
+  currentStock?: number;
+  minStock: number;
+  reorderPoint: number;
+  costPerUnit: number;
+  supplierId: string;
+  category?: string;
+  shelfLife?: number;
+  isActive?: boolean;
+};
+
 // ============================================================================
 // Repository Implementation
 // ============================================================================
@@ -378,6 +413,56 @@ export class APIIngredientRepository implements IngredientRepository {
       {
         method: "POST",
         body: JSON.stringify({ updates }),
+      },
+    );
+  }
+
+  // --------------------------------------------------------------------------
+  // Ingredient CRUD (management dashboard)
+  // --------------------------------------------------------------------------
+
+  async listIngredients(): Promise<Result<IngredientItem[], string>> {
+    return this.fetch<IngredientItem[]>("/api/inventory/ingredients");
+  }
+
+  async createIngredient(
+    input: IngredientInput,
+  ): Promise<Result<IngredientItem, string>> {
+    return this.fetch<IngredientItem>("/api/inventory/ingredients", {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
+  }
+
+  async updateIngredient(
+    id: string,
+    input: Partial<IngredientInput>,
+  ): Promise<Result<IngredientItem, string>> {
+    return this.fetch<IngredientItem>(`/api/inventory/ingredients/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(input),
+    });
+  }
+
+  async deleteIngredient(
+    id: string,
+  ): Promise<Result<{ success: boolean; id: string }, string>> {
+    return this.fetch<{ success: boolean; id: string }>(
+      `/api/inventory/ingredients/${id}`,
+      { method: "DELETE" },
+    );
+  }
+
+  async adjustStock(
+    id: string,
+    delta: number,
+    reason?: string,
+  ): Promise<Result<IngredientItem, string>> {
+    return this.fetch<IngredientItem>(
+      `/api/inventory/ingredients/${id}/adjust`,
+      {
+        method: "POST",
+        body: JSON.stringify({ delta, reason }),
       },
     );
   }

@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Typecheck + Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install --legacy-peer-deps
+      - name: Type check
+        run: npx tsc --noEmit
+      - name: Lint
+        # ESLint flat-config migration pending; non-blocking until fixed.
+        run: npm run lint
+        continue-on-error: true
+      - name: Test
+        run: npm run test
