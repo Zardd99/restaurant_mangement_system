@@ -34,7 +34,6 @@ import {
   LogOut,
   Bell,
   BarChart,
-  FileText,
   CreditCard,
   Shield,
   Calendar,
@@ -262,13 +261,6 @@ export class SidebarConfig {
           text: "Inventory Dashboard",
           icon: <Package className={this.ICON_SIZE} />,
           link: "/inventory/IngredientStockDashboard",
-          roles: ["admin", "manager"],
-        },
-        {
-          id: "orders",
-          text: "Order Management",
-          icon: <FileText className={this.ICON_SIZE} />,
-          link: "/waiter_order",
           roles: ["admin", "manager"],
         },
         {
