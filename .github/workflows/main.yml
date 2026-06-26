@@ -21,7 +21,7 @@ jobs:
 
       # 2. Sets up the environment (e.g., Node.js)
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: "22.22.0"
 
