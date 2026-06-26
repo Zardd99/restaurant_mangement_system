@@ -67,38 +67,36 @@ const Navbar = ({ user }: NavbarProps) => {
   return (
     <nav
       ref={containerRef}
-      className="fixed top-0 z-50 w-full bg-black shadow-xl border-b border-gray-800/50 backdrop-blur-sm"
+      className="fixed top-4 left-1/2 z-50 w-[calc(100%-2rem)] max-w-3xl -translate-x-1/2 rounded-full border border-white/40 bg-white/60 shadow-lg shadow-black/5 ring-1 ring-black/5 backdrop-blur-xl backdrop-saturate-150 dark:border-white/10 dark:bg-black/40 dark:shadow-black/30 dark:ring-white/5"
     >
-      <div className="px-4 h-16 flex items-center justify-between">
+      <div className="flex h-14 items-center justify-between gap-3 pl-3 pr-2 sm:pl-5 sm:pr-3">
         {/* -------------------- Left Section: Brand -------------------- */}
-        <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-3">
-            {/* Brand icon with initials "RP" (Restaurant Pro) */}
-            <div className="w-8 h-8 bg-black rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">RP</span>
-            </div>
-            {/* Brand name and tagline */}
-            <div>
-              <h1 className="text-white font-semibold text-lg">
-                Restaurant Pro
-              </h1>
-              <p className="text-gray-400 text-xs">Management System</p>
-            </div>
+        <div className="flex items-center gap-3">
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-500 shadow-sm shadow-indigo-500/30">
+            <span className="text-sm font-bold text-white">RP</span>
+          </div>
+          <div className="leading-tight">
+            <h1 className="text-base font-semibold text-gray-900 dark:text-white">
+              Restaurant Pro
+            </h1>
+            <p className="hidden text-xs text-gray-500 sm:block dark:text-gray-400">
+              Management System
+            </p>
           </div>
         </div>
 
         {/* -------------------- Right Section: Notifications & Profile -------------------- */}
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center gap-1.5 sm:gap-2">
           {/* Notification Bell (placeholder) */}
           <button
-            className="p-2 rounded-lg hover:bg-gray-800/50 transition-colors relative"
+            className="relative rounded-full p-2 text-gray-600 transition-colors hover:bg-black/5 dark:text-gray-300 dark:hover:bg-white/10"
             onClick={() => {
               /* Add notification handler later – currently placeholder */
             }}
             title="Notifications"
           >
             <svg
-              className="w-5 h-5 text-gray-400"
+              className="h-5 w-5"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -111,37 +109,38 @@ const Navbar = ({ user }: NavbarProps) => {
               />
             </svg>
             {/* Mock unread indicator (small red dot) */}
-            <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
+            <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-red-500 ring-2 ring-white/70 dark:ring-black/40" />
           </button>
 
           {/* Vertical divider */}
-          <div className="h-8 w-px bg-gray-700" />
+          <div className="hidden h-7 w-px bg-black/10 sm:block dark:bg-white/15" />
 
           {/* User profile area */}
-          <div className="flex items-center space-x-2 p-2 rounded-lg hover:bg-gray-800/50 transition-colors">
-            {/* Avatar with initials */}
-            <div className="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center">
-              <span className="text-white font-bold text-sm">
+          <div className="flex items-center gap-2 rounded-full p-1 pr-2 transition-colors hover:bg-black/5 dark:hover:bg-white/10">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-200 dark:bg-white/10">
+              <span className="text-sm font-bold text-gray-900 dark:text-white">
                 {getUserInitials()}
               </span>
             </div>
             {/* User name and role (hidden on mobile, shown on md and up) */}
-            <div className="hidden md:block text-left">
-              <p className="text-sm font-medium text-gray-200">
+            <div className="hidden text-left md:block">
+              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                 {user?.name || "Guest User"}
               </p>
-              <p className="text-xs text-gray-400">{getRoleLabel()}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                {getRoleLabel()}
+              </p>
             </div>
           </div>
 
           {/* Logout button – hidden on mobile, shown on md and up */}
           <button
             onClick={logout}
-            className="hidden md:flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-red-500/10 transition-colors text-red-400 hover:text-red-300"
+            className="hidden items-center gap-2 rounded-full px-3 py-2 text-red-500 transition-colors hover:bg-red-500/10 hover:text-red-600 md:flex dark:text-red-400 dark:hover:text-red-300"
             title="Logout"
           >
             <svg
-              className="w-4 h-4"
+              className="h-4 w-4"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
