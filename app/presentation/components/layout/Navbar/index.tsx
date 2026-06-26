@@ -23,11 +23,13 @@
  */
 
 import { useRef } from "react";
+import { useRouter } from "next/navigation";
 import { NavbarProps } from "./types";
 import { useAuth } from "../../../../contexts/AuthContext";
 
 const Navbar = ({ user }: NavbarProps) => {
   const { logout } = useAuth();
+  const router = useRouter();
 
   // Ref to the container div – currently unused but kept for potential future
   // needs (e.g., detecting clicks outside, measuring dimensions, or animations).
@@ -90,9 +92,7 @@ const Navbar = ({ user }: NavbarProps) => {
           {/* Notification Bell (placeholder) */}
           <button
             className="relative rounded-full p-2 text-gray-600 transition-colors hover:bg-black/5 dark:text-gray-300 dark:hover:bg-white/10"
-            onClick={() => {
-              /* Add notification handler later – currently placeholder */
-            }}
+            onClick={() => router.push("/notifications")}
             title="Notifications"
           >
             <svg
