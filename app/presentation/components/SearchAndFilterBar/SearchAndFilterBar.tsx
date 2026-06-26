@@ -77,7 +77,7 @@ const SearchAndFilterBar: React.FC<SearchAndFilterBarProps> = ({
   ].filter(Boolean).length;
 
   return (
-    <div className="bg-white rounded-lg p-2 border border-gray-200 mb-2 shadow-sm">
+    <div className="rounded-3xl border border-white/40 bg-white/60 p-2.5 shadow-lg shadow-black/10 ring-1 ring-black/5 backdrop-blur-xl backdrop-saturate-150 dark:border-white/10 dark:bg-black/40 dark:shadow-black/40 dark:ring-white/5">
       {/* Compact single row layout */}
       <div className="flex items-center gap-2">
         {/* Search Input */}
@@ -137,7 +137,7 @@ const SearchAndFilterBar: React.FC<SearchAndFilterBarProps> = ({
 
           {/* Compact Dropdown Menu */}
           {isCategoryOpen && (
-            <div className="absolute right-0 z-50 mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden animate-fade-in">
+            <div className="absolute bottom-full right-0 z-50 mb-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden animate-fade-in">
               <div className="p-2">
                 <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 px-1">
                   Categories
