@@ -104,17 +104,17 @@ const CollapsibleSidebar = ({ user, onLogout }: CollapsibleSidebarProps) => {
       onMouseLeave={() => setIsHovered(false)}
       className={`fixed top-0 left-0 h-screen z-40 transition-all duration-300 ease-in-out ${
         isHovered ? "w-64" : "w-16"
-      } bg-black border-r border-gray-800 overflow-hidden group`}
+      } bg-white/70 dark:bg-black/50 backdrop-blur-xl backdrop-saturate-150 border-r border-black/10 dark:border-white/10 shadow-xl overflow-hidden group`}
     >
       {/* Header Section: Brand Logo and Name (name only visible when expanded) */}
-      <div className="h-16 flex items-center justify-center border-b border-gray-800 flex-shrink-0">
-        <div className="w-10 h-10 bg-black rounded-lg flex items-center justify-center shadow-lg">
+      <div className="h-16 flex items-center justify-center border-b border-black/10 dark:border-white/10 flex-shrink-0">
+        <div className="w-10 h-10 bg-indigo-500 rounded-lg flex items-center justify-center shadow-lg shadow-indigo-500/30">
           <span className="text-white font-bold text-sm">RP</span>
         </div>
         {isHovered && (
           <div className="ml-3 flex flex-col animate-in fade-in duration-200">
-            <h2 className="text-white font-semibold text-sm">Restaurant Pro</h2>
-            <p className="text-gray-400 text-xs">Management</p>
+            <h2 className="text-gray-900 dark:text-white font-semibold text-sm">Restaurant Pro</h2>
+            <p className="text-gray-500 dark:text-gray-400 text-xs">Management</p>
           </div>
         )}
       </div>
@@ -151,8 +151,8 @@ const CollapsibleSidebar = ({ user, onLogout }: CollapsibleSidebarProps) => {
                           onClick={() => toggleDropdown(item.id)}
                           className={`w-full group/item flex items-center px-3 py-3 rounded-lg transition-all duration-200 relative ${
                             isActive
-                              ? "bg-gray-700 bg-opacity-30 text-white"
-                              : "text-gray-400 hover:text-white hover:bg-gray-800/50"
+                              ? "bg-black/5 dark:bg-white/10 text-gray-900 dark:text-white"
+                              : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10"
                           }`}
                           title={!isHovered ? item.text : ""} // Title attribute shows native tooltip when collapsed (fallback)
                         >
@@ -170,7 +170,7 @@ const CollapsibleSidebar = ({ user, onLogout }: CollapsibleSidebarProps) => {
 
                           {/* Badge – only visible when expanded */}
                           {item.badge && isHovered && (
-                            <span className="ml-2 px-2 py-0.5 bg-gray-700 text-white text-xs rounded fg-shrink-0">
+                            <span className="ml-2 px-2 py-0.5 bg-black/10 dark:bg-white/10 text-gray-700 dark:text-white text-xs rounded shrink-0">
                               {item.badge}
                             </span>
                           )}
@@ -196,7 +196,7 @@ const CollapsibleSidebar = ({ user, onLogout }: CollapsibleSidebarProps) => {
 
                           {/* Active indicator – a vertical white bar on the right when item is active */}
                           {isActive && (
-                            <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-white rounded-l" />
+                            <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-indigo-500 dark:bg-white rounded-l" />
                           )}
                         </button>
                       ) : (
@@ -205,8 +205,8 @@ const CollapsibleSidebar = ({ user, onLogout }: CollapsibleSidebarProps) => {
                           href={item.link || "#"}
                           className={`w-full group/item flex items-center px-3 py-3 rounded-lg transition-all duration-200 relative ${
                             isActive
-                              ? "bg-gray-700 bg-opacity-30 text-white"
-                              : "text-gray-400 hover:text-white hover:bg-gray-800/50"
+                              ? "bg-black/5 dark:bg-white/10 text-gray-900 dark:text-white"
+                              : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10"
                           }`}
                           title={!isHovered ? item.text : ""}
                         >
@@ -224,14 +224,14 @@ const CollapsibleSidebar = ({ user, onLogout }: CollapsibleSidebarProps) => {
 
                           {/* Badge – only when expanded */}
                           {item.badge && isHovered && (
-                            <span className="ml-2 px-2 py-0.5 bg-gray-700 text-white text-xs rounded flex-shrink-0">
+                            <span className="ml-2 px-2 py-0.5 bg-black/10 dark:bg-white/10 text-gray-700 dark:text-white text-xs rounded shrink-0">
                               {item.badge}
                             </span>
                           )}
 
                           {/* Active indicator */}
                           {isActive && (
-                            <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-white rounded-l" />
+                            <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-indigo-500 dark:bg-white rounded-l" />
                           )}
 
                           {/* Tooltip when collapsed – appears to the right of the icon with a pointer arrow */}
@@ -254,8 +254,8 @@ const CollapsibleSidebar = ({ user, onLogout }: CollapsibleSidebarProps) => {
                               href={child.link || "#"}
                               className={`block px-3 py-2 rounded-lg text-sm transition-all duration-200 ${
                                 child.link === pathname
-                                  ? "bg-gray-700 text-white border-l-2 border-white"
-                                  : "text-gray-400 hover:text-gray-200 hover:bg-gray-800/30"
+                                  ? "bg-black/5 dark:bg-white/10 text-gray-900 dark:text-white border-l-2 border-indigo-500 dark:border-white"
+                                  : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-black/5 dark:hover:bg-white/10"
                               }`}
                             >
                               {child.text}
@@ -270,7 +270,7 @@ const CollapsibleSidebar = ({ user, onLogout }: CollapsibleSidebarProps) => {
 
               {/* Divider between sections */}
               <div className="my-2">
-                <div className="border-t border-gray-800/50"></div>
+                <div className="border-t border-black/10 dark:border-white/10"></div>
               </div>
             </div>
           ))}
@@ -278,24 +278,24 @@ const CollapsibleSidebar = ({ user, onLogout }: CollapsibleSidebarProps) => {
       </div>
 
       {/* User Profile Section – pinned to bottom */}
-      <div className="border-t border-gray-800 bg-gray-900/50 backdrop-blur flex-shrink-0 p-3">
+      <div className="border-t border-black/10 dark:border-white/10 shrink-0 p-3">
         {isHovered ? (
           // Expanded view: shows user avatar, name, role, and logout button.
           <div className="flex items-center space-x-3 animate-in fade-in duration-200">
             <div className="relative flex-shrink-0">
-              <div className="w-10 h-10 bg-gray-700 rounded-full flex items-center justify-center shadow-lg">
-                <span className="text-white font-bold text-sm">
+              <div className="w-10 h-10 bg-gray-200 dark:bg-white/10 rounded-full flex items-center justify-center shadow-lg">
+                <span className="text-gray-900 dark:text-white font-bold text-sm">
                   {user?.name?.charAt(0).toUpperCase() || "U"}
                 </span>
               </div>
-              {/* Online status indicator (always shown as white dot) */}
-              <div className="absolute bottom-0 right-0 w-3 h-3 bg-white rounded-full border-2 border-gray-900"></div>
+              {/* Online status indicator */}
+              <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white dark:border-black"></div>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-white truncate">
+              <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
                 {user?.name || "User"}
               </p>
-              <p className="text-xs text-gray-400 truncate">
+              <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
                 {user?.role || "Guest"}
               </p>
             </div>
@@ -324,13 +324,13 @@ const CollapsibleSidebar = ({ user, onLogout }: CollapsibleSidebarProps) => {
           <div className="flex justify-center">
             <button
               onClick={handleLogoutClick}
-              className="w-10 h-10 bg-gray-700 rounded-full flex items-center justify-center hover:scale-105 transition-transform shadow-lg relative group"
+              className="w-10 h-10 bg-gray-200 dark:bg-white/10 rounded-full flex items-center justify-center hover:scale-105 transition-transform shadow-lg relative group"
               title="Logout"
             >
-              <span className="text-white font-bold text-sm">
+              <span className="text-gray-900 dark:text-white font-bold text-sm">
                 {user?.name?.charAt(0).toUpperCase() || "U"}
               </span>
-              <div className="absolute bottom-0 right-0 w-2 h-2 bg-white rounded-full border border-gray-900"></div>
+              <div className="absolute bottom-0 right-0 w-2 h-2 bg-green-500 rounded-full border border-white dark:border-black"></div>
 
               {/* Tooltip for collapsed avatar */}
               <div className="absolute left-full ml-2 top-1/2 -translate-y-1/2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50 border border-gray-700 shadow-xl">
