@@ -26,8 +26,8 @@ const MenuStickyHeader = ({
   orders,
 }: MenuStickyHeaderProps) => {
   return (
-    <div className="sticky top-17 z-30 flex gap-4 items-center mx-auto justify-center">
-      <div className="lg:col-span-2 w-full">
+    <div className="fixed bottom-6 left-1/2 z-40 flex w-[calc(100%-2rem)] max-w-2xl -translate-x-1/2 items-center justify-center">
+      <div className="w-full">
         <SearchAndFilterBar
           searchTerm={searchTerm}
           setSearchTerm={setSearchTerm}
