@@ -27,6 +27,7 @@ interface PopulatedMenuItem {
 }
 
 interface OrderItem {
+  _id?: string;
   menuItem: PopulatedMenuItem;
   quantity: number;
   price: number;
@@ -35,23 +36,59 @@ interface OrderItem {
   specialInstructions?: string;
 }
 
+interface SplitPayment {
+  amount: number;
+  method: "cash" | "credit_card" | "khqr";
+  itemIds?: string[];
+  tipAmount?: number;
+}
+
+type OrderPaymentStatus = "unpaid" | "partially_paid" | "paid" | "refunded";
+
 interface BillingOrder {
   _id: string;
   status: "served";
-  paymentStatus: "unpaid" | "paid";
-  paymentMethod?: "cash" | "credit_card" | "debit_card" | "KHQR" | null;
+  paymentStatus: OrderPaymentStatus;
+  paymentMethod?:
+    | "cash"
+    | "credit_card"
+    | "debit_card"
+    | "khqr"
+    | "KHQR"
+    | "split"
+    | null;
   paidAt?: string;
   tableNumber?: number;
   customerName?: string;
   orderType: "dine-in" | "takeaway" | "delivery";
   totalAmount: number;
   totalDiscountAmount?: number;
+  amountPaid?: number;
+  tipAmount?: number;
+  splitDetails?: SplitPayment[];
   items: OrderItem[];
   updatedAt: string;
   createdAt: string;
 }
 
-type PaymentMethod = "cash" | "credit_card" | "debit_card" | "KHQR";
+// Display methods (history list + legacy paid orders). Payment actions go
+// through the partial/split endpoint and use the narrower PayMethod set.
+type PaymentMethod = "cash" | "credit_card" | "debit_card" | "khqr" | "KHQR";
+type PayMethod = "cash" | "credit_card" | "khqr";
+type SplitMode = "full" | "even" | "items";
+
+interface SplitPortion {
+  label: string;
+  amount: number;
+  itemIds?: string[];
+}
+
+interface PaymentResult {
+  paymentStatus: OrderPaymentStatus;
+  amountPaid: number;
+  amountDue: number;
+  referenceId?: string;
+}
 
 interface HistoricalReceiptItem {
   name: string;
@@ -86,11 +123,21 @@ interface HistoricalReceipt {
 const fmt = (n: number) =>
   n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
+const round2 = (n: number) => Math.round(n * 100) / 100;
+
+const errMsg = (e: unknown, fallback: string) => {
+  const data = (e as { response?: { data?: { error?: string; message?: string } } })
+    .response?.data;
+  return data?.error || data?.message || fallback;
+};
+
 const labelFor: Record<string, string> = {
   cash: "Cash",
   credit_card: "Credit Card",
   debit_card: "Debit Card",
+  khqr: "KHQR",
   KHQR: "KHQR",
+  split: "Split",
 };
 
 const timeAgo = (iso: string) => {
@@ -120,15 +167,14 @@ function PaymentMethodButton({
   selected,
   onClick,
 }: {
-  method: PaymentMethod;
+  method: PayMethod;
   selected: boolean;
   onClick: () => void;
 }) {
-  const icons: Record<PaymentMethod, React.ReactNode> = {
+  const icons: Record<PayMethod, React.ReactNode> = {
     cash: <Wallet className="w-4 h-4" />,
     credit_card: <CreditCard className="w-4 h-4" />,
-    debit_card: <CreditCard className="w-4 h-4" />,
-    KHQR: <Smartphone className="w-4 h-4" />,
+    khqr: <Smartphone className="w-4 h-4" />,
   };
 
   return (
@@ -273,37 +319,508 @@ function ReceiptPrintArea({
 }
 
 // ---------------------------------------------------------------------------
+// Payment panel — full / partial / even-split / by-item, with tips + KHQR
+// ---------------------------------------------------------------------------
+
+function PaymentPanel({
+  order,
+  axiosInstance,
+  onResult,
+  onPrint,
+  onMethodChange,
+  onTenderedChange,
+}: {
+  order: BillingOrder;
+  axiosInstance: ReturnType<typeof useAuth>["axiosInstance"];
+  onResult: (result: PaymentResult, method: PayMethod) => void;
+  onPrint: () => void;
+  onMethodChange: (m: PayMethod) => void;
+  onTenderedChange: (v: string) => void;
+}) {
+  const total = order.totalAmount;
+  const paidSoFar = order.amountPaid ?? 0;
+  const remaining = Math.max(0, round2(total - paidSoFar));
+
+  const serverPaidItemIds = useMemo(
+    () =>
+      new Set(
+        (order.splitDetails ?? []).flatMap((s) => s.itemIds ?? []).map(String),
+      ),
+    [order.splitDetails],
+  );
+
+  const [mode, setMode] = useState<SplitMode>("full");
+  const [method, setMethod] = useState<PayMethod>("cash");
+  const [amountInput, setAmountInput] = useState(remaining.toFixed(2));
+  const [tipInput, setTipInput] = useState("");
+  const [tendered, setTendered] = useState("");
+  const [ways, setWays] = useState(2);
+  const [portions, setPortions] = useState<SplitPortion[]>([]);
+  const [paidPortions, setPaidPortions] = useState<Set<number>>(new Set());
+  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
+  const [paidItemIds, setPaidItemIds] = useState<Set<string>>(new Set());
+  const [khqr, setKhqr] = useState<{ qrPayload: string; referenceId: string } | null>(null);
+  const [processing, setProcessing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => onMethodChange(method), [method, onMethodChange]);
+  useEffect(() => onTenderedChange(tendered), [tendered, onTenderedChange]);
+
+  const tip = parseFloat(tipInput) || 0;
+
+  const unpaidItems = order.items.filter(
+    (it) => it._id && !serverPaidItemIds.has(it._id) && !paidItemIds.has(it._id),
+  );
+  const selectedSubtotal = round2(
+    order.items
+      .filter((it) => it._id && selectedItems.has(it._id))
+      .reduce((sum, it) => sum + itemTotal(it), 0),
+  );
+
+  const fullAmount = parseFloat(amountInput) || 0;
+  const cashTendered = parseFloat(tendered) || 0;
+  const cashChange = cashTendered - (fullAmount + tip);
+  const insufficient =
+    method === "cash" && mode === "full" && cashTendered > 0 && cashChange < 0;
+
+  const pay = async (
+    amount: number,
+    itemIds: string[] | undefined,
+    after?: () => void,
+  ) => {
+    if (!(amount > 0)) {
+      setError("Enter an amount greater than zero");
+      return;
+    }
+    setProcessing(true);
+    setError(null);
+    try {
+      const { data } = await axiosInstance.post<PaymentResult>(
+        `/api/billing/${order._id}/pay`,
+        {
+          amount: round2(amount),
+          method,
+          tipAmount: tip > 0 ? tip : undefined,
+          referenceId: method === "khqr" ? khqr?.referenceId : undefined,
+          itemIds,
+        },
+      );
+      onResult(data, method);
+      setTipInput("");
+      setTendered("");
+      setKhqr(null);
+      after?.();
+    } catch (e) {
+      setError(errMsg(e, "Payment failed. Please try again."));
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const generateKhqr = async (amount: number) => {
+    if (!(amount > 0)) {
+      setError("Nothing to charge");
+      return;
+    }
+    setProcessing(true);
+    setError(null);
+    try {
+      const { data } = await axiosInstance.post<{
+        qrPayload: string;
+        referenceId: string;
+      }>(`/api/billing/${order._id}/khqr`, { amount: round2(amount + tip) });
+      setKhqr(data);
+    } catch (e) {
+      setError(errMsg(e, "Failed to generate KHQR code"));
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  // KHQR is two-step: generate the code, then confirm against its reference.
+  const chargeAction = (
+    amount: number,
+    itemIds: string[] | undefined,
+    after?: () => void,
+  ) => {
+    if (method === "khqr" && !khqr) return generateKhqr(amount);
+    return pay(amount, itemIds, after);
+  };
+
+  const loadEvenSplit = async (n: number) => {
+    setError(null);
+    try {
+      const { data } = await axiosInstance.post<SplitPortion[]>(
+        `/api/billing/${order._id}/split/even`,
+        { ways: n },
+      );
+      setPortions(data);
+      setPaidPortions(new Set());
+    } catch (e) {
+      setError(errMsg(e, "Failed to compute the split"));
+    }
+  };
+
+  const switchMode = (m: SplitMode) => {
+    setMode(m);
+    setError(null);
+    setKhqr(null);
+    if (m === "even" && portions.length === 0) loadEvenSplit(ways);
+  };
+
+  const changeWays = (n: number) => {
+    const next = Math.max(2, Math.min(20, n));
+    setWays(next);
+    loadEvenSplit(next);
+  };
+
+  const toggleItem = (id: string) =>
+    setSelectedItems((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+
+  const chargeLabel = (amount: number, settleLabel = false) => {
+    if (method === "khqr" && !khqr) return "Generate KHQR";
+    if (settleLabel && amount >= remaining) return `Settle $${fmt(amount)}`;
+    return `Pay $${fmt(amount)}`;
+  };
+
+  const Spinner = (
+    <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+  );
+
+  return (
+    <div className="px-5 py-4 border-t border-gray-100 space-y-4">
+      {/* Balance summary */}
+      <div className="grid grid-cols-3 gap-2 text-center">
+        <div className="bg-gray-50 rounded-lg py-2">
+          <p className="text-[11px] uppercase tracking-wider text-gray-400">Total</p>
+          <p className="text-sm font-semibold text-gray-900">${fmt(total)}</p>
+        </div>
+        <div className="bg-gray-50 rounded-lg py-2">
+          <p className="text-[11px] uppercase tracking-wider text-gray-400">Paid</p>
+          <p className="text-sm font-semibold text-green-600">${fmt(paidSoFar)}</p>
+        </div>
+        <div className="bg-amber-50 rounded-lg py-2">
+          <p className="text-[11px] uppercase tracking-wider text-amber-500">Remaining</p>
+          <p className="text-sm font-bold text-amber-700">${fmt(remaining)}</p>
+        </div>
+      </div>
+
+      {/* Split mode */}
+      <div>
+        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+          Split
+        </p>
+        <div className="flex gap-1 bg-gray-100 rounded-lg p-1">
+          {(
+            [
+              ["full", "Full / Partial"],
+              ["even", "Even"],
+              ["items", "By Item"],
+            ] as [SplitMode, string][]
+          ).map(([m, label]) => (
+            <button
+              key={m}
+              onClick={() => switchMode(m)}
+              className={`flex-1 text-xs font-medium py-1.5 rounded-md transition-colors ${
+                mode === m
+                  ? "bg-white text-blue-600 shadow-sm"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Method selector */}
+      <div>
+        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+          Payment Method
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {(["cash", "credit_card", "khqr"] as PayMethod[]).map((m) => (
+            <PaymentMethodButton
+              key={m}
+              method={m}
+              selected={method === m}
+              onClick={() => {
+                setMethod(m);
+                setKhqr(null);
+              }}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Tip */}
+      <div className="space-y-1">
+        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+          Tip (optional)
+        </p>
+        <div className="relative">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-medium text-sm">
+            $
+          </span>
+          <input
+            type="number"
+            min="0"
+            step="0.01"
+            placeholder="0.00"
+            value={tipInput}
+            onChange={(e) => setTipInput(e.target.value)}
+            className="w-full pl-7 pr-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+      </div>
+
+      {/* Mode body */}
+      {mode === "full" && (
+        <div className="space-y-2">
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+            Amount to Charge
+          </p>
+          <div className="relative">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-medium text-sm">
+              $
+            </span>
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              value={amountInput}
+              onChange={(e) => setAmountInput(e.target.value)}
+              className="w-full pl-7 pr-3 py-2.5 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          {fullAmount > 0 && fullAmount < remaining && (
+            <p className="text-xs text-amber-600">
+              Partial — ${fmt(round2(remaining - fullAmount))} will remain due.
+            </p>
+          )}
+          {method === "cash" && (
+            <div className="space-y-2 pt-1">
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-medium text-sm">
+                  $
+                </span>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="Cash received"
+                  value={tendered}
+                  onChange={(e) => setTendered(e.target.value)}
+                  className="w-full pl-7 pr-3 py-2.5 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              {cashTendered > 0 && (
+                <div
+                  className={`flex justify-between items-center px-3 py-2 rounded-lg text-sm font-semibold ${
+                    insufficient
+                      ? "bg-red-50 text-red-600 border border-red-200"
+                      : "bg-green-50 text-green-700 border border-green-200"
+                  }`}
+                >
+                  <span>{insufficient ? "Insufficient" : "Change"}</span>
+                  <span>
+                    {insufficient
+                      ? `-$${fmt(Math.abs(cashChange))}`
+                      : `$${fmt(cashChange)}`}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+          <button
+            onClick={() => chargeAction(fullAmount, undefined)}
+            disabled={processing || insufficient || !(fullAmount > 0)}
+            className="flex items-center justify-center gap-2 w-full py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white rounded-lg text-sm font-semibold transition-colors"
+          >
+            {processing ? Spinner : <CheckCircle className="w-4 h-4" />}
+            {processing ? "Processing…" : chargeLabel(fullAmount, true)}
+          </button>
+        </div>
+      )}
+
+      {mode === "even" && (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+              Split Evenly
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => changeWays(ways - 1)}
+                className="w-7 h-7 rounded-md border border-gray-200 text-gray-600 hover:bg-gray-50"
+              >
+                −
+              </button>
+              <span className="text-sm font-semibold w-6 text-center">{ways}</span>
+              <button
+                onClick={() => changeWays(ways + 1)}
+                className="w-7 h-7 rounded-md border border-gray-200 text-gray-600 hover:bg-gray-50"
+              >
+                +
+              </button>
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            {portions.map((p, i) => {
+              const portionPaid = paidPortions.has(i);
+              return (
+                <div
+                  key={i}
+                  className="flex items-center justify-between gap-2 px-3 py-2 border border-gray-200 rounded-lg"
+                >
+                  <span className="text-sm text-gray-700">{p.label}</span>
+                  <span className="text-sm font-semibold text-gray-900">
+                    ${fmt(p.amount)}
+                  </span>
+                  <button
+                    onClick={() =>
+                      chargeAction(p.amount, undefined, () =>
+                        setPaidPortions((prev) => new Set(prev).add(i)),
+                      )
+                    }
+                    disabled={portionPaid || processing}
+                    className={`text-xs font-semibold px-3 py-1.5 rounded-md transition-colors ${
+                      portionPaid
+                        ? "bg-green-50 text-green-600 cursor-default"
+                        : "bg-blue-600 text-white hover:bg-blue-700 disabled:bg-blue-300"
+                    }`}
+                  >
+                    {portionPaid
+                      ? "Paid"
+                      : method === "khqr" && !khqr
+                        ? "QR"
+                        : "Collect"}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {mode === "items" && (
+        <div className="space-y-2">
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+            Charge Selected Items
+          </p>
+          {unpaidItems.length === 0 ? (
+            <p className="text-sm text-gray-400">All items have been charged.</p>
+          ) : (
+            <div className="space-y-1">
+              {unpaidItems.map((it) => (
+                <label
+                  key={it._id}
+                  className="flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50"
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedItems.has(it._id!)}
+                    onChange={() => toggleItem(it._id!)}
+                    className="w-4 h-4 accent-blue-600"
+                  />
+                  <span className="flex-1 text-sm text-gray-700 truncate">
+                    {it.menuItem.name} ×{it.quantity}
+                  </span>
+                  <span className="text-sm font-semibold text-gray-900">
+                    ${fmt(itemTotal(it))}
+                  </span>
+                </label>
+              ))}
+            </div>
+          )}
+          {unpaidItems.length > 0 && (
+            <>
+              <div className="flex justify-between text-sm font-semibold text-gray-900 px-1">
+                <span>Selected</span>
+                <span>${fmt(selectedSubtotal)}</span>
+              </div>
+              <button
+                onClick={() =>
+                  chargeAction(selectedSubtotal, [...selectedItems], () => {
+                    setPaidItemIds((prev) => new Set([...prev, ...selectedItems]));
+                    setSelectedItems(new Set());
+                  })
+                }
+                disabled={processing || !(selectedSubtotal > 0)}
+                className="flex items-center justify-center gap-2 w-full py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white rounded-lg text-sm font-semibold transition-colors"
+              >
+                {processing ? Spinner : <CheckCircle className="w-4 h-4" />}
+                {processing ? "Processing…" : chargeLabel(selectedSubtotal)}
+              </button>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* KHQR code */}
+      {khqr && (
+        <div className="bg-indigo-50 border border-indigo-200 rounded-lg px-4 py-3 space-y-1">
+          <p className="text-xs font-semibold text-indigo-700 uppercase tracking-wider">
+            KHQR — scan to pay
+          </p>
+          <p className="text-[11px] font-mono break-all text-indigo-500">
+            {khqr.qrPayload}
+          </p>
+          <p className="text-[11px] text-indigo-400">
+            Tap the charge button again to confirm once the guest has paid.
+          </p>
+        </div>
+      )}
+
+      {error && (
+        <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+          {error}
+        </p>
+      )}
+
+      <button
+        onClick={onPrint}
+        className="flex items-center justify-center gap-2 w-full py-2.5 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+      >
+        <Printer className="w-4 h-4" />
+        Print
+      </button>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Order detail + payment panel
 // ---------------------------------------------------------------------------
 
 function OrderDetailPanel({
   order,
-  paymentMethod,
-  setPaymentMethod,
-  amountTendered,
-  setAmountTendered,
-  processing,
-  onPay,
+  axiosInstance,
+  onResult,
   onPrint,
+  onMethodChange,
+  onTenderedChange,
 }: {
   order: BillingOrder;
-  paymentMethod: PaymentMethod;
-  setPaymentMethod: (m: PaymentMethod) => void;
-  amountTendered: string;
-  setAmountTendered: (v: string) => void;
-  processing: boolean;
-  onPay: () => void;
+  axiosInstance: ReturnType<typeof useAuth>["axiosInstance"];
+  onResult: (result: PaymentResult, method: PayMethod) => void;
   onPrint: () => void;
+  onMethodChange: (m: PayMethod) => void;
+  onTenderedChange: (v: string) => void;
 }) {
   const subtotal = orderSubtotal(order);
   const discount = order.totalDiscountAmount ?? 0;
   const total = order.totalAmount;
 
-  const tendered = parseFloat(amountTendered) || 0;
-  const change = tendered - total;
-  const insufficientFunds = tendered > 0 && change < 0;
-
+  const paidSoFar = order.amountPaid ?? 0;
+  const remaining = Math.max(0, round2(total - paidSoFar));
   const isPaid = order.paymentStatus === "paid";
+  const isPartial = order.paymentStatus === "partially_paid";
 
   return (
     <div className="flex flex-col h-full">
@@ -320,6 +837,11 @@ function OrderDetailPanel({
             <span className="flex items-center gap-1.5 text-sm font-medium text-green-700 bg-green-50 border border-green-200 rounded-full px-3 py-1">
               <CheckCircle className="w-4 h-4" />
               Paid
+            </span>
+          ) : isPartial ? (
+            <span className="flex items-center gap-1.5 text-sm font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-full px-3 py-1">
+              <Clock className="w-4 h-4" />
+              Partial · ${fmt(remaining)} due
             </span>
           ) : (
             <span className="flex items-center gap-1.5 text-sm font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-3 py-1">
@@ -365,94 +887,40 @@ function OrderDetailPanel({
             <span>-${fmt(discount)}</span>
           </div>
         )}
+        {(order.tipAmount ?? 0) > 0 && (
+          <div className="flex justify-between text-sm text-gray-600">
+            <span>Tip</span>
+            <span>${fmt(order.tipAmount!)}</span>
+          </div>
+        )}
         <div className="flex justify-between text-base font-bold text-gray-900 pt-1 border-t border-gray-200 mt-1">
           <span>Total</span>
           <span>${fmt(total)}</span>
         </div>
+        {isPartial && (
+          <>
+            <div className="flex justify-between text-sm text-green-600">
+              <span>Paid</span>
+              <span>${fmt(paidSoFar)}</span>
+            </div>
+            <div className="flex justify-between text-sm font-semibold text-amber-700">
+              <span>Remaining</span>
+              <span>${fmt(remaining)}</span>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Payment section */}
       {!isPaid && (
-        <div className="px-5 py-4 border-t border-gray-100 space-y-4">
-          {/* Method selector */}
-          <div>
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-              Payment Method
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {(["cash", "credit_card", "debit_card", "KHQR"] as PaymentMethod[]).map((m) => (
-                <PaymentMethodButton
-                  key={m}
-                  method={m}
-                  selected={paymentMethod === m}
-                  onClick={() => setPaymentMethod(m)}
-                />
-              ))}
-            </div>
-          </div>
-
-          {/* Cash calculator */}
-          {paymentMethod === "cash" && (
-            <div className="space-y-2">
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                Cash Received
-              </p>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-medium text-sm">
-                  $
-                </span>
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  placeholder="0.00"
-                  value={amountTendered}
-                  onChange={(e) => setAmountTendered(e.target.value)}
-                  className="w-full pl-7 pr-3 py-2.5 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-              {tendered > 0 && (
-                <div
-                  className={`flex justify-between items-center px-3 py-2 rounded-lg text-sm font-semibold ${
-                    insufficientFunds
-                      ? "bg-red-50 text-red-600 border border-red-200"
-                      : "bg-green-50 text-green-700 border border-green-200"
-                  }`}
-                >
-                  <span>{insufficientFunds ? "Insufficient" : "Change"}</span>
-                  <span>
-                    {insufficientFunds
-                      ? `-$${fmt(Math.abs(change))}`
-                      : `$${fmt(change)}`}
-                  </span>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Action buttons */}
-          <div className="flex gap-2 pt-1">
-            <button
-              onClick={onPrint}
-              className="flex items-center justify-center gap-2 flex-1 py-2.5 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-            >
-              <Printer className="w-4 h-4" />
-              Print
-            </button>
-            <button
-              onClick={onPay}
-              disabled={processing || (paymentMethod === "cash" && insufficientFunds)}
-              className="flex items-center justify-center gap-2 flex-2 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white rounded-lg text-sm font-semibold transition-colors"
-            >
-              {processing ? (
-                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <CheckCircle className="w-4 h-4" />
-              )}
-              {processing ? "Processing…" : "Mark as Paid"}
-            </button>
-          </div>
-        </div>
+        <PaymentPanel
+          order={order}
+          axiosInstance={axiosInstance}
+          onResult={onResult}
+          onPrint={onPrint}
+          onMethodChange={onMethodChange}
+          onTenderedChange={onTenderedChange}
+        />
       )}
 
       {/* Already-paid info */}
@@ -811,9 +1279,8 @@ export default function BillingPage() {
   const [tab, setTab] = useState<"pending" | "paid" | "history">("pending");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showMobileDetail, setShowMobileDetail] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cash");
+  const [paymentMethod, setPaymentMethod] = useState<PayMethod>("cash");
   const [amountTendered, setAmountTendered] = useState("");
-  const [processing, setProcessing] = useState(false);
 
   const receiptRef = useRef<HTMLDivElement>(null);
 
@@ -870,7 +1337,11 @@ export default function BillingPage() {
   // ---------------------------------------------------------------------------
 
   const pendingOrders = useMemo(
-    () => orders.filter((o) => o.paymentStatus === "unpaid"),
+    () =>
+      orders.filter(
+        (o) =>
+          o.paymentStatus === "unpaid" || o.paymentStatus === "partially_paid",
+      ),
     [orders],
   );
 
@@ -895,24 +1366,29 @@ export default function BillingPage() {
     setShowMobileDetail(true);
   };
 
-  const handlePay = async () => {
-    if (!selectedOrder) return;
-    setProcessing(true);
-    try {
-      await axiosInstance.patch(`/api/billing/${selectedOrder._id}/pay`, { paymentMethod });
+  const applyPaymentResult = useCallback(
+    (orderId: string, result: PaymentResult, method: PayMethod) => {
       setOrders((prev) =>
-        prev.map((o) =>
-          o._id === selectedOrder._id
-            ? { ...o, paymentStatus: "paid", paymentMethod, paidAt: new Date().toISOString() }
-            : o,
-        ),
+        prev.map((o) => {
+          if (o._id !== orderId) return o;
+          const settled = result.paymentStatus === "paid";
+          const hadPriorPayment = (o.amountPaid ?? 0) > 0;
+          return {
+            ...o,
+            amountPaid: result.amountPaid,
+            paymentStatus: result.paymentStatus,
+            paymentMethod: settled
+              ? hadPriorPayment
+                ? "split"
+                : method
+              : o.paymentMethod,
+            paidAt: settled ? new Date().toISOString() : o.paidAt,
+          };
+        }),
       );
-    } catch {
-      // stay on the same order so the user can retry
-    } finally {
-      setProcessing(false);
-    }
-  };
+    },
+    [],
+  );
 
   const handlePrint = () => {
     window.print();
@@ -1073,6 +1549,13 @@ export default function BillingPage() {
                       </span>
                     </div>
                   )}
+                  {order.paymentStatus === "partially_paid" && (
+                    <div className="mt-1.5">
+                      <span className="text-xs text-blue-600 font-medium bg-blue-50 rounded px-1.5 py-0.5">
+                        Partial · ${fmt(round2(order.totalAmount - (order.amountPaid ?? 0)))} due
+                      </span>
+                    </div>
+                  )}
                 </button>
               ))}
           </div>
@@ -1098,14 +1581,15 @@ export default function BillingPage() {
 
             {selectedOrder ? (
               <OrderDetailPanel
+                key={selectedOrder._id}
                 order={selectedOrder}
-                paymentMethod={paymentMethod}
-                setPaymentMethod={(m) => { setPaymentMethod(m); setAmountTendered(""); }}
-                amountTendered={amountTendered}
-                setAmountTendered={setAmountTendered}
-                processing={processing}
-                onPay={handlePay}
+                axiosInstance={axiosInstance}
+                onResult={(result, method) =>
+                  applyPaymentResult(selectedOrder._id, result, method)
+                }
                 onPrint={handlePrint}
+                onMethodChange={setPaymentMethod}
+                onTenderedChange={setAmountTendered}
               />
             ) : (
               <div className="flex-1 flex flex-col items-center justify-center gap-3 text-gray-300">
