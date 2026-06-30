@@ -61,6 +61,8 @@ export interface User {
   email: string;
   role: string;
   phone?: string;
+  birthdate?: string | null;
+  showBirthdayToOthers?: boolean;
   createdAt: string;
   updatedAt: string;
   isActive: boolean;

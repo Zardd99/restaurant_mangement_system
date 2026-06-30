@@ -56,6 +56,14 @@ const TYPE_CONFIG: Record<
     labelColor: "text-gray-700",
     progressColor: "bg-gray-400",
   },
+  birthday_today: {
+    icon: "🎂",
+    label: "Birthday Today",
+    borderColor: "border-pink-400",
+    iconBg: "bg-pink-100",
+    labelColor: "text-pink-700",
+    progressColor: "bg-pink-400",
+  },
 };
 
 const ROLE_LABELS: Record<string, string> = {
@@ -117,8 +125,8 @@ function ToastCard({
     return `${Math.floor(diff / 60_000)}m ago`;
   })();
 
-  const roleLabel =
-    ROLE_LABELS[notification.actor.role] ?? notification.actor.role;
+  const actorRole = notification.actor?.role ?? "";
+  const roleLabel = ROLE_LABELS[actorRole] ?? actorRole;
 
   return (
     <div
@@ -144,30 +152,48 @@ function ToastCard({
             {config.label}
           </p>
 
-          {/* Table + item count */}
-          <p className="text-sm text-gray-800 font-medium mt-0.5">
-            {notification.tableNumber
-              ? `Table ${notification.tableNumber}`
-              : notification.customerName ?? "Takeaway / Delivery"}
-            {notification.itemCount > 0 && (
-              <span className="text-gray-500 font-normal">
-                {" · "}
-                {notification.itemCount}{" "}
-                {notification.itemCount === 1 ? "item" : "items"}
-              </span>
-            )}
-          </p>
+          {notification.type === "birthday_today" ? (
+            <>
+              <p className="text-sm text-gray-800 font-medium mt-0.5">
+                {notification.title ??
+                  `${notification.customerName ?? "A team member"}'s birthday today`}
+              </p>
+              {notification.message && (
+                <p className="text-xs text-gray-500 mt-1">
+                  {notification.message}
+                </p>
+              )}
+            </>
+          ) : (
+            <>
+              {/* Table + item count */}
+              <p className="text-sm text-gray-800 font-medium mt-0.5">
+                {notification.tableNumber
+                  ? `Table ${notification.tableNumber}`
+                  : notification.customerName ?? "Takeaway / Delivery"}
+                {notification.itemCount > 0 && (
+                  <span className="text-gray-500 font-normal">
+                    {" · "}
+                    {notification.itemCount}{" "}
+                    {notification.itemCount === 1 ? "item" : "items"}
+                  </span>
+                )}
+              </p>
 
-          {/* Actor */}
-          <p className="text-xs text-gray-500 mt-1 truncate">
-            By{" "}
-            <span className="font-medium text-gray-700">
-              {notification.actor.name}
-            </span>
-            <span className="ml-1 inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-gray-100 text-gray-600">
-              {roleLabel}
-            </span>
-          </p>
+              {/* Actor */}
+              {notification.actor && (
+                <p className="text-xs text-gray-500 mt-1 truncate">
+                  By{" "}
+                  <span className="font-medium text-gray-700">
+                    {notification.actor.name}
+                  </span>
+                  <span className="ml-1 inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-gray-100 text-gray-600">
+                    {roleLabel}
+                  </span>
+                </p>
+              )}
+            </>
+          )}
 
           {/* Timestamp */}
           <p className="text-[10px] text-gray-400 mt-0.5">{timeAgo}</p>
@@ -220,7 +246,9 @@ export default function NotificationToast() {
   }, []);
 
   const visible = notifications.filter(
-    (n) => settings.toastsEnabled && settings.toastTypes[n.type],
+    (n) =>
+      settings.toastsEnabled &&
+      (n.type === "birthday_today" || settings.toastTypes[n.type]),
   );
 
   if (!mounted || visible.length === 0) return null;
