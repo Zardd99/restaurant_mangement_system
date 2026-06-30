@@ -3,7 +3,11 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Bell, Trash2, Loader2, RefreshCw } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
-import { OrderNotification, NotificationType } from "../contexts/NotificationContext";
+import {
+  OrderNotification,
+  NotificationType,
+  useNotifications,
+} from "../contexts/NotificationContext";
 
 // -----------------------------------------------------------------------------
 // Types
@@ -129,6 +133,7 @@ function NotificationRow({ n }: { n: OrderNotification & { read: boolean } }) {
 
 export default function NotificationsPage() {
   const { axiosInstance, isLoading: authLoading } = useAuth();
+  const { markAllRead, refreshUnreadCount } = useNotifications();
   const axiosRef = useRef(axiosInstance);
   axiosRef.current = axiosInstance;
 
@@ -151,7 +156,7 @@ export default function NotificationsPage() {
         if (activeFilter !== "all") params.set("type", activeFilter);
         const res = await axiosRef.current.get<PaginatedResponse>(`/api/notifications?${params}`);
         const { data, total: t, totalPages: tp } = res.data;
-        setItems((prev) => replace ? data : [...prev, ...data]);
+        setItems((prev) => (replace ? data : [...prev, ...data]));
         setTotal(t);
         setTotalPages(tp);
         setPage(pageNum);
@@ -169,6 +174,14 @@ export default function NotificationsPage() {
     if (!authLoading) fetchPage(1, true);
   }, [fetchPage, authLoading]);
 
+  // Opening this page marks everything read and resets the sidebar badge.
+  const markedRef = useRef(false);
+  useEffect(() => {
+    if (authLoading || markedRef.current) return;
+    markedRef.current = true;
+    markAllRead();
+  }, [authLoading, markAllRead]);
+
   async function handleClearAll() {
     setClearing(true);
     try {
@@ -177,6 +190,7 @@ export default function NotificationsPage() {
       setTotal(0);
       setTotalPages(1);
       setPage(1);
+      refreshUnreadCount();
     } catch {
       setError("Failed to clear notifications.");
     } finally {

@@ -55,6 +55,17 @@ jest.mock("../contexts/SettingsContext", () => ({
   }),
 }));
 
+jest.mock("../contexts/AuthContext", () => ({
+  useAuth: () => ({
+    user: null,
+    isLoading: false,
+    axiosInstance: {
+      get: jest.fn().mockResolvedValue({ data: { count: 0 } }),
+      patch: jest.fn().mockResolvedValue({}),
+    },
+  }),
+}));
+
 // Import after mocks are registered
 import {
   NotificationProvider,

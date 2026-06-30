@@ -10,6 +10,7 @@ import React, {
 } from "react";
 import { useSocket } from "./SocketContext";
 import { useSettings } from "./SettingsContext";
+import { useAuth } from "./AuthContext";
 
 export type NotificationType =
   | "order_created"
@@ -34,11 +35,20 @@ export interface OrderNotification {
 interface NotificationContextType {
   notifications: OrderNotification[];
   dismiss: (id: string) => void;
+  /** Live count of unread notifications (from the backend). */
+  unreadCount: number;
+  /** Re-fetch the unread count from the backend. */
+  refreshUnreadCount: () => void;
+  /** Mark every notification read on the backend and zero the count. */
+  markAllRead: () => Promise<void>;
 }
 
 const NotificationContext = createContext<NotificationContextType>({
   notifications: [],
   dismiss: () => {},
+  unreadCount: 0,
+  refreshUnreadCount: () => {},
+  markAllRead: async () => {},
 });
 
 export const useNotifications = () => useContext(NotificationContext);
@@ -50,9 +60,35 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [notifications, setNotifications] = useState<OrderNotification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
   const { socket } = useSocket();
   const { settings } = useSettings();
+  const { axiosInstance, user, isLoading } = useAuth();
   const timers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+
+  const refreshUnreadCount = useCallback(() => {
+    if (!user) {
+      setUnreadCount(0);
+      return;
+    }
+    axiosInstance
+      .get<{ count: number }>("/api/notifications/unread-count")
+      .then((res) => setUnreadCount(res.data.count ?? 0))
+      .catch(() => {});
+  }, [axiosInstance, user]);
+
+  const markAllRead = useCallback(async () => {
+    setUnreadCount(0);
+    try {
+      await axiosInstance.patch("/api/notifications/read");
+    } catch {
+      // Non-fatal: a later refresh reconciles the count.
+    }
+  }, [axiosInstance]);
+
+  useEffect(() => {
+    if (!isLoading) refreshUnreadCount();
+  }, [isLoading, refreshUnreadCount]);
 
   const dismiss = useCallback((id: string) => {
     setNotifications((prev) => prev.filter((n) => n.id !== id));
@@ -65,10 +101,14 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const enqueue = useCallback(
     (notification: OrderNotification) => {
+      let isNew = false;
       setNotifications((prev) => {
         if (prev.some((n) => n.id === notification.id)) return prev;
+        isNew = true;
         return [notification, ...prev].slice(0, MAX_VISIBLE);
       });
+
+      if (isNew) setUnreadCount((count) => count + 1);
 
       if (settings.soundEnabled) {
         try {
@@ -107,7 +147,15 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
   }, []);
 
   return (
-    <NotificationContext.Provider value={{ notifications, dismiss }}>
+    <NotificationContext.Provider
+      value={{
+        notifications,
+        dismiss,
+        unreadCount,
+        refreshUnreadCount,
+        markAllRead,
+      }}
+    >
       {children}
     </NotificationContext.Provider>
   );

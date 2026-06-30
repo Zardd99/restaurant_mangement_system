@@ -379,7 +379,6 @@ export class SidebarConfig {
           text: "Notifications",
           icon: <Bell className={this.ICON_SIZE} />,
           link: "/notifications",
-          badge: 3,
           roles: ["admin", "manager", "waiter", "chef"],
         },
         {
