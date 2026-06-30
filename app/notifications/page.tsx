@@ -28,6 +28,7 @@ const TYPE_CONFIG: Record<
   order_preparing: { icon: "👨‍🍳", label: "Now Preparing",  borderColor: "border-amber-400", badgeBg: "bg-amber-100 text-amber-700" },
   order_ready:     { icon: "✅", label: "Ready to Serve", borderColor: "border-green-400", badgeBg: "bg-green-100 text-green-700" },
   order_served:    { icon: "🍽️", label: "Order Served",   borderColor: "border-gray-400",  badgeBg: "bg-gray-100 text-gray-600" },
+  birthday_today:  { icon: "🎂", label: "Birthday",       borderColor: "border-pink-400",  badgeBg: "bg-pink-100 text-pink-700" },
 };
 
 const ROLE_LABELS: Record<string, string> = {
@@ -41,6 +42,7 @@ const FILTER_TABS: { value: NotificationType | "all"; label: string }[] = [
   { value: "order_preparing", label: "Preparing" },
   { value: "order_ready",     label: "Ready" },
   { value: "order_served",    label: "Served" },
+  { value: "birthday_today",  label: "Birthdays" },
 ];
 
 const PAGE_LIMIT = 20;
@@ -64,7 +66,8 @@ function formatTime(iso: string): string {
 
 function NotificationRow({ n }: { n: OrderNotification & { read: boolean } }) {
   const cfg = TYPE_CONFIG[n.type];
-  const roleLabel = ROLE_LABELS[n.actor.role] ?? n.actor.role;
+  const isBirthday = n.type === "birthday_today";
+  const roleLabel = n.actor ? ROLE_LABELS[n.actor.role] ?? n.actor.role : "";
 
   return (
     <div className={`flex items-start gap-4 p-4 bg-white rounded-xl border border-gray-100 border-l-4 ${cfg.borderColor} shadow-sm`}>
@@ -83,23 +86,38 @@ function NotificationRow({ n }: { n: OrderNotification & { read: boolean } }) {
           <span className="text-xs text-gray-400 ml-auto">{formatTime(n.timestamp)}</span>
         </div>
 
-        <p className="text-sm font-medium text-gray-800 mt-1">
-          {n.tableNumber
-            ? `Table ${n.tableNumber}`
-            : n.customerName ?? "Takeaway / Delivery"}
-          {n.itemCount > 0 && (
-            <span className="text-gray-500 font-normal">
-              {" · "}{n.itemCount} {n.itemCount === 1 ? "item" : "items"}
-            </span>
-          )}
-        </p>
+        {isBirthday ? (
+          <>
+            <p className="text-sm font-medium text-gray-800 mt-1">
+              {n.title ?? `${n.customerName ?? "A team member"}'s birthday today`}
+            </p>
+            {n.message && (
+              <p className="text-xs text-gray-500 mt-0.5">{n.message}</p>
+            )}
+          </>
+        ) : (
+          <>
+            <p className="text-sm font-medium text-gray-800 mt-1">
+              {n.tableNumber
+                ? `Table ${n.tableNumber}`
+                : n.customerName ?? "Takeaway / Delivery"}
+              {n.itemCount > 0 && (
+                <span className="text-gray-500 font-normal">
+                  {" · "}{n.itemCount} {n.itemCount === 1 ? "item" : "items"}
+                </span>
+              )}
+            </p>
 
-        <p className="text-xs text-gray-500 mt-0.5">
-          By <span className="font-medium text-gray-700">{n.actor.name}</span>
-          <span className="ml-1 inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-gray-100 text-gray-600">
-            {roleLabel}
-          </span>
-        </p>
+            {n.actor && (
+              <p className="text-xs text-gray-500 mt-0.5">
+                By <span className="font-medium text-gray-700">{n.actor.name}</span>
+                <span className="ml-1 inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-gray-100 text-gray-600">
+                  {roleLabel}
+                </span>
+              </p>
+            )}
+          </>
+        )}
       </div>
     </div>
   );

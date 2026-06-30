@@ -11,6 +11,7 @@ import { WebSocketProvider } from "./contexts/WebSocketContext";
 import { NotificationProvider } from "./contexts/NotificationContext";
 import { SettingsProvider } from "./contexts/SettingsContext";
 import NotificationToast from "./presentation/components/NotificationToast";
+import BirthdayOnboardingModal from "./presentation/components/BirthdayOnboardingModal";
 import Layout from "./presentation/components/layout";
 
 const ibmPlexSans = localFont({
@@ -58,6 +59,7 @@ const RootLayout = async ({ children }: { children: ReactNode }) => {
                     </div>
                   </SearchProvider>
                   <NotificationToast />
+                  <BirthdayOnboardingModal />
                 </SettingsProvider>
               </NotificationProvider>
             </WebSocketProvider>

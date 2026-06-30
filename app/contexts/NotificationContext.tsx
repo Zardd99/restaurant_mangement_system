@@ -15,16 +15,19 @@ export type NotificationType =
   | "order_created"
   | "order_preparing"
   | "order_ready"
-  | "order_served";
+  | "order_served"
+  | "birthday_today";
 
 export interface OrderNotification {
   id: string;
   type: NotificationType;
-  orderId: string;
+  orderId?: string;
   tableNumber?: number;
   customerName?: string;
   itemCount: number;
-  actor: { id: string; name: string; role: string };
+  actor?: { id: string; name: string; role: string };
+  title?: string;
+  message?: string;
   timestamp: string;
 }
 

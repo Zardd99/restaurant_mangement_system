@@ -100,7 +100,7 @@ function NotificationSpy() {
       {notifications.map((n) => (
         <div key={n.id} data-testid={`notif-${n.id}`}>
           <span data-testid={`type-${n.id}`}>{n.type}</span>
-          <span data-testid={`actor-${n.id}`}>{n.actor.name}</span>
+          <span data-testid={`actor-${n.id}`}>{n.actor?.name}</span>
           <button
             data-testid={`dismiss-${n.id}`}
             onClick={() => dismiss(n.id)}
