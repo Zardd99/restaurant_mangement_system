@@ -55,6 +55,17 @@ jest.mock("../contexts/SettingsContext", () => ({
   }),
 }));
 
+jest.mock("../contexts/AuthContext", () => ({
+  useAuth: () => ({
+    user: null,
+    isLoading: false,
+    axiosInstance: {
+      get: jest.fn().mockResolvedValue({ data: { count: 0 } }),
+      patch: jest.fn().mockResolvedValue({}),
+    },
+  }),
+}));
+
 // Import after mocks are registered
 import {
   NotificationProvider,
@@ -100,7 +111,7 @@ function NotificationSpy() {
       {notifications.map((n) => (
         <div key={n.id} data-testid={`notif-${n.id}`}>
           <span data-testid={`type-${n.id}`}>{n.type}</span>
-          <span data-testid={`actor-${n.id}`}>{n.actor.name}</span>
+          <span data-testid={`actor-${n.id}`}>{n.actor?.name}</span>
           <button
             data-testid={`dismiss-${n.id}`}
             onClick={() => dismiss(n.id)}

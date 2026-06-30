@@ -56,7 +56,7 @@ const UserProfile: React.FC = () => {
   // --------------------------------------------------------------------------
   // Hooks & Context
   // --------------------------------------------------------------------------
-  const { user, token, updateUser } = useAuth();
+  const { user, token, updateUser, axiosInstance } = useAuth();
   const { socket, isConnected } = useSocket();
 
   // --------------------------------------------------------------------------
@@ -81,6 +81,12 @@ const UserProfile: React.FC = () => {
   /** Current online status of the user (real-time if socket connected). */
   const [isOnline, setIsOnline] = useState<boolean>(true);
 
+  /** Birthday section edit mode + field values. */
+  const [isEditingBirthday, setIsEditingBirthday] = useState<boolean>(false);
+  const [birthdayValue, setBirthdayValue] = useState<string>("");
+  const [shareBirthday, setShareBirthday] = useState<boolean>(true);
+  const [savingBirthday, setSavingBirthday] = useState<boolean>(false);
+
   // --------------------------------------------------------------------------
   // Effects – Data Synchronisation
   // --------------------------------------------------------------------------
@@ -96,6 +102,10 @@ const UserProfile: React.FC = () => {
         email: user.email,
         phone: user.phone || "",
       });
+      setBirthdayValue(
+        user.birthdate ? new Date(user.birthdate).toISOString().split("T")[0] : "",
+      );
+      setShareBirthday(user.showBirthdayToOthers ?? true);
       // Do not read user.isActive here — it is a stale DB snapshot from login.
       // The socket effect is the authoritative source for live presence.
     }
@@ -238,6 +248,38 @@ const UserProfile: React.FC = () => {
     // Clear status message after 3 seconds
     setTimeout(() => setUpdateStatus({ type: "", message: "" }), 3000);
     setIsEditing(false);
+  };
+
+  /**
+   * Persists the birthdate and birthday-privacy preference via the self-service
+   * profile endpoint. Sends `null` when the field is cleared.
+   */
+  const handleSaveBirthday = async () => {
+    setSavingBirthday(true);
+    try {
+      const response = await axiosInstance.put("/api/auth/update", {
+        birthdate: birthdayValue || null,
+        showBirthdayToOthers: shareBirthday,
+      });
+      if (response.data?.user) {
+        updateUser(response.data.user);
+      }
+      setUpdateStatus({
+        type: "success",
+        message: "Birthday preferences saved!",
+      });
+      setIsEditingBirthday(false);
+    } catch (error: unknown) {
+      const axiosError = error as AxiosErrorWithResponse;
+      setUpdateStatus({
+        type: "error",
+        message:
+          axiosError.response?.data?.message || "Failed to save birthday",
+      });
+    } finally {
+      setSavingBirthday(false);
+      setTimeout(() => setUpdateStatus({ type: "", message: "" }), 3000);
+    }
   };
 
   // --------------------------------------------------------------------------
@@ -501,6 +543,94 @@ const UserProfile: React.FC = () => {
               </p>
             </div>
           </div>
+        </div>
+
+        {/* -------------------- Birthday & Privacy Card -------------------- */}
+        <div className="mt-8 bg-white rounded-2xl shadow-xl p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold text-gray-800">
+              Birthday & Privacy
+            </h2>
+            {!isEditingBirthday && (
+              <button
+                onClick={() => setIsEditingBirthday(true)}
+                className="px-4 py-1.5 text-sm rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-colors"
+              >
+                {user.birthdate ? "Edit" : "Add birthday"}
+              </button>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-1">
+                Birthdate
+              </label>
+              {isEditingBirthday ? (
+                <input
+                  type="date"
+                  max={new Date().toISOString().split("T")[0]}
+                  value={birthdayValue}
+                  onChange={(e) => setBirthdayValue(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                />
+              ) : (
+                <p className="px-4 py-2 bg-gray-50 rounded-lg">
+                  {user.birthdate
+                    ? new Date(user.birthdate).toLocaleDateString("en-US", {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      })
+                    : "Not set"}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-1">
+                Birthday notifications
+              </label>
+              <label className="flex items-center gap-2 px-4 py-2 bg-gray-50 rounded-lg">
+                <input
+                  type="checkbox"
+                  checked={shareBirthday}
+                  disabled={!isEditingBirthday}
+                  onChange={(e) => setShareBirthday(e.target.checked)}
+                  className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 disabled:opacity-60"
+                />
+                <span className="text-sm text-gray-700">
+                  Allow the system to notify others of my birthday
+                </span>
+              </label>
+            </div>
+          </div>
+
+          {isEditingBirthday && (
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                onClick={() => {
+                  setIsEditingBirthday(false);
+                  setBirthdayValue(
+                    user.birthdate
+                      ? new Date(user.birthdate).toISOString().split("T")[0]
+                      : "",
+                  );
+                  setShareBirthday(user.showBirthdayToOthers ?? true);
+                }}
+                className="px-5 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveBirthday}
+                disabled={savingBirthday}
+                className="px-5 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 transition-colors disabled:opacity-50"
+              >
+                {savingBirthday ? "Saving…" : "Save"}
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
