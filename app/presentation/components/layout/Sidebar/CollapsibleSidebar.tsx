@@ -24,7 +24,19 @@ import { useRef, useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { SidebarConfig } from "../../../../lib/sidebar/sidebarConfig";
 import { useAuth } from "../../../../contexts/AuthContext";
+import { useNotifications } from "../../../../contexts/NotificationContext";
 import Link from "next/link";
+
+/** Live badge value for an item — unread count for notifications, capped at 99+. */
+function resolveBadge(
+  itemId: string,
+  staticBadge: string | number | undefined,
+  unreadCount: number,
+): string | number | undefined {
+  if (itemId !== "notifications") return staticBadge;
+  if (unreadCount <= 0) return undefined;
+  return unreadCount > 99 ? "99+" : unreadCount;
+}
 
 interface CollapsibleSidebarProps {
   user?: any; // User object, can be undefined (e.g., guest)
@@ -53,6 +65,9 @@ const CollapsibleSidebar = ({ user, onLogout }: CollapsibleSidebarProps) => {
 
   // Auth context for logout as fallback.
   const { logout } = useAuth();
+
+  // Live unread notification count for the notifications badge.
+  const { unreadCount } = useNotifications();
 
   // Get filtered navigation items based on user role (or "guest" if no user).
   // SidebarConfig.getFilteredItems returns an array of sections, each containing items.
@@ -192,6 +207,13 @@ const CollapsibleSidebar = ({ user, onLogout }: CollapsibleSidebarProps) => {
                     const hasChildren =
                       item.children && item.children.length > 0;
 
+                    // Notifications shows the live unread count; others use config.
+                    const badgeValue = resolveBadge(
+                      item.id,
+                      item.badge,
+                      unreadCount,
+                    );
+
                     return (
                       <div key={item.id} className="relative">
                         {/* Main Item Rendering */}
@@ -219,9 +241,9 @@ const CollapsibleSidebar = ({ user, onLogout }: CollapsibleSidebarProps) => {
                             )}
 
                             {/* Badge – only visible when expanded */}
-                            {item.badge && expanded && (
+                            {badgeValue && expanded && (
                               <span className="ml-2 px-2 py-0.5 bg-black/10 dark:bg-white/10 text-gray-700 dark:text-white text-xs rounded shrink-0">
-                                {item.badge}
+                                {badgeValue}
                               </span>
                             )}
 
@@ -274,9 +296,9 @@ const CollapsibleSidebar = ({ user, onLogout }: CollapsibleSidebarProps) => {
                             )}
 
                             {/* Badge – only when expanded */}
-                            {item.badge && expanded && (
+                            {badgeValue && expanded && (
                               <span className="ml-2 px-2 py-0.5 bg-black/10 dark:bg-white/10 text-gray-700 dark:text-white text-xs rounded shrink-0">
-                                {item.badge}
+                                {badgeValue}
                               </span>
                             )}
 
