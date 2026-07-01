@@ -21,7 +21,7 @@ import { useLocalStorage } from "../hooks/useLocalStorage";
 import { useOrderManager } from "../hooks/useOrderManager";
 import { useInventoryDeduction } from "../hooks/useInventoryDeduction";
 
-import MenuItemCardForWaiter from "../presentation/components/MenuItemCard/MenuItemCardForWaiter";
+import MenuGrid from "../presentation/components/MenuItemCard/MenuGrid";
 import MenuItemRowWaiter from "../presentation/components/MenuItemCard/MenuItemRowWaiter";
 import OrderForm from "../presentation/components/OrderForm/OrderForm";
 import OrderSummary from "../presentation/components/OrderSummary/OrderSummary";
@@ -56,7 +56,7 @@ const WaiterOrderInterface = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeCategory, setActiveCategory] = useState("all");
   const [activeQuickFilter, setActiveQuickFilter] = useState<QuickFilter>("all");
-  const [viewMode, setViewMode] = useState<"list" | "card">("list");
+  const [viewMode, setViewMode] = useState<"list" | "card">("card");
 
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [showStockWarning, setShowStockWarning] = useState(false);
@@ -115,6 +115,24 @@ const WaiterOrderInterface = () => {
     // Available items first, then unavailable
     return result.sort((a, b) => Number(b.availability) - Number(a.availability));
   }, [menuItems, searchTerm, activeCategory, activeQuickFilter]);
+
+  const cartQuantities = useMemo(() => {
+    const map: Record<string, number> = {};
+    for (const entry of orderManager.currentOrder) {
+      map[entry.menuItem._id] = entry.quantity;
+    }
+    return map;
+  }, [orderManager.currentOrder]);
+
+  const removeOneFromOrder = useCallback(
+    (item: MenuItem) => {
+      const current = orderManager.currentOrder.find(
+        (entry) => entry.menuItem._id === item._id,
+      );
+      if (current) orderManager.updateQuantity(item._id, current.quantity - 1);
+    },
+    [orderManager],
+  );
 
   // ---------------------------------------------------------------------------
   // Fetch
@@ -428,16 +446,13 @@ const WaiterOrderInterface = () => {
                 ))}
               </div>
             ) : (
-              <div className="p-4 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-3">
-                {filteredItems.map((item, idx) => (
-                  <MenuItemCardForWaiter
-                    key={item._id}
-                    item={item}
-                    onAddToCart={orderManager.addToOrder}
-                    animationDelay={idx * 0.03}
-                  />
-                ))}
-              </div>
+              <MenuGrid
+                items={filteredItems}
+                cartQuantities={cartQuantities}
+                onAdd={orderManager.addToOrder}
+                onRemoveOne={removeOneFromOrder}
+                emptyHint={searchTerm ? "Try a different search" : "Change your filters"}
+              />
             )}
           </div>
         </div>
