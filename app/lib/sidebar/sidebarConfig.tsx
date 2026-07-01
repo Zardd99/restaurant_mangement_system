@@ -38,6 +38,7 @@ import {
   Shield,
   Calendar,
   Zap,
+  ClipboardCheck,
 } from "lucide-react";
 
 // =============================================================================
@@ -261,6 +262,13 @@ export class SidebarConfig {
           text: "Inventory Dashboard",
           icon: <Package className={this.ICON_SIZE} />,
           link: "/inventory/IngredientStockDashboard",
+          roles: ["admin", "manager"],
+        },
+        {
+          id: "inventory-audit",
+          text: "Stock Take",
+          icon: <ClipboardCheck className={this.ICON_SIZE} />,
+          link: "/inventory/audit",
           roles: ["admin", "manager"],
         },
         {
