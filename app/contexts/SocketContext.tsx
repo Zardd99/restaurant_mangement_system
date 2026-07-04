@@ -78,19 +78,31 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
   // --------------------------------------------------------------------------
   const [socket, setSocket] = useState<Socket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
-  const { token, user } = useAuth();
+  const { token, user, isLoading } = useAuth();
+
+  // Depend on stable primitives, not the `user` object reference. Optimistic
+  // profile edits (`updateUser`) produce a new `user` object with the same
+  // identity fields; keying the effect on the object would tear down and
+  // re-establish the socket on every such change (connection churn).
+  const userId = user?._id;
+  const userRole = user?.role;
+  const userName = user?.name;
 
   // --------------------------------------------------------------------------
   // Side Effects
   // --------------------------------------------------------------------------
 
   /**
-   * Effect: Establish Socket.IO connection when authentication becomes available.
-   * Runs whenever the token or user object changes.
+   * Effect: Establish Socket.IO connection once authentication is fully resolved.
+   * Gated on `!isLoading` so we never open a socket mid-verification (before the
+   * token/role are known), and re-runs only when the identity primitives change.
    */
   useEffect(() => {
-    // Guard: require both token and user role to connect
-    if (!token || !user?.role) {
+    // Guard: wait until the initial session verification has settled.
+    if (isLoading) return;
+
+    // Guard: require both token and user role to connect.
+    if (!token || !userRole) {
       console.log("Socket: Missing token or role, skipping connection");
       return;
     }
@@ -104,8 +116,8 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
       },
       query: {
         token: token,
-        role: user.role,
-        userId: user._id, // Include user ID for server-side room management
+        role: userRole,
+        userId: userId, // Include user ID for server-side room management
       },
       transports: ["websocket", "polling"],
       timeout: 10000,
@@ -121,11 +133,11 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
       setIsConnected(true);
 
       // Notify server about the user's role and identity
-      newSocket.emit("set_role", user.role);
+      newSocket.emit("set_role", userRole);
       newSocket.emit("user_connected", {
-        userId: user._id,
-        role: user.role,
-        name: user.name,
+        userId: userId,
+        role: userRole,
+        name: userName,
       });
     });
 
@@ -145,8 +157,8 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
     newSocket.on("reconnect", (attemptNumber) => {
       console.log("Socket: Reconnected after", attemptNumber, "attempts");
       setIsConnected(true);
-      if (user) {
-        newSocket.emit("user_reconnected", user._id);
+      if (userId) {
+        newSocket.emit("user_reconnected", userId);
       }
     });
 
@@ -165,14 +177,19 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
     // ------------------------------------------------------------------------
     return () => {
       console.log("Socket: Cleaning up connection");
-      if (user) {
-        newSocket.emit("user_disconnected", user._id);
+      if (userId) {
+        newSocket.emit("user_disconnected", userId);
       }
+      // Remove listeners before disconnecting so a lingering handler can't fire
+      // against a torn-down instance, then close the underlying connection to
+      // eliminate the leak on unmount / re-run.
+      newSocket.removeAllListeners();
       newSocket.disconnect();
       setSocket(null);
       setIsConnected(false);
     };
-  }, [token, user]); // Dependencies: re‑establish when token or user changes
+    // Re-establish only when the token or identity primitives actually change.
+  }, [token, isLoading, userId, userRole, userName]);
 
   // --------------------------------------------------------------------------
   // Render
