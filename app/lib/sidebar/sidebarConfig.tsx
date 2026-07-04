@@ -67,6 +67,12 @@ export interface SidebarItem {
   roles?: string[];
   /** If true, shows a "New" indicator. */
   isNew?: boolean;
+  /**
+   * Controls Next.js `<Link>` prefetching. Leave undefined (default prefetch)
+   * for hot paths; set `false` on heavy or low-priority routes so they don't
+   * fire `?_rsc=` prefetch requests for every visible link on each render.
+   */
+  prefetch?: boolean;
 }
 
 /**
@@ -227,6 +233,7 @@ export class SidebarConfig {
           text: "Analytics",
           icon: <BarChart className={this.ICON_SIZE} />,
           link: "/analytics",
+          prefetch: false,
           roles: ["admin", "manager"],
         },
       ],
@@ -262,6 +269,7 @@ export class SidebarConfig {
           text: "Inventory Dashboard",
           icon: <Package className={this.ICON_SIZE} />,
           link: "/inventory/IngredientStockDashboard",
+          prefetch: false,
           roles: ["admin", "manager"],
         },
         {
@@ -269,6 +277,7 @@ export class SidebarConfig {
           text: "Stock Take",
           icon: <ClipboardCheck className={this.ICON_SIZE} />,
           link: "/inventory/audit",
+          prefetch: false,
           roles: ["admin", "manager"],
         },
         {
@@ -276,6 +285,7 @@ export class SidebarConfig {
           text: "Billing & Payments",
           icon: <CreditCard className={this.ICON_SIZE} />,
           link: "/billing",
+          prefetch: false,
           roles: ["admin", "manager", "cashier", "waiter"],
         },
       ],
@@ -304,6 +314,7 @@ export class SidebarConfig {
           text: "Promotions",
           icon: <Zap className={this.ICON_SIZE} />,
           link: "/promotions",
+          prefetch: false,
           roles: ["admin"],
         },
         {
@@ -325,6 +336,7 @@ export class SidebarConfig {
           text: "Shift Schedule",
           icon: <Calendar className={this.ICON_SIZE} />,
           link: "/schedule",
+          prefetch: false,
           roles: ["admin", "manager"],
         },
       ],
@@ -380,6 +392,7 @@ export class SidebarConfig {
           text: "Settings",
           icon: <Settings className={this.ICON_SIZE} />,
           link: "/settings",
+          prefetch: false,
           roles: ["admin", "manager"],
         },
         {
@@ -387,6 +400,7 @@ export class SidebarConfig {
           text: "Notifications",
           icon: <Bell className={this.ICON_SIZE} />,
           link: "/notifications",
+          prefetch: false,
           roles: ["admin", "manager", "waiter", "chef"],
         },
         {
@@ -394,6 +408,7 @@ export class SidebarConfig {
           text: "Help & Support",
           icon: <HelpCircle className={this.ICON_SIZE} />,
           link: "/help",
+          prefetch: false,
           roles: ["admin", "manager", "waiter", "chef"],
         },
       ],

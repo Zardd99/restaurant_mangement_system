@@ -15,8 +15,9 @@
 // -----------------------------------------------------------------------------
 // IMPORTS
 // -----------------------------------------------------------------------------
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useAuth } from "../../contexts/AuthContext";
+import { useStats } from "../../hooks/useStats";
 import KitchenStatsPanel from "../../presentation/components/KitchenStatsPanel/KitchenStatsPanel";
 import LoadingState from "../../(waiter_order)/common/LoadingState";
 import ErrorState from "../../(waiter_order)/common/ErrorState";
@@ -44,6 +45,12 @@ const AnalyticsPage = () => {
   // AUTHENTICATION
   // ===========================================================================
   const { token } = useAuth();
+
+  // Unified data source: the summary cards below read from the SAME
+  // `/api/orders/stats` endpoint that powers the embedded KitchenStatsPanel,
+  // so the two never diverge (previously the cards were hard-coded demo values
+  // while the panel showed live data).
+  const { stats, fetchStats } = useStats();
 
   // ===========================================================================
   // STATE DECLARATIONS
@@ -77,6 +84,39 @@ const AnalyticsPage = () => {
 
     return () => clearTimeout(timer);
   }, []);
+
+  /**
+   * Fetch the real aggregated stats once a token is available so the summary
+   * cards reflect live data. Kept separate from the skeleton timer above.
+   */
+  useEffect(() => {
+    if (token) {
+      fetchStats(token);
+    }
+  }, [token, fetchStats]);
+
+  // Derived, presentation-ready figures from the unified stats payload.
+  const summary = useMemo(() => {
+    const byStatus = stats?.ordersByStatus ?? {};
+    // "Completed" mirrors the panel's definition (ready + served).
+    const completed = (byStatus.ready ?? 0) + (byStatus.served ?? 0);
+    const totalFromStatus = Object.values(byStatus).reduce(
+      (sum, count) => sum + count,
+      0,
+    );
+    const totalOrders = stats?.todayOrderCount ?? totalFromStatus;
+    const inProgress = Math.max(totalOrders - completed, 0);
+    const topDish = stats?.bestSellingDishes?.[0];
+
+    return {
+      dailyRevenue: stats?.dailyEarnings ?? 0,
+      totalOrders,
+      completed,
+      inProgress,
+      avgOrderValue: stats?.avgOrderValue ?? 0,
+      topDish,
+    };
+  }, [stats]);
 
   // ===========================================================================
   // EVENT HANDLERS (memoized with useCallback)
@@ -261,10 +301,12 @@ const AnalyticsPage = () => {
                   Today&apos;s Revenue
                 </div>
               </div>
-              <div className="text-2xl font-bold text-gray-900">$1,856.50</div>
+              <div className="text-2xl font-bold text-gray-900">
+                ${summary.dailyRevenue.toFixed(2)}
+              </div>
               <div className="flex items-center text-xs text-green-600 mt-1">
                 <TrendingUp className="w-3 h-3 mr-1" />
-                +12.5% from yesterday
+                Today&apos;s total
               </div>
             </div>
 
@@ -278,9 +320,11 @@ const AnalyticsPage = () => {
                   Total Orders
                 </div>
               </div>
-              <div className="text-2xl font-bold text-gray-900">68</div>
+              <div className="text-2xl font-bold text-gray-900">
+                {summary.totalOrders}
+              </div>
               <div className="text-xs text-gray-500 mt-1">
-                42 completed • 26 in progress
+                {summary.completed} completed • {summary.inProgress} in progress
               </div>
             </div>
 
@@ -291,13 +335,15 @@ const AnalyticsPage = () => {
                   <Clock className="w-5 h-5 text-purple-600" />
                 </div>
                 <div className="text-sm text-gray-500 font-medium">
-                  Avg Prep Time
+                  Avg Order Value
                 </div>
               </div>
-              <div className="text-2xl font-bold text-gray-900">14m 23s</div>
-              <div className="flex items-center text-xs text-green-600 mt-1">
+              <div className="text-2xl font-bold text-gray-900">
+                ${summary.avgOrderValue.toFixed(2)}
+              </div>
+              <div className="flex items-center text-xs text-gray-500 mt-1">
                 <TrendingUp className="w-3 h-3 mr-1" />
-                -2m faster than avg
+                Per order today
               </div>
             </div>
 
@@ -312,10 +358,12 @@ const AnalyticsPage = () => {
                 </div>
               </div>
               <div className="text-xl font-bold text-gray-900">
-                Classic Burger
+                {summary.topDish?.name ?? "—"}
               </div>
               <div className="text-xs text-gray-500 mt-1">
-                28 sold • $425 revenue
+                {summary.topDish
+                  ? `${summary.topDish.quantity} sold • $${summary.topDish.revenue.toFixed(2)} revenue`
+                  : "No sales yet"}
               </div>
             </div>
           </div>
