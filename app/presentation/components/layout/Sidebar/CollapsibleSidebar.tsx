@@ -275,6 +275,7 @@ const CollapsibleSidebar = ({ user, onLogout }: CollapsibleSidebarProps) => {
                           // Regular link item (no children)
                           <Link
                             href={item.link || "#"}
+                            prefetch={item.prefetch}
                             onClick={() => setIsOpen(false)}
                             className={`w-full group/item flex items-center px-3 py-3 rounded-lg transition-all duration-200 relative ${
                               isActive
@@ -325,6 +326,7 @@ const CollapsibleSidebar = ({ user, onLogout }: CollapsibleSidebarProps) => {
                               <Link
                                 key={child.id}
                                 href={child.link || "#"}
+                                prefetch={child.prefetch}
                                 onClick={() => setIsOpen(false)}
                                 className={`block px-3 py-2 rounded-lg text-sm transition-all duration-200 ${
                                   child.link === pathname
