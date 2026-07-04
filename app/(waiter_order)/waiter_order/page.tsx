@@ -5,8 +5,6 @@ import { useAuth } from "../../contexts/AuthContext";
 import { ProtectedRoute } from "../../presentation/components/ProtectedRoute/ProtectedRoute";
 import WaiterOrderInterface from "../WaiterOrderInterface";
 import KitchenDisplaySystem from "../KitchenDisplaySystem";
-import { SocketProvider } from "@/app/contexts/SocketContext";
-import { WebSocketProvider } from "@/app/contexts/WebSocketContext";
 
 const WaiterOrderPage = () => {
   const { user } = useAuth();
@@ -58,13 +56,11 @@ const WaiterOrderPage = () => {
           </div>
         </div>
 
-        {/* Full-height content */}
+        {/* Full-height content — realtime providers come from the root layout,
+            so this view shares the single persistent socket instead of opening
+            a second, page-scoped connection that churned on every navigation. */}
         <div className="flex-1 overflow-hidden">
-          <SocketProvider>
-            <WebSocketProvider>
-              {activeTab === "order" ? <WaiterOrderInterface /> : <KitchenDisplaySystem />}
-            </WebSocketProvider>
-          </SocketProvider>
+          {activeTab === "order" ? <WaiterOrderInterface /> : <KitchenDisplaySystem />}
         </div>
       </div>
     </ProtectedRoute>
