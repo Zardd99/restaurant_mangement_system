@@ -4,9 +4,9 @@ import type { NextConfig } from "next";
 // Vercel environment variables must take precedence so deployments can select
 // a different backend without changing source code.
 const API_BY_BRANCH: Record<string, string> = {
-  main: "https://backendrestaurant-production-8a7e.up.railway.app",
-  staging: "https://backendrestaurant-stagging.up.railway.app",
-  dev: "https://backendrestaurant-development.up.railway.app",
+  main: "https://backend-restaurant-2.onrender.com",
+  staging: "https://backend-restaurant-2.onrender.com",
+  dev: "https://backend-restaurant-2.onrender.com",
 };
 
 const branch = process.env.VERCEL_GIT_COMMIT_REF;
