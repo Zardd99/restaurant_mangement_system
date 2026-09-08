@@ -55,10 +55,8 @@ export const useSidebarViewModel = ({
    * Effect: Re‑fetch and filter sidebar sections whenever the user role changes.
    * This ensures the sidebar always shows the correct items for the current user.
    *
-   * Note: The code maps over filteredSections and adds both `items` and `content`
-   * properties. The duplication (items || items) is redundant and may indicate a
-   * data structure inconsistency. We preserve it to match the original logic,
-   * but it could be simplified to just use `items`.
+   * Note: The sidebar renderer consumes the legacy `content` property, while
+   * newer consumers use `items`, so both properties are kept in sync.
    */
   useEffect(() => {
     // Get filtered sections from the config based on user role.
@@ -68,8 +66,8 @@ export const useSidebarViewModel = ({
     const mappedSections: SidebarSection[] = filteredSections.map(
       (section) => ({
         ...section,
-        items: section.items || section.items || [], // Redundant; could be `section.items || []`
-        content: section.items || section.items || [], // Also redundant; likely `content` is not used.
+        items: section.items,
+        content: section.items,
       }),
     );
 

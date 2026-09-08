@@ -80,20 +80,12 @@ export class SidebarCoordinator {
    * 3. If not, and the item has children, search through the children.
    * 4. Return the first match found, or null if no match.
    *
-   * Note: There is a typo in the original code: `section.items || section.items || []`
-   * is redundant and always evaluates to section.items (which may be undefined).
-   * The safe way is to use optional chaining or default to an empty array.
-   * We'll keep the original logic but add a comment about the redundancy.
-   *
    * @param path - The URL path to search for (e.g., "/dashboard/orders").
    * @returns The matching SidebarItem, or null if not found.
    */
   findItemByPath(path: string): SidebarItem | null {
     for (const section of this.sections) {
-      // Original code had `section.items || section.items || []` – this is redundant.
-      // It effectively means: use section.items if truthy, else [].
-      // A cleaner approach would be `section.items || []`.
-      for (const item of section.items || section.items || []) {
+      for (const item of section.items) {
         if (item.link === path) {
           return item;
         }

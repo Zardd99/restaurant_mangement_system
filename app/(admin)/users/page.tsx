@@ -480,7 +480,7 @@ const AdminUserDashboard = () => {
   }
 
   /** Access denied for non‑admin users */
-  if (!authLoading && currentUser?.role !== "admin") {
+  if (currentUser?.role !== "admin") {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
         <div className="text-center">
