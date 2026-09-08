@@ -22,7 +22,7 @@ import {
   BarChart,
   PieChart,
 } from "lucide-react";
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
 
 interface KitchenStatsPanelProps {
@@ -77,7 +77,7 @@ const KitchenStatsPanel = ({
 
   // ==================== EXPORT FUNCTIONALITY ====================
   // The following block implements a comprehensive Excel export with multiple sheets,
-  // formatted columns, and simulated operational data. It uses xlsx and file‑saver.
+  // formatted columns, and simulated operational data. It uses ExcelJS and file‑saver.
   // The data structure is partly mocked (time analysis, inventory) to provide a
   // rich report even when real data is limited – this is a design decision to
   // deliver immediate business value.
@@ -96,18 +96,16 @@ const KitchenStatsPanel = ({
    *
    * All sheets are formatted with column widths and a timestamped filename.
    */
-  const exportToExcel = useCallback(() => {
+  const exportToExcel = useCallback(async () => {
     if (!stats) return;
 
     try {
       // Create a new workbook
-      const wb = XLSX.utils.book_new();
-      wb.Props = {
-        Title: "Kitchen Analytics Report",
-        Subject: "Kitchen Performance Data",
-        Author: "Kitchen Display System",
-        CreatedDate: new Date(),
-      };
+      const wb = new ExcelJS.Workbook();
+      wb.creator = "Kitchen Display System";
+      wb.created = new Date();
+      wb.title = "Kitchen Analytics Report";
+      wb.subject = "Kitchen Performance Data";
 
       // Calculate completion rate for display
       const calculatedCompletionRate = calculateCompletionRate(stats);
@@ -210,8 +208,8 @@ const KitchenStatsPanel = ({
         ],
       ];
 
-      const ws1 = XLSX.utils.aoa_to_sheet(overviewData);
-      XLSX.utils.book_append_sheet(wb, ws1, "Overview");
+      const ws1 = wb.addWorksheet("Overview");
+      overviewData.forEach((row) => ws1.addRow(row));
 
       // Sheet 2: Order Status Distribution
       const statusEntries = Object.entries(stats.ordersByStatus || {});
@@ -275,8 +273,8 @@ const KitchenStatsPanel = ({
         ],
       ];
 
-      const ws2 = XLSX.utils.aoa_to_sheet(statusData);
-      XLSX.utils.book_append_sheet(wb, ws2, "Order Status");
+      const ws2 = wb.addWorksheet("Order Status");
+      statusData.forEach((row) => ws2.addRow(row));
 
       // Sheet 3: Best Selling Dishes
       const dishesData = [
@@ -354,8 +352,8 @@ const KitchenStatsPanel = ({
         ],
       ];
 
-      const ws3 = XLSX.utils.aoa_to_sheet(dishesData);
-      XLSX.utils.book_append_sheet(wb, ws3, "Best Sellers");
+      const ws3 = wb.addWorksheet("Best Sellers");
+      dishesData.forEach((row) => ws3.addRow(row));
 
       // Sheet 4: Time-based Analysis (mocked data to illustrate patterns)
       const timeData = [
@@ -407,8 +405,8 @@ const KitchenStatsPanel = ({
         ["20:00-21:00", "10", "$240.00", "$24.00", "80%", "★★★☆☆", "Standard"],
       ];
 
-      const ws4 = XLSX.utils.aoa_to_sheet(timeData);
-      XLSX.utils.book_append_sheet(wb, ws4, "Time Analysis");
+      const ws4 = wb.addWorksheet("Time Analysis");
+      timeData.forEach((row) => ws4.addRow(row));
 
       // Sheet 5: Inventory & Cost Analysis (mocked for demonstration)
       const inventoryData = [
@@ -448,8 +446,8 @@ const KitchenStatsPanel = ({
         ["ROI", "18%", "15%", "+3%", "Excellent ✓", "Positive"],
       ];
 
-      const ws5 = XLSX.utils.aoa_to_sheet(inventoryData);
-      XLSX.utils.book_append_sheet(wb, ws5, "Inventory & Cost");
+      const ws5 = wb.addWorksheet("Inventory & Cost");
+      inventoryData.forEach((row) => ws5.addRow(row));
 
       // Sheet 6: Recommendations (actionable insights, partly mocked)
       const recommendationsData = [
@@ -513,8 +511,8 @@ const KitchenStatsPanel = ({
         ["Inventory Turnover", "5.2", "4.5", "↑", "Excellent"],
       ];
 
-      const ws6 = XLSX.utils.aoa_to_sheet(recommendationsData);
-      XLSX.utils.book_append_sheet(wb, ws6, "Recommendations");
+      const ws6 = wb.addWorksheet("Recommendations");
+      recommendationsData.forEach((row) => ws6.addRow(row));
 
       // Format columns for better readability (widths in characters)
       const cols = [
@@ -528,7 +526,7 @@ const KitchenStatsPanel = ({
       ];
 
       [ws1, ws2, ws3, ws4, ws5, ws6].forEach((ws) => {
-        ws["!cols"] = cols;
+        ws.columns = cols.map(({ wch }) => ({ width: wch }));
       });
 
       // Generate filename with timestamp (YYYYMMDD_HHmm)
@@ -539,11 +537,7 @@ const KitchenStatsPanel = ({
       const filename = `Kitchen_Analytics_Report_${timestamp}_${new Date().getHours()}${new Date().getMinutes()}.xlsx`;
 
       // Write workbook to buffer and save as blob
-      const excelBuffer = XLSX.write(wb, {
-        bookType: "xlsx",
-        type: "array",
-        bookSST: true,
-      });
+      const excelBuffer = await wb.xlsx.writeBuffer();
       const blob = new Blob([excelBuffer], {
         type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       });
@@ -719,17 +713,17 @@ const KitchenStatsPanel = ({
   // ==============================================================
 
   const exportSpecificSheet = useCallback(
-    (sheetType: "overview" | "status" | "dishes" | "all") => {
+    async (sheetType: "overview" | "status" | "dishes" | "all") => {
       if (!stats) return;
 
       try {
         if (sheetType === "all") {
-          exportToExcel();
+          await exportToExcel();
           return;
         }
 
         // Create workbook for single sheet
-        const wb = XLSX.utils.book_new();
+        const wb = new ExcelJS.Workbook();
         const timestamp = new Date().toISOString().split("T")[0];
 
         switch (sheetType) {
@@ -764,8 +758,8 @@ const KitchenStatsPanel = ({
                 "Today",
               ],
             ];
-            const ws = XLSX.utils.aoa_to_sheet(overviewData);
-            XLSX.utils.book_append_sheet(wb, ws, "Overview");
+            const ws = wb.addWorksheet("Overview");
+            overviewData.forEach((row) => ws.addRow(row));
             break;
 
           case "status":
@@ -780,8 +774,8 @@ const KitchenStatsPanel = ({
                 return [status, count, `${percentage}%`, `${target}%`];
               }),
             ];
-            const ws2 = XLSX.utils.aoa_to_sheet(statusData);
-            XLSX.utils.book_append_sheet(wb, ws2, "Order Status");
+            const ws2 = wb.addWorksheet("Order Status");
+            statusData.forEach((row) => ws2.addRow(row));
             break;
 
           case "dishes":
@@ -803,13 +797,13 @@ const KitchenStatsPanel = ({
                 ],
               ),
             ];
-            const ws3 = XLSX.utils.aoa_to_sheet(dishesData);
-            XLSX.utils.book_append_sheet(wb, ws3, "Best Sellers");
+            const ws3 = wb.addWorksheet("Best Sellers");
+            dishesData.forEach((row) => ws3.addRow(row));
             break;
         }
 
         const filename = `Kitchen_${sheetType}_${timestamp}.xlsx`;
-        const excelBuffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+        const excelBuffer = await wb.xlsx.writeBuffer();
         const blob = new Blob([excelBuffer], {
           type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         });
