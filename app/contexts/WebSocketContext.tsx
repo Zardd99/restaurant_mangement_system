@@ -96,7 +96,7 @@ export const WebSocketProvider: React.FC<{ children: React.ReactNode }> = ({
   // ---------------------------------------------------------------------------
   // CONSTANTS
   // ---------------------------------------------------------------------------
-  const API_URL = process.env.API_URL || "http://localhost:5000";
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
   // ---------------------------------------------------------------------------
   // PUBLIC METHODS (memoised with useCallback)
