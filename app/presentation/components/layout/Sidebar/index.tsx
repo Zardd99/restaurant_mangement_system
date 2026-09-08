@@ -75,9 +75,7 @@ const Sidebar = ({ isOpen, onClose, user, onLogout }: SidebarProps) => {
       <div
         ref={sidebarRef}
         data-sidebar
-        className={` fixed top-0 left-0 h-full w-64 bg-black border-r border-gray-800 z-50 transform transition-transform duration-300 ${
-          isOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
+        className="fixed top-0 left-0 h-full w-64 bg-black border-r border-gray-800 z-50 transform transition-transform duration-300 translate-x-0"
       >
         {/* Header – brand logo, title, and close button.
             Fixed height (h‑16) to align with typical app bars. */}
