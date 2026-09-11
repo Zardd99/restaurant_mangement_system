@@ -1,19 +1,18 @@
 import type { NextConfig } from "next";
 
-// Per-branch backend mapping. On Vercel, VERCEL_GIT_COMMIT_REF is the branch
-// being built, so dev/staging previews automatically target their matching
-// Railway backend. An explicit NEXT_PUBLIC_API_URL (local dev or a manual
-// override) still wins for any branch not listed here.
+// Per-branch backend mapping used only when no explicit API URL is configured.
+// Vercel environment variables must take precedence so deployments can select
+// a different backend without changing source code.
 const API_BY_BRANCH: Record<string, string> = {
-  main: "https://backendrestaurant-production-8a7e.up.railway.app",
-  staging: "https://backendrestaurant-stagging.up.railway.app",
-  dev: "https://backendrestaurant-development.up.railway.app",
+  main: "https://backend-restaurant-2.onrender.com",
+  staging: "https://backend-restaurant-2.onrender.com",
+  dev: "https://backend-restaurant-2.onrender.com",
 };
 
 const branch = process.env.VERCEL_GIT_COMMIT_REF;
 const API_URL =
-  (branch && API_BY_BRANCH[branch]) ||
   process.env.NEXT_PUBLIC_API_URL ||
+  (branch && API_BY_BRANCH[branch]) ||
   "http://localhost:5000";
 
 const nextConfig: NextConfig = {
