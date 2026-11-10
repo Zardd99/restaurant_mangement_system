@@ -38,7 +38,7 @@
     "jsonwebtoken": "^9.0.3",
     "lucide-react": "^1.55.0",
     "mongodb": "^7.7.0",
-    "mongoose": "^9.11.1",
+    "mongoose": "^9.11.4",
     "mui": "^0.0.1",
     "next": "^16.4.0",
     "postcss": "^8.5.29",
